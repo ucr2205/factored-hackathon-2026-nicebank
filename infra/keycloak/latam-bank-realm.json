@@ -1,0 +1,134 @@
+{
+  "realm": "latam-bank",
+  "enabled": true,
+  "displayName": "LATAM Bank (hackathon test realm)",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 900,
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyDigits": 6,
+  "otpPolicyPeriod": 30,
+  "roles": {
+    "realm": [
+      { "name": "customer", "description": "Bank customer using the self-service chat" },
+      { "name": "agent", "description": "Human service agent receiving handoffs" },
+      { "name": "supervisor", "description": "Supervisor with access to audit and metrics views" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "web",
+      "name": "Customer and agent web app",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": { "pkce.code.challenge.method": "S256", "post.logout.redirect.uris": "http://localhost:5173/*" },
+      "protocolMappers": [
+        {
+          "name": "customer_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "customer_id",
+            "claim.name": "customer_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-disputes-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "disputes-api", "access.token.claim": "true" }
+        }
+      ]
+    },
+    {
+      "clientId": "eval-harness",
+      "name": "Evaluation harness (test environment only)",
+      "description": "Direct access grants are enabled ONLY so the offline evaluation can run without a browser. Must be removed in any real deployment.",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "eval-harness-local-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "customer_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "customer_id",
+            "claim.name": "customer_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience-disputes-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "disputes-api", "access.token.claim": "true" }
+        }
+      ]
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"unmanagedAttributePolicy\":\"ADMIN_VIEW\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255}}},{\"name\":\"email\",\"displayName\":\"${email}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"email\":{}}},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}},{\"name\":\"customer_id\",\"displayName\":\"Customer ID\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]}}],\"groups\":[]}"
+          ]
+        }
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "cliente01",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 01",
+      "email": "cliente01@example.test",
+      "emailVerified": true,
+      "attributes": { "customer_id": ["CUST-PLACEHOLDER-01"] },
+      "credentials": [{ "type": "password", "value": "Test-Only-cliente01", "temporary": false }],
+      "realmRoles": ["customer"]
+    },
+    {
+      "username": "cliente02",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 02",
+      "email": "cliente02@example.test",
+      "emailVerified": true,
+      "attributes": { "customer_id": ["CUST-PLACEHOLDER-02"] },
+      "credentials": [{ "type": "password", "value": "Test-Only-cliente02", "temporary": false }],
+      "realmRoles": ["customer"]
+    },
+    {
+      "username": "agente01",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Agent 01",
+      "email": "agente01@example.test",
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "Test-Only-agente01", "temporary": false }],
+      "realmRoles": ["agent"]
+    }
+  ]
+}

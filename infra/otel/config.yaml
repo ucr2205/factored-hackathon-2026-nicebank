@@ -1,0 +1,27 @@
+# Traces: services -> collector (OTLP) -> Jaeger. Metrics are scraped by Prometheus directly from services.
+receivers:
+  otlp:
+    protocols:
+      grpc: { endpoint: 0.0.0.0:4317 }
+      http: { endpoint: 0.0.0.0:4318 }
+
+processors:
+  batch: {}
+  # Defense in depth: drop attributes that could carry personal data if a service sets them by mistake.
+  attributes/strip_pii:
+    actions:
+      - { key: customer.name, action: delete }
+      - { key: customer.document_number, action: delete }
+      - { key: user.email, action: delete }
+
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls: { insecure: true }
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/strip_pii, batch]
+      exporters: [otlp/jaeger]
