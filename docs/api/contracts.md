@@ -4,7 +4,8 @@ Owner: team lead. Consumers: frontend, evaluation harness (P4). Go structs live 
 `backend/internal/contract/contract.go`; TypeScript types in `frontend/src/api/types.ts`. Keep the three in sync.
 
 All endpoints except health require `Authorization: Bearer <Keycloak access token>` (audience `disputes-api`).
-The customer identity is taken **only** from the token's `customer_id` claim.
+The customer identity is taken **only** from the token's `customer_ref` claim, an opaque pseudonym that Postgres
+resolves to the bank's `customer_id` inside each transaction (ADR 0003). The bank id never reaches the client.
 
 ## Customer
 
@@ -71,3 +72,15 @@ Never includes the raw transcript.
 ## Errors
 `{ "error": "<code>", "message": "..." }` with codes `session_expired` (401), `unauthorized` (401),
 `forbidden` (403), `step_up_required` (403), `not_found` (404), `bad_request` (400), `dependency_unavailable` (503).
+
+### `POST /api/handoffs/{id}/identity` (role `agent`)
+Returns the customer's identity only to the agent who claimed the handoff; any other caller gets `404`. Every
+call writes an `identity / reveal_identity` audit event (POST because it has that side effect).
+```jsonc
+{ "customer_ref": "cr_...", "first_name": "Lucas", "last_name": "Flores Luna" }
+```
+
+## Customer email notifications (outbox)
+The orchestrator writes `notifications` rows (`case_opened | card_blocked | handoff_created`, `lang`, `payload`
+with verified facts: `case_id, type, merchant, amount, date, card, block_id, reference`) in the action's
+transaction; the backend worker delivers them (ADR 0005). Not exposed over HTTP.
