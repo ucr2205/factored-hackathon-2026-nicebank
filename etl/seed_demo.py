@@ -3,27 +3,49 @@
 Temporary until the full ETL loader (P2) exists. Picks 20 demo customers deterministically, loads their
 customers/products/recent transactions plus all service agents and exchange rates, adds a few clearly
 labeled team-generated fixture transactions for the demo scripts, writes etl/seeds/demo_customers.csv and
-patches the Keycloak realm file so test users cliente01..cliente20 carry real customer_ids.
+patches the Keycloak realm file so test users cliente01..cliente20 carry an opaque customer_ref.
+
+Identity is pseudonymized: customers holds no names; customer_identity maps a random customer_ref (the only
+identifier in tokens) to the customer_id and stores the names as AES-256-GCM ciphertext bound to the row and
+column (associated data "<customer_id>|<column>|v1"). The key is PII_KEY (base64, 32 bytes) from the
+environment or the repo's .env (`make env` creates one).
 
 Usage: python etl/seed_demo.py   (Postgres from docker compose must be running)
 """
 
 from __future__ import annotations
 
+import base64
 import csv
 import hashlib
 import json
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import duckdb
 import psycopg
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RAW = REPO_ROOT / "data" / "raw"
 SEEDS = REPO_ROOT / "etl" / "seeds"
 REALM_FILE = REPO_ROOT / "infra" / "keycloak" / "latam-bank-realm.json"
+KEY_VERSION = 1
+
+
+def load_env_file(path: Path = REPO_ROOT / ".env") -> None:
+    """Minimal .env reader (KEY=value lines); real environment variables win."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.partition("=")
+        if sep and not key.strip().startswith("#"):
+            os.environ.setdefault(key.strip(), value.split(" #")[0].strip())
+
+
+load_env_file()
 
 DEMO_TODAY = datetime.fromisoformat(os.environ.get("DEMO_TODAY", "2026-06-17")).replace(tzinfo=timezone.utc)
 WINDOW_DAYS = 180          # activity window used to pick customers
@@ -38,6 +60,30 @@ PG_DSN = "host={h} port={p} dbname={d} user={u} password={pw}".format(
     h=os.environ.get("POSTGRES_HOST", "localhost"), p=os.environ.get("POSTGRES_PORT", "5433"),
     d=os.environ.get("POSTGRES_DB", "bank"), u=os.environ.get("POSTGRES_USER", "bank_admin"),
     pw=os.environ.get("POSTGRES_PASSWORD", "change-me-local"))
+
+
+def pii_cipher() -> AESGCM:
+    key = base64.b64decode(os.environ.get("PII_KEY", ""))
+    if len(key) != 32:
+        raise SystemExit("PII_KEY missing or not 32 bytes base64: run `make env` (writes it to .env)")
+    return AESGCM(key)
+
+
+def encrypt(aead: AESGCM, customer_id: str, column: str, value: str) -> bytes:
+    nonce = os.urandom(12)
+    aad = f"{customer_id}|{column}|v{KEY_VERSION}".encode()
+    return nonce + aead.encrypt(nonce, value.encode("utf-8"), aad)
+
+
+def customer_refs(ordered_ids: list[str]) -> dict[str, str]:
+    """Keep existing refs from the mapping file (the realm must match); new customers get a random one."""
+    refs: dict[str, str] = {}
+    path = SEEDS / "demo_customers.csv"
+    if path.exists():
+        for row in csv.DictReader(path.open(encoding="utf-8")):
+            if row.get("customer_ref"):
+                refs[row["customer_id"]] = row["customer_ref"]
+    return {cid: refs.get(cid) or "cr_" + secrets.token_urlsafe(18) for cid in ordered_ids}
 
 
 def csv_glob(table: str) -> str:
@@ -82,7 +128,7 @@ def pick_customers(con: duckdb.DuckDBPyConnection) -> list[dict]:
     return chosen
 
 
-def load(con: duckdb.DuckDBPyConnection, chosen: list[dict]) -> dict[str, int]:
+def load(con: duckdb.DuckDBPyConnection, chosen: list[dict], refs: dict[str, str]) -> dict[str, int]:
     ids = [c["customer_id"] for c in chosen]
     con.execute("CREATE TEMP TABLE demo_ids (customer_id VARCHAR)")
     con.executemany("INSERT INTO demo_ids VALUES (?)", [[i] for i in ids])
@@ -90,14 +136,20 @@ def load(con: duckdb.DuckDBPyConnection, chosen: list[dict]) -> dict[str, int]:
 
     customers = con.execute(f"""
         SELECT DISTINCT ON (customer_id) customer_id, first_name, last_name, country, segment,
-               detected_accent, customer_status
+               detected_accent, customer_status, email
         FROM read_csv('{(RAW / 'customers.csv').as_posix()}', all_varchar = true)
         WHERE customer_id IN (SELECT customer_id FROM demo_ids) ORDER BY customer_id, last_updated DESC
     """).fetchall()
     products = con.execute(f"""
         SELECT DISTINCT ON (product_id) product_id, customer_id, product_type,
                CASE WHEN product_type LIKE 'Tarjeta%' THEN right(product_number, 4) END,
-               currency, product_status, TRY_CAST(credit_limit AS DECIMAL(15, 2))
+               currency, product_status, TRY_CAST(credit_limit AS DECIMAL(15, 2)),
+               -- Card brand from the BIN (first digits); only the brand and last 4 digits are kept.
+               CASE WHEN product_type NOT LIKE 'Tarjeta%' THEN NULL
+                    WHEN product_number LIKE '4%' THEN 'visa'
+                    WHEN regexp_matches(product_number, '^(5[1-5]|222[1-9]|22[3-9]|2[3-6]|27[01]|2720)') THEN 'mastercard'
+                    WHEN regexp_matches(product_number, '^3[47]') THEN 'amex'
+                    ELSE 'other' END
         FROM read_csv('{(RAW / 'products.csv').as_posix()}', all_varchar = true)
         WHERE customer_id IN (SELECT customer_id FROM demo_ids) ORDER BY product_id, last_updated DESC
     """).fetchall()
@@ -123,11 +175,19 @@ def load(con: duckdb.DuckDBPyConnection, chosen: list[dict]) -> dict[str, int]:
     """).fetchall()
 
     fixtures = team_fixtures(products, customers, ids)
+    aead = pii_cipher()
+    # Contact emails are encrypted like names; the notifier redirects them to a test inbox on real SMTP.
+    identities = [(refs[cid], cid, encrypt(aead, cid, "first_name", first), encrypt(aead, cid, "last_name", last),
+                   encrypt(aead, cid, "email", email) if email else None, KEY_VERSION)
+                  for cid, first, last, *_, email in customers]
     with psycopg.connect(PG_DSN) as pg, pg.cursor() as cur:
-        cur.execute("TRUNCATE audit_events, handoffs, card_blocks, dispute_cases, pending_actions, messages, "
-                    "chat_sessions, transactions, products, customers, service_agents, exchange_rates CASCADE")
-        cur.executemany("INSERT INTO customers VALUES (%s,%s,%s,%s,%s,%s,%s)", customers)
-        cur.executemany("INSERT INTO products VALUES (%s,%s,%s,%s,%s,%s,%s)", products)
+        cur.execute("TRUNCATE notifications, audit_events, handoffs, card_blocks, dispute_cases, pending_actions, messages, "
+                    "chat_sessions, transactions, products, customer_identity, customers, service_agents, "
+                    "exchange_rates CASCADE")
+        cur.executemany("INSERT INTO customers VALUES (%s,%s,%s,%s,%s)", [(c[0], *c[3:7]) for c in customers])
+        cur.executemany("INSERT INTO customer_identity (customer_ref, customer_id, first_name_ct, last_name_ct, "
+                        "email_ct, key_version) VALUES (%s,%s,%s,%s,%s,%s)", identities)
+        cur.executemany("INSERT INTO products VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", products)
         cur.executemany("INSERT INTO transactions (transaction_id, customer_id, product_id, transaction_date, "
                         "transaction_type, amount, currency, amount_usd, merchant_name, merchant_category, "
                         "transaction_country, transaction_city, transaction_status, channel) "
@@ -150,10 +210,10 @@ def team_fixtures(products: list[tuple], customers: list[tuple], ordered_ids: li
     cliente02 gets a duplicate charge (Portuguese demo), cliente03 a high-value foreign purchase (escalation).
     """
     cards: dict[str, str] = {}
-    for product_id, customer_id, product_type, _last4, _cur, status, _limit in products:
+    for product_id, customer_id, product_type, _last4, _cur, status, *_ in products:
         if product_type in CARD_TYPES and status == "Active":
             cards.setdefault(customer_id, product_id)
-    country = {row[0]: row[3] for row in customers}
+    country = {row[0]: row[3] for row in customers}  # row = (id, first, last, country, ...) before the split
     c2, c3 = ordered_ids[1], ordered_ids[2]
     p2, p3 = cards[c2], cards[c3]
     day = DEMO_TODAY - timedelta(days=2)
@@ -169,30 +229,43 @@ def team_fixtures(products: list[tuple], customers: list[tuple], ordered_ids: li
     ]
 
 
-def write_mapping_and_realm(chosen: list[dict], ordered_ids: list[str]) -> None:
+def write_mapping_and_realm(chosen: list[dict], ordered_ids: list[str], refs: dict[str, str]) -> None:
     SEEDS.mkdir(parents=True, exist_ok=True)
     by_id = {c["customer_id"]: c for c in chosen}
     with (SEEDS / "demo_customers.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
-        w.writerow(["username", "customer_id", "country", "segment"])
+        w.writerow(["username", "customer_id", "customer_ref", "country", "segment"])
         for i, cid in enumerate(ordered_ids, 1):
-            w.writerow([f"cliente{i:02d}", cid, by_id[cid]["country"], by_id[cid]["segment"]])
+            w.writerow([f"cliente{i:02d}", cid, refs[cid], by_id[cid]["country"], by_id[cid]["segment"]])
 
     realm = json.loads(REALM_FILE.read_text(encoding="utf-8"))
     otp_data = json.dumps({"subType": "totp", "digits": 6, "counter": 0, "period": 30, "algorithm": "HmacSHA1"})
     users = []
     for i, cid in enumerate(ordered_ids, 1):
         name = f"cliente{i:02d}"
+        # cliente20 is the password-recovery demo user: its address comes from the Keycloak container
+        # environment (the test inbox, MAIL_REDIRECT_TO), resolved when the realm is imported.
+        email = "${KC_DEMO_RESET_EMAIL:cliente20@example.test}" if name == "cliente20" else f"{name}@example.test"
         users.append({
             "username": name, "enabled": True, "firstName": "Test", "lastName": f"Customer {i:02d}",
-            "email": f"{name}@example.test", "emailVerified": True,
-            "attributes": {"customer_id": [cid]}, "realmRoles": ["customer"],
+            "email": email, "emailVerified": True,
+            "attributes": {"customer_ref": [refs[cid]]}, "realmRoles": ["customer"],
             "credentials": [
                 {"type": "password", "value": f"Test-Only-{name}", "temporary": False},
                 # Test-only TOTP seed so the step-up demo works without enrolling a phone.
                 {"type": "otp", "userLabel": "demo-totp",
                  "secretData": json.dumps({"value": f"nicebank-demo-otp-{name}"}), "credentialData": otp_data},
             ],
+        })
+    # Load-test users (JMeter): same demo customers, password only, no TOTP. They can never pass step-up,
+    # so a load test cannot block cards. Test environment only.
+    for i, cid in enumerate(ordered_ids, 1):
+        name = f"carga{i:02d}"
+        users.append({
+            "username": name, "enabled": True, "firstName": "Load", "lastName": f"Test {i:02d}",
+            "email": f"{name}@example.test", "emailVerified": True,
+            "attributes": {"customer_ref": [refs[cid]]}, "realmRoles": ["customer"],
+            "credentials": [{"type": "password", "value": f"Test-Only-{name}", "temporary": False}],
         })
     for name, role in (("agente01", "agent"), ("agente02", "agent"), ("supervisor01", "supervisor")):
         users.append({
@@ -209,8 +282,9 @@ def main() -> None:
     chosen = pick_customers(con)
     # Order follows (country, segment); cliente01 is a Mexican Basic customer (normal ES demo).
     ordered_ids = [c["customer_id"] for c in chosen]
-    counts = load(con, chosen)
-    write_mapping_and_realm(chosen, ordered_ids)
+    refs = customer_refs(ordered_ids)
+    counts = load(con, chosen, refs)
+    write_mapping_and_realm(chosen, ordered_ids, refs)
     print("Loaded:", ", ".join(f"{k}={v:,}" for k, v in counts.items()))
     print(f"Wrote {SEEDS.relative_to(REPO_ROOT)}/demo_customers.csv and updated {REALM_FILE.relative_to(REPO_ROOT)}")
 
