@@ -1,0 +1,188 @@
+import { useState, type ReactNode } from "react";
+import { Link as RouterLink, useParams } from "react-router";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  LinearProgress,
+  Link,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { ArrowLeft, CircleCheck, CircleHelp, ExternalLink, Scale, ShieldCheck } from "lucide-react";
+import { api, JAEGER_URL } from "../../api/client";
+import type { AuditEvent, Handoff } from "../../api/types";
+import { useResource } from "../../api/useResource";
+import { formatDateTime } from "../../app/i18n";
+import { useAuth } from "../../auth/AuthProvider";
+import { DISPUTE_TYPES, LANGS, PRIORITY_COLOR, PRIORITY_LABEL, REASONS, STEPS } from "./labels";
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Paper sx={{ p: 2 }}>
+      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+        {title}
+      </Typography>
+      {children}
+    </Paper>
+  );
+}
+
+export default function HandoffDetailPage() {
+  const { id } = useParams();
+  const { user, roles } = useAuth();
+  const handoff = useResource<Handoff>(id ? `/api/handoffs/${id}` : null);
+  const h = handoff.data;
+  const audit = useResource<AuditEvent[]>(h ? `/api/sessions/${h.session_id}/audit` : null);
+  const [claiming, setClaiming] = useState(false);
+
+  const claim = async () => {
+    if (!user || !id) return;
+    setClaiming(true);
+    try {
+      await api<Handoff>(`/api/handoffs/${id}/claim`, user.access_token, { method: "POST" });
+      await handoff.reload();
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  if (handoff.error) return <Alert severity="error">No se pudo cargar el caso: {handoff.error}</Alert>;
+  if (!h) return <LinearProgress />;
+
+  return (
+    <Stack spacing={2}>
+      <Button component={RouterLink} to="/console" startIcon={<ArrowLeft size={16} />} sx={{ alignSelf: "flex-start" }}>
+        Volver a la cola
+      </Button>
+
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: { sm: "center" } }}>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h5">{REASONS[h.reason] ?? h.reason}</Typography>
+          <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", rowGap: 1 }}>
+            <Chip size="small" color={PRIORITY_COLOR[h.priority]} label={`Prioridad ${PRIORITY_LABEL[h.priority]}`} />
+            <Chip size="small" label={DISPUTE_TYPES[h.dispute_type] ?? h.dispute_type} />
+            <Chip size="small" label={LANGS[h.language]} />
+            <Chip size="small" variant="outlined" label={h.suggested_queue} />
+            <Chip size="small" variant="outlined" label={h.status === "open" ? "Abierto" : `Tomado por ${h.claimed_by}`} />
+          </Stack>
+        </Box>
+        {h.status === "open" && roles.includes("agent") && (
+          <Button variant="contained" onClick={claim} disabled={claiming}>
+            Tomar caso
+          </Button>
+        )}
+      </Stack>
+
+      <Section title="Lo que pidió el cliente (enmascarado)">
+        <Typography variant="body1">“{h.customer_request}”</Typography>
+      </Section>
+
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: "stretch" }}>
+        <Box sx={{ flex: 1 }}>
+          <Section title="Hechos verificados">
+            <List dense disablePadding>
+              {h.verified_facts.map((f) => (
+                <ListItem key={f.fact} disableGutters>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <ShieldCheck size={18} color="#2E7D32" />
+                  </ListItemIcon>
+                  <ListItemText primary={f.fact} secondary={`Fuente: ${f.source}`} />
+                </ListItem>
+              ))}
+              {h.verified_facts.length === 0 && <Typography variant="body2">Sin hechos verificados.</Typography>}
+            </List>
+          </Section>
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Section title="Acciones tomadas">
+            <List dense disablePadding>
+              {h.actions_taken.map((a) => (
+                <ListItem key={a.reference} disableGutters>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <CircleCheck size={18} color="#2E7D32" />
+                  </ListItemIcon>
+                  <ListItemText primary={`${a.action} · ${a.reference}`} secondary={`${a.status} · ${formatDateTime(a.at, "es")}`} />
+                </ListItem>
+              ))}
+              {h.actions_taken.length === 0 && <Typography variant="body2">Ninguna acción automática.</Typography>}
+            </List>
+          </Section>
+        </Box>
+      </Stack>
+
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        <Box sx={{ flex: 1 }}>
+          <Section title="Preguntas abiertas">
+            <List dense disablePadding>
+              {h.open_questions?.map((q) => (
+                <ListItem key={q} disableGutters>
+                  <ListItemIcon sx={{ minWidth: 32 }}>
+                    <CircleHelp size={18} color="#D98A00" />
+                  </ListItemIcon>
+                  <ListItemText primary={q} />
+                </ListItem>
+              ))}
+            </List>
+          </Section>
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Section title="Evidencia y agentes sugeridos">
+            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1, mb: 1.5 }}>
+              {h.evidence?.map((e) => (
+                <Chip key={e.id} size="small" icon={<Scale size={14} />} label={e.id} variant="outlined" />
+              ))}
+            </Stack>
+            {h.suggested_agents?.map((a) => (
+              <Typography key={a.agent_id} variant="body2">
+                {a.name} · {a.specialty || "general"} · {a.languages}
+              </Typography>
+            ))}
+          </Section>
+        </Box>
+      </Stack>
+
+      <Section title="Auditoría de la conversación">
+        <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 1 }}>
+          <Link href={`${JAEGER_URL}/trace/${h.trace_id}`} target="_blank" rel="noreferrer" variant="body2">
+            Ver traza en Jaeger <ExternalLink size={14} style={{ verticalAlign: "middle" }} />
+          </Link>
+        </Stack>
+        {audit.loading && !audit.data && <LinearProgress />}
+        <Stack divider={<Divider flexItem />}>
+          {audit.data?.map((e, i) => (
+            <Stack key={i} direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.5, sm: 2 }} sx={{ py: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
+                {formatDateTime(e.ts, "es")}
+              </Typography>
+              <Box sx={{ width: 170, flexShrink: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {STEPS[e.step] ?? e.step}
+                </Typography>
+                {e.tool && (
+                  <Typography variant="caption" color="text.secondary">
+                    {e.tool}
+                  </Typography>
+                )}
+              </Box>
+              <Typography variant="body2" sx={{ flex: 1, wordBreak: "break-word" }}>
+                {e.summary}
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+                {e.result && <Chip size="small" label={e.result} />}
+                {e.rule_id && <Chip size="small" variant="outlined" icon={<Scale size={14} />} label={e.rule_id} />}
+              </Stack>
+            </Stack>
+          ))}
+        </Stack>
+      </Section>
+    </Stack>
+  );
+}
