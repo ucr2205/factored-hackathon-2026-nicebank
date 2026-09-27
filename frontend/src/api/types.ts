@@ -115,3 +115,10 @@ export type Overview = {
   recent: Candidate[];
   today: string;
 };
+
+/** Revealed only to the agent who claimed the handoff; every reveal is audited. */
+export type CustomerIdentity = {
+  customer_ref: string;
+  first_name: string;
+  last_name: string;
+};

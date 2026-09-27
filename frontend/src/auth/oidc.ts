@@ -14,13 +14,18 @@ export const userManager = new UserManager({
 
 export type Claims = {
   preferred_username?: string;
-  customer_id?: string;
+  customer_ref?: string; // opaque pseudonym; the bank's customer_id never reaches the browser
   acr?: string;
   realm_access?: { roles?: string[] };
 };
 
+// Display only: the backend verifies the token. A malformed token yields no claims instead of crashing the app.
 export function decodeClaims(accessToken: string): Claims {
-  const payload = accessToken.split(".")[1] ?? "";
-  const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-  return JSON.parse(json) as Claims;
+  try {
+    const payload = (accessToken.split(".")[1] ?? "").replace(/-/g, "+").replace(/_/g, "/");
+    const bytes = Uint8Array.from(atob(payload.padEnd(Math.ceil(payload.length / 4) * 4, "=")), (c) => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes)) as Claims;
+  } catch {
+    return {};
+  }
 }

@@ -16,9 +16,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ArrowLeft, CircleCheck, CircleHelp, ExternalLink, Scale, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CircleCheck, CircleHelp, ExternalLink, Eye, EyeOff, Scale, ShieldCheck, UserRound } from "lucide-react";
 import { api, JAEGER_URL } from "../../api/client";
-import type { AuditEvent, Handoff } from "../../api/types";
+import type { AuditEvent, CustomerIdentity, Handoff } from "../../api/types";
 import { useResource } from "../../api/useResource";
 import { formatDateTime } from "../../app/i18n";
 import { useAuth } from "../../auth/AuthProvider";
@@ -42,6 +42,20 @@ export default function HandoffDetailPage() {
   const h = handoff.data;
   const audit = useResource<AuditEvent[]>(h ? `/api/sessions/${h.session_id}/audit` : null);
   const [claiming, setClaiming] = useState(false);
+  const [identity, setIdentity] = useState<CustomerIdentity | null>(null);
+  const [revealError, setRevealError] = useState<string | null>(null);
+  const mine = h?.status === "claimed" && h.claimed_by === user?.profile.preferred_username;
+
+  const reveal = async () => {
+    if (!user || !id) return;
+    setRevealError(null);
+    try {
+      setIdentity(await api<CustomerIdentity>(`/api/handoffs/${id}/identity`, user.access_token, { method: "POST" }));
+      await audit.reload();
+    } catch {
+      setRevealError("No se pudo mostrar la identidad. Solo quien tomó el caso puede verla.");
+    }
+  };
 
   const claim = async () => {
     if (!user || !id) return;
@@ -80,6 +94,43 @@ export default function HandoffDetailPage() {
           </Button>
         )}
       </Stack>
+
+      <Section title="Cliente">
+        {identity ? (
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+            <UserRound size={20} />
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                {identity.first_name} {identity.last_name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Referencia {identity.customer_ref} · esta consulta quedó registrada en la auditoría
+              </Typography>
+            </Box>
+            <Button size="small" startIcon={<EyeOff size={16} />} onClick={() => setIdentity(null)}>
+              Ocultar
+            </Button>
+          </Stack>
+        ) : (
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "center" } }}>
+            <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+              {mine
+                ? "La identidad está protegida. Muéstrala solo si necesitas contactar al cliente; queda registrado."
+                : "La identidad está protegida. Se puede ver después de tomar el caso."}
+            </Typography>
+            {mine && (
+              <Button variant="outlined" size="small" startIcon={<Eye size={16} />} onClick={reveal}>
+                Mostrar identidad
+              </Button>
+            )}
+          </Stack>
+        )}
+        {revealError && (
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            {revealError}
+          </Alert>
+        )}
+      </Section>
 
       <Section title="Lo que pidió el cliente (enmascarado)">
         <Typography variant="body1">“{h.customer_request}”</Typography>
@@ -151,7 +202,7 @@ export default function HandoffDetailPage() {
 
       <Section title="Auditoría de la conversación">
         <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 1 }}>
-          <Link href={`${JAEGER_URL}/trace/${h.trace_id}`} target="_blank" rel="noreferrer" variant="body2">
+          <Link href={`${JAEGER_URL}/trace/${encodeURIComponent(h.trace_id)}`} target="_blank" rel="noreferrer" variant="body2">
             Ver traza en Jaeger <ExternalLink size={14} style={{ verticalAlign: "middle" }} />
           </Link>
         </Stack>

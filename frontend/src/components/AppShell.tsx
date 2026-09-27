@@ -7,7 +7,7 @@ import { useLang, type Lang } from "../app/i18n";
 import { useAuth } from "../auth/AuthProvider";
 
 export function BrandMark({ size = 32 }: { size?: number }) {
-  return <Box component="img" src="/nicebank-mark.svg" alt="" sx={{ width: size, height: size, display: "block" }} />;
+  return <Box component="img" src="/brand/nicebank-mark-512.png" alt="" sx={{ width: size, height: size, display: "block" }} />;
 }
 
 export default function AppShell({ children }: { children: ReactNode }) {

@@ -30,6 +30,7 @@ export const STEPS: Record<string, string> = {
   act: "Ejecutar",
   verify: "Verificar",
   handoff: "Pasar a humano",
+  identity: "Ver identidad del cliente",
   respond: "Responder",
 };
 
