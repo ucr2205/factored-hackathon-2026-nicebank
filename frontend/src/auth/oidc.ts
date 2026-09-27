@@ -1,6 +1,7 @@
 import { InMemoryWebStorage, UserManager, WebStorageStateStore } from "oidc-client-ts";
 
 // Authorization Code + PKCE against Keycloak. Tokens live in memory only (never localStorage).
+// The OIDC state for the redirect round-trip uses sessionStorage (default), which holds no tokens.
 export const userManager = new UserManager({
   authority: import.meta.env.VITE_OIDC_AUTHORITY ?? "http://localhost:8080/realms/latam-bank",
   client_id: import.meta.env.VITE_OIDC_CLIENT_ID ?? "web",
