@@ -1,6 +1,6 @@
 <#-- Same design as the backend notifications (backend/internal/notify/templates/layout.html): dark card,
-     accent line and title, security note and dark footer. accent: title/button color for this email. -->
-<#macro emailLayout accent="#E5769A">
+     burgundy line and button, rose (logo) titles, security note and dark footer. Brand palette only. -->
+<#macro emailLayout>
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,7 +15,7 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
           style="max-width:600px;background-color:#1E1E1E;border:1px solid #333333;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,0.4);margin:0 auto;overflow:hidden;">
           <tr>
-            <td align="center" style="padding:28px 20px 22px;background-color:#252525;border-bottom:3px solid ${accent};">
+            <td align="center" style="padding:28px 20px 22px;background-color:#252525;border-bottom:3px solid #7A1F3D;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="width:38px;height:38px;background-color:#7A1F3D;border-radius:10px;text-align:center;vertical-align:middle;font-size:22px;font-weight:bold;color:#ffffff;">N</td>

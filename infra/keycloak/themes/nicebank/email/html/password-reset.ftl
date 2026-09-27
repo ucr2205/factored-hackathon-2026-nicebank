@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.emailLayout accent="#E5769A">
+<@layout.emailLayout>
   <tr>
     <td align="center" style="padding:36px 30px 6px;">
       <h1 style="margin:0;font-size:24px;line-height:1.3;font-weight:bold;color:#E5769A;text-transform:uppercase;letter-spacing:0.5px;">${msg("nbEmailResetTitle")}</h1>
@@ -22,7 +22,7 @@
   </tr>
   <tr>
     <td align="center" style="padding:28px 32px 8px;">
-      <a href="${link}" style="display:inline-block;padding:14px 30px;background-color:#E5769A;color:#121212;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;">${msg("nbEmailResetButton")}</a>
+      <a href="${link}" style="display:inline-block;padding:14px 30px;background-color:#7A1F3D;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;">${msg("nbEmailResetButton")}</a>
     </td>
   </tr>
 </@layout.emailLayout>

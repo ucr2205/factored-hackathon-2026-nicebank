@@ -70,7 +70,7 @@ type view struct {
 	Next, ImportantLabel, Security, SecurityLabel string
 	Thanks, Footer, CTALabel, CTAURL              string
 	LogoURL                                       template.URL // cid: of the NiceBank mark, when the asset is present
-	Accent                                        template.CSS
+	Accent, Burgundy                              template.CSS
 	Details                                       []detail
 }
 
@@ -81,11 +81,12 @@ type copyText struct {
 	Details                              [][2]string // label, payload key; the first row is highlighted
 }
 
-var accents = map[string]template.CSS{
-	KindCaseOpened:     "#E5769A", // NiceBank rose
-	KindCardBlocked:    "#F5B942", // amber: a security action
-	KindHandoffCreated: "#6FC3DF", // calm blue: a person will follow up
-}
+// Brand palette only (every kind uses it): burgundy for the header line and the button, and the logo's rose,
+// a lighter burgundy tint, for titles and highlights so they stay readable on the dark card.
+const (
+	brandBurgundy template.CSS = "#7A1F3D"
+	brandRose     template.CSS = "#E5769A"
+)
 
 var texts = map[string]map[string]copyText{
 	KindCaseOpened: {
@@ -186,7 +187,7 @@ func Render(kind, lang, firstName, appURL string, payload map[string]string) (Me
 	v := view{Lang: lang, Subject: fill(c.Subject), Preheader: c.Subtitle, Title: c.Title, Subtitle: c.Subtitle,
 		GreetingPrefix: cm.GreetingPrefix, Name: firstName, Lead: c.Lead, Next: c.Next, ImportantLabel: cm.ImportantLabel,
 		Security: cm.Security, SecurityLabel: cm.SecurityLabel, Thanks: cm.Thanks, Footer: cm.Footer,
-		Accent: accents[kind]}
+		Accent: brandRose, Burgundy: brandBurgundy}
 	if firstName == "" {
 		v.GreetingPrefix = cm.AnonGreeting
 	}

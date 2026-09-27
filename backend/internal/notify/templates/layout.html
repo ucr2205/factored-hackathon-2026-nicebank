@@ -15,9 +15,9 @@
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
           style="max-width:600px;background-color:#1E1E1E;border:1px solid #333333;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,0.4);margin:0 auto;overflow:hidden;">
 
-          <!-- Header: wordmark + accent line (color depends on the notification kind) -->
+          <!-- Header: logo + burgundy line (brand palette only) -->
           <tr>
-            <td align="center" style="padding:28px 20px 22px;background-color:#252525;border-bottom:3px solid {{.Accent}};">
+            <td align="center" style="padding:28px 20px 22px;background-color:#252525;border-bottom:3px solid {{.Burgundy}};">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   {{if .LogoURL}}
@@ -71,7 +71,7 @@
           <!-- Call to action -->
           <tr>
             <td align="center" style="padding:28px 32px 8px;">
-              <a href="{{.CTAURL}}" style="display:inline-block;padding:14px 30px;background-color:{{.Accent}};color:#121212;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;">{{.CTALabel}}</a>
+              <a href="{{.CTAURL}}" style="display:inline-block;padding:14px 30px;background-color:{{.Burgundy}};color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;">{{.CTALabel}}</a>
             </td>
           </tr>
           {{end}}
