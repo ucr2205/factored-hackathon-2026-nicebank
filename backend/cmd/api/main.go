@@ -1,10 +1,8 @@
 // Command api is the disputes backend: identity, sessions, orchestration, policy engine, tools and audit.
-// Phase 0: health, readiness (checks ml-service) and Prometheus metrics.
 package main
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,74 +10,81 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/auth"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/config"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/contract"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/httpapi"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/llm"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/mlclient"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/orchestrator"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/policy"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/store"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/telemetry"
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	cfg := config.Load()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	addr := envOr("HTTP_ADDR", ":8081")
-	mlURL := envOr("ML_SERVICE_URL", "http://localhost:8000")
+	pol, err := policy.Load(cfg.PolicyFile)
+	if err != nil {
+		slog.Error("invalid policy; refusing to start", "err", err)
+		os.Exit(1)
+	}
+	shutdownTracing, err := telemetry.InitTracing(ctx, "disputes-backend")
+	if err != nil {
+		slog.Warn("tracing disabled", "err", err)
+	}
+	db, err := store.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		slog.Error("database", "err", err)
+		os.Exit(1)
+	}
+	defer db.Close()
 
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID, middleware.RealIP, middleware.Recoverer)
-	r.Use(middleware.Timeout(15 * time.Second))
+	ml := mlclient.New(cfg.MLServiceURL)
+	var model llm.Provider = llm.Fake{} // real provider plugged in on D2 behind the same interface
+	orch := orchestrator.New(db, pol, ml, model, cfg.DemoToday, cfg.SessionIdle)
 
-	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-	})
-	r.Get("/api/ready", readyHandler(mlURL))
-	r.Handle("/metrics", promhttp.Handler())
+	srv := &httpapi.Server{
+		Orch:     orch,
+		Verifier: auth.NewVerifier(ctx, cfg.OIDCIssuer, cfg.OIDCJWKSURL, cfg.OIDCAudience),
+		Origins:  cfg.AllowedOrigins,
+		ReadyFunc: func(r *http.Request) (int, map[string]string) {
+			status := map[string]string{"status": "ready", "database": "ok", "ml_service": "ok"}
+			code := http.StatusOK
+			if err := db.Pool.Ping(r.Context()); err != nil {
+				status["database"], status["status"], code = "unreachable", "degraded", http.StatusServiceUnavailable
+			}
+			if ml.ModelVersion(r.Context()) == "unavailable" {
+				status["ml_service"], status["status"], code = "unreachable", "degraded", http.StatusServiceUnavailable
+			}
+			return code, status
+		},
+		Config: func(r *http.Request) contract.AdminConfig {
+			return contract.AdminConfig{PolicyVersion: pol.Version, PolicyOrigin: pol.Origin, Policy: pol,
+				LLMProvider: model.Name(), PromptVersion: model.Version(), ClassifierModel: ml.ModelVersion(r.Context()),
+				DemoToday: cfg.DemoToday.Format(time.DateOnly)}
+		},
+	}
 
-	srv := &http.Server{Addr: addr, Handler: r, ReadHeaderTimeout: 5 * time.Second}
-
+	httpSrv := &http.Server{Addr: cfg.HTTPAddr, Handler: srv.Routes(), ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second}
 	go func() {
-		slog.Info("backend listening", "addr", addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		slog.Info("backend listening", "addr", cfg.HTTPAddr, "policy_version", pol.Version)
+		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server failed", "err", err)
 			os.Exit(1)
 		}
 	}()
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-	<-stop
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	<-ctx.Done()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_ = srv.Shutdown(ctx)
-}
-
-// readyHandler reports whether the backend's dependencies are reachable.
-func readyHandler(mlURL string) http.HandlerFunc {
-	client := &http.Client{Timeout: 2 * time.Second}
-	return func(w http.ResponseWriter, r *http.Request) {
-		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, mlURL+"/health", nil)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"status": "error"})
-			return
-		}
-		resp, err := client.Do(req)
-		if err != nil || resp.StatusCode != http.StatusOK {
-			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"status": "degraded", "ml_service": "unreachable"})
-			return
-		}
-		resp.Body.Close()
-		writeJSON(w, http.StatusOK, map[string]string{"status": "ready", "ml_service": "ok"})
+	_ = httpSrv.Shutdown(shutdownCtx)
+	if shutdownTracing != nil {
+		_ = shutdownTracing(shutdownCtx)
 	}
-}
-
-func writeJSON(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(body)
-}
-
-func envOr(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
 }
