@@ -1,0 +1,184 @@
+package orchestrator
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+
+	"github.com/jackc/pgx/v5"
+
+	"github.com/factored-hackathon-2026/disputes/backend/internal/auth"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/contract"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/tools"
+)
+
+// Overview returns the customer's own cards and latest card movements (RLS-scoped).
+func (o *Orchestrator) Overview(ctx context.Context, p auth.Principal) (contract.Overview, error) {
+	v := contract.Overview{Cards: []contract.Card{}, Recent: []contract.Candidate{}, Today: o.Today.Format("2006-01-02")}
+	err := o.Store.WithCustomer(ctx, p.CustomerID, func(tx pgx.Tx) error {
+		_ = tx.QueryRow(ctx, `SELECT first_name FROM customers LIMIT 1`).Scan(&v.FirstName)
+		cards, err := tools.ActiveCards(ctx, tx)
+		if err != nil {
+			return err
+		}
+		for _, c := range cards {
+			v.Cards = append(v.Cards, contract.Card{Last4: c.Last4, Type: c.Type, Status: c.Status})
+		}
+		recent, err := tools.FindTransactions(ctx, tx, tools.Filter{From: o.Today.AddDate(0, -6, 0), To: o.Today,
+			Types: []string{"Purchase", "Withdrawal"}}, 8)
+		if err != nil {
+			return err
+		}
+		for _, t := range recent {
+			v.Recent = append(v.Recent, contract.Candidate{TransactionID: t.ID, Date: t.Date, Amount: t.Amount,
+				Currency: t.Currency, Merchant: t.Merchant, City: t.City, Country: t.Country, CardLast4: t.CardLast4})
+		}
+		return nil
+	})
+	return v, err
+}
+
+// Session returns the customer's own conversation (used to restore the chat after a step-up redirect).
+func (o *Orchestrator) Session(ctx context.Context, p auth.Principal, id string) (contract.SessionView, error) {
+	var v contract.SessionView
+	err := o.Store.WithCustomer(ctx, p.CustomerID, func(tx pgx.Tx) error {
+		var raw []byte
+		err := tx.QueryRow(ctx, `SELECT session_id, lang, state FROM chat_sessions WHERE session_id = $1`, id).Scan(&v.SessionID, &v.Lang, &raw)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		} else if err != nil {
+			return err
+		}
+		var st state
+		_ = json.Unmarshal(raw, &st)
+		rows, err := tx.Query(ctx, `SELECT role, text, created_at FROM messages WHERE session_id = $1 ORDER BY id`, id)
+		if err != nil {
+			return err
+		}
+		v.Messages, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (contract.Message, error) {
+			var m contract.Message
+			return m, r.Scan(&m.Role, &m.Text, &m.At)
+		})
+		if err != nil {
+			return err
+		}
+		if st.Stage == stageAwaitingConfirm && st.PendingAction != "" {
+			var actionType string
+			if tx.QueryRow(ctx, `SELECT action_type FROM pending_actions WHERE action_id = $1 AND status = 'pending'`,
+				st.PendingAction).Scan(&actionType) == nil {
+				summary := ""
+				if n := len(v.Messages); n > 0 {
+					summary = v.Messages[n-1].Text
+				}
+				v.PendingAction = &contract.PendingAction{ID: st.PendingAction, Type: actionType, Summary: summary,
+					RequiresStepUp: o.Policy.RequiresStepUp(actionType)}
+			}
+		}
+		return nil
+	})
+	return v, err
+}
+
+func (o *Orchestrator) ListHandoffs(ctx context.Context, p auth.Principal, status string) ([]contract.HandoffSummary, error) {
+	out := []contract.HandoffSummary{}
+	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `SELECT handoff_id, created_at, status, language, reason, priority,
+			payload->>'suggested_queue', coalesce(payload->>'dispute_type', ''), claimed_by
+			FROM handoffs WHERE ($1 = '' OR status = $1)
+			ORDER BY (priority = 'high') DESC, created_at DESC LIMIT 100`, status)
+		if err != nil {
+			return err
+		}
+		out, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (contract.HandoffSummary, error) {
+			var h contract.HandoffSummary
+			return h, r.Scan(&h.HandoffID, &h.CreatedAt, &h.Status, &h.Language, &h.Reason, &h.Priority, &h.Queue, &h.DisputeType, &h.ClaimedBy)
+		})
+		return err
+	})
+	return out, err
+}
+
+func (o *Orchestrator) GetHandoff(ctx context.Context, p auth.Principal, id string) (contract.Handoff, error) {
+	var h contract.Handoff
+	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error { return loadHandoff(ctx, tx, id, &h) })
+	return h, err
+}
+
+// ClaimHandoff assigns an open handoff to the calling agent.
+func (o *Orchestrator) ClaimHandoff(ctx context.Context, p auth.Principal, id string) (contract.Handoff, error) {
+	var h contract.Handoff
+	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, `UPDATE handoffs SET status = 'claimed', claimed_by = $2, claimed_at = now()
+			WHERE handoff_id = $1 AND status = 'open'`, id, p.Username)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return ErrNotFound
+		}
+		return loadHandoff(ctx, tx, id, &h)
+	})
+	return h, err
+}
+
+func loadHandoff(ctx context.Context, tx pgx.Tx, id string, h *contract.Handoff) error {
+	var raw []byte
+	var status string
+	var claimedBy *string
+	err := tx.QueryRow(ctx, `SELECT payload, status, claimed_by, handoff_id, created_at FROM handoffs WHERE handoff_id = $1`, id).
+		Scan(&raw, &status, &claimedBy, &h.HandoffID, &h.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+	createdAt, handoffID := h.CreatedAt, h.HandoffID
+	if err := json.Unmarshal(raw, h); err != nil {
+		return err
+	}
+	h.HandoffID, h.CreatedAt, h.Status, h.ClaimedBy = handoffID, createdAt, status, claimedBy
+	return nil
+}
+
+func (o *Orchestrator) SessionAudit(ctx context.Context, p auth.Principal, sessionID string) ([]contract.AuditEvent, error) {
+	out := []contract.AuditEvent{}
+	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `SELECT ts, step, tool, summary, result, policy_rule_id, trace_id, coalesce(latency_ms, 0)
+			FROM audit_events WHERE session_id = $1 ORDER BY id`, sessionID)
+		if err != nil {
+			return err
+		}
+		out, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (contract.AuditEvent, error) {
+			var e contract.AuditEvent
+			return e, r.Scan(&e.TS, &e.Step, &e.Tool, &e.Summary, &e.Result, &e.RuleID, &e.TraceID, &e.LatencyMS)
+		})
+		return err
+	})
+	return out, err
+}
+
+// Summary aggregates completed turns from the audit trail (staff-visible, no personal data).
+func (o *Orchestrator) Summary(ctx context.Context, p auth.Principal) (contract.Summary, error) {
+	s := contract.Summary{ByOutcome: []contract.OutcomeCount{}}
+	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+		if err := tx.QueryRow(ctx, `SELECT count(*), coalesce(percentile_cont(0.5) WITHIN GROUP (ORDER BY latency_ms), 0),
+			coalesce(percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms), 0)
+			FROM audit_events WHERE step = 'respond'`).Scan(&s.Turns, &s.P50LatencyMS, &s.P95LatencyMS); err != nil {
+			return err
+		}
+		rows, err := tx.Query(ctx, `SELECT coalesce(result, ''), coalesce(lang, ''), coalesce(mode, ''), count(*)
+			FROM audit_events WHERE step = 'respond' GROUP BY 1, 2, 3 ORDER BY 4 DESC`)
+		if err != nil {
+			return err
+		}
+		s.ByOutcome, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (contract.OutcomeCount, error) {
+			var c contract.OutcomeCount
+			return c, r.Scan(&c.Outcome, &c.Lang, &c.Mode, &c.Count)
+		})
+		if err != nil {
+			return err
+		}
+		return tx.QueryRow(ctx, `SELECT count(*) FROM handoffs WHERE status = 'open'`).Scan(&s.OpenHandoffs)
+	})
+	return s, err
+}
