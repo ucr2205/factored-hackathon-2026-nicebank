@@ -19,7 +19,7 @@ import {
 import type { HandoffSummary } from "../../api/types";
 import { useResource } from "../../api/useResource";
 import { formatDateTime } from "../../app/i18n";
-import { DISPUTE_TYPES, LANGS, PRIORITY_COLOR, PRIORITY_LABEL, REASONS } from "./labels";
+import { DISPUTE_TYPES, LANGS, PRIORITY_COLOR, PRIORITY_LABEL, queueLabel, REASONS } from "./labels";
 
 export default function HandoffQueuePage() {
   const [status, setStatus] = useState<"open" | "claimed">("open");
@@ -64,7 +64,7 @@ export default function HandoffQueuePage() {
                   <TableCell>{DISPUTE_TYPES[h.dispute_type] ?? (h.dispute_type || "—")}</TableCell>
                   <TableCell>{LANGS[h.language] ?? h.language}</TableCell>
                   <TableCell>
-                    <code>{h.suggested_queue}</code>
+                    {queueLabel(h.suggested_queue)}
                   </TableCell>
                   <TableCell>{formatDateTime(h.created_at, "es")}</TableCell>
                   {status === "claimed" && <TableCell>{h.claimed_by}</TableCell>}

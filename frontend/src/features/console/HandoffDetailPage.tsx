@@ -6,6 +6,7 @@ import {
   Button,
   Chip,
   Divider,
+  FormControlLabel,
   LinearProgress,
   Link,
   List,
@@ -14,6 +15,8 @@ import {
   ListItemText,
   Paper,
   Stack,
+  Switch,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { ArrowLeft, CircleCheck, CircleHelp, ExternalLink, Eye, EyeOff, Scale, ShieldCheck, UserRound } from "lucide-react";
@@ -22,7 +25,8 @@ import type { AuditEvent, CustomerIdentity, Handoff } from "../../api/types";
 import { useResource } from "../../api/useResource";
 import { formatDateTime } from "../../app/i18n";
 import { useAuth } from "../../auth/AuthProvider";
-import { DISPUTE_TYPES, LANGS, PRIORITY_COLOR, PRIORITY_LABEL, REASONS, STEPS } from "./labels";
+import { describeAudit, resultLabel, RULE_NAMES } from "./auditText";
+import { ACTION_NAMES, ACTION_STATUS, DISPUTE_TYPES, LANGS, PRIORITY_COLOR, PRIORITY_LABEL, queueLabel, REASONS, SOURCES, STEPS } from "./labels";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -42,6 +46,7 @@ export default function HandoffDetailPage() {
   const h = handoff.data;
   const audit = useResource<AuditEvent[]>(h ? `/api/sessions/${h.session_id}/audit` : null);
   const [claiming, setClaiming] = useState(false);
+  const [technical, setTechnical] = useState(false);
   const [identity, setIdentity] = useState<CustomerIdentity | null>(null);
   const [revealError, setRevealError] = useState<string | null>(null);
   const mine = h?.status === "claimed" && h.claimed_by === user?.profile.preferred_username;
@@ -84,7 +89,7 @@ export default function HandoffDetailPage() {
             <Chip size="small" color={PRIORITY_COLOR[h.priority]} label={`Prioridad ${PRIORITY_LABEL[h.priority]}`} />
             <Chip size="small" label={DISPUTE_TYPES[h.dispute_type] ?? h.dispute_type} />
             <Chip size="small" label={LANGS[h.language]} />
-            <Chip size="small" variant="outlined" label={h.suggested_queue} />
+            <Chip size="small" variant="outlined" label={`Cola: ${queueLabel(h.suggested_queue)}`} />
             <Chip size="small" variant="outlined" label={h.status === "open" ? "Abierto" : `Tomado por ${h.claimed_by}`} />
           </Stack>
         </Box>
@@ -145,7 +150,7 @@ export default function HandoffDetailPage() {
                   <ListItemIcon sx={{ minWidth: 32 }}>
                     <ShieldCheck size={18} color="#2E7D32" />
                   </ListItemIcon>
-                  <ListItemText primary={f.fact} secondary={`Fuente: ${f.source}`} />
+                  <ListItemText primary={f.fact} secondary={`Fuente: ${SOURCES[f.source] ?? f.source}`} />
                 </ListItem>
               ))}
               {h.verified_facts.length === 0 && <Typography variant="body2">Sin hechos verificados.</Typography>}
@@ -160,7 +165,7 @@ export default function HandoffDetailPage() {
                   <ListItemIcon sx={{ minWidth: 32 }}>
                     <CircleCheck size={18} color="#2E7D32" />
                   </ListItemIcon>
-                  <ListItemText primary={`${a.action} · ${a.reference}`} secondary={`${a.status} · ${formatDateTime(a.at, "es")}`} />
+                  <ListItemText primary={`${ACTION_NAMES[a.action] ?? a.action} · ${a.reference}`} secondary={`${ACTION_STATUS[a.status] ?? a.status} · ${formatDateTime(a.at, "es")}`} />
                 </ListItem>
               ))}
               {h.actions_taken.length === 0 && <Typography variant="body2">Ninguna acción automática.</Typography>}
@@ -188,7 +193,9 @@ export default function HandoffDetailPage() {
           <Section title="Evidencia y agentes sugeridos">
             <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1, mb: 1.5 }}>
               {h.evidence?.map((e) => (
-                <Chip key={e.id} size="small" icon={<Scale size={14} />} label={e.id} variant="outlined" />
+                <Tooltip key={e.id} title={`Regla ${e.id}`}>
+                  <Chip size="small" icon={<Scale size={14} />} label={RULE_NAMES[e.id] ?? e.id} variant="outlined" />
+                </Tooltip>
               ))}
             </Stack>
             {h.suggested_agents?.map((a) => (
@@ -201,37 +208,58 @@ export default function HandoffDetailPage() {
       </Stack>
 
       <Section title="Auditoría de la conversación">
-        <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 1 }}>
-          <Link href={`${JAEGER_URL}/trace/${encodeURIComponent(h.trace_id)}`} target="_blank" rel="noreferrer" variant="body2">
-            Ver traza en Jaeger <ExternalLink size={14} style={{ verticalAlign: "middle" }} />
-          </Link>
+        <Stack direction="row" spacing={2} sx={{ justifyContent: "flex-end", alignItems: "center", mb: 1, flexWrap: "wrap" }}>
+          <FormControlLabel
+            control={<Switch size="small" checked={technical} onChange={(ev) => setTechnical(ev.target.checked)} />}
+            label={<Typography variant="body2">Ver detalle técnico</Typography>}
+          />
+          {technical && (
+            <Link href={`${JAEGER_URL}/trace/${encodeURIComponent(h.trace_id)}`} target="_blank" rel="noreferrer" variant="body2">
+              Ver traza en Jaeger <ExternalLink size={14} style={{ verticalAlign: "middle" }} />
+            </Link>
+          )}
         </Stack>
         {audit.loading && !audit.data && <LinearProgress />}
         <Stack divider={<Divider flexItem />}>
-          {audit.data?.map((e, i) => (
-            <Stack key={i} direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.5, sm: 2 }} sx={{ py: 1 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
-                {formatDateTime(e.ts, "es")}
-              </Typography>
-              <Box sx={{ width: 170, flexShrink: 0 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {STEPS[e.step] ?? e.step}
+          {audit.data?.map((e, i) => {
+            const result = resultLabel(e.result);
+            return (
+              <Stack key={i} direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.5, sm: 2 }} sx={{ py: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
+                  {formatDateTime(e.ts, "es")}
                 </Typography>
-                {e.tool && (
-                  <Typography variant="caption" color="text.secondary">
-                    {e.tool}
+                <Box sx={{ width: 170, flexShrink: 0 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {STEPS[e.step] ?? e.step}
                   </Typography>
-                )}
-              </Box>
-              <Typography variant="body2" sx={{ flex: 1, wordBreak: "break-word" }}>
-                {e.summary}
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-                {e.result && <Chip size="small" label={e.result} />}
-                {e.rule_id && <Chip size="small" variant="outlined" icon={<Scale size={14} />} label={e.rule_id} />}
+                  {technical && e.tool && (
+                    <Typography variant="caption" color="text.secondary">
+                      {e.tool}
+                    </Typography>
+                  )}
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" sx={{ wordBreak: "break-word" }}>
+                    {describeAudit(e)}
+                  </Typography>
+                  {technical && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontFamily: "monospace", wordBreak: "break-all" }}>
+                      {e.summary}
+                    </Typography>
+                  )}
+                </Box>
+                <Stack direction="row" spacing={1} sx={{ flexShrink: 0, flexWrap: "wrap", rowGap: 0.5 }}>
+                  {result && <Chip size="small" label={result} />}
+                  {e.rule_id && (
+                    <Tooltip title={`Regla ${e.rule_id}`}>
+                      <Chip size="small" variant="outlined" icon={<Scale size={14} />}
+                        label={technical ? e.rule_id : RULE_NAMES[e.rule_id] ?? e.rule_id} />
+                    </Tooltip>
+                  )}
+                </Stack>
               </Stack>
-            </Stack>
-          ))}
+            );
+          })}
         </Stack>
       </Section>
     </Stack>

@@ -18,6 +18,8 @@ export const DISPUTE_TYPES: Record<string, string> = {
   not_received: "Compra no recibida",
   atm_cash_not_dispensed: "Cajero no entregó efectivo",
   card_lost_stolen: "Tarjeta perdida o robada",
+  other_in_scope: "Otro problema con la tarjeta",
+  out_of_scope: "Fuera de alcance",
 };
 
 export const STEPS: Record<string, string> = {
@@ -30,7 +32,8 @@ export const STEPS: Record<string, string> = {
   act: "Ejecutar",
   verify: "Verificar",
   handoff: "Pasar a humano",
-  identity: "Ver identidad del cliente",
+  identity: "Identidad del cliente",
+  notify: "Correo al cliente",
   respond: "Responder",
 };
 
@@ -39,3 +42,27 @@ export const LANGS: Record<string, string> = { es: "Español", pt: "Portugués" 
 export const PRIORITY_COLOR = { high: "error", medium: "warning", low: "default" } as const;
 
 export const PRIORITY_LABEL = { high: "alta", medium: "media", low: "baja" } as const;
+
+// Queues are "<team>_<lang>" (e.g. fraud_es): shown as "Fraudes · español".
+const QUEUE_TEAMS: Record<string, string> = { disputes: "Disputas", fraud: "Fraudes" };
+const QUEUE_LANGS: Record<string, string> = { es: "español", pt: "portugués" };
+export const queueLabel = (q: string) => {
+  const [team, lang] = q.split("_");
+  return [QUEUE_TEAMS[team] ?? team, QUEUE_LANGS[lang] ?? lang].filter(Boolean).join(" · ");
+};
+
+export const ACTION_NAMES: Record<string, string> = {
+  open_dispute_case: "Disputa abierta",
+  block_card: "Tarjeta bloqueada",
+};
+
+export const ACTION_STATUS: Record<string, string> = { verified: "verificada", failed: "falló", pending: "pendiente" };
+
+// Where each verified fact was read from.
+export const SOURCES: Record<string, string> = {
+  transactions: "movimientos de la tarjeta",
+  exchange_rates: "tasas de cambio del día",
+  card_blocks: "registro de bloqueos",
+  dispute_cases: "registro de disputas",
+  products: "productos del cliente",
+};
