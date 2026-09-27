@@ -1,7 +1,7 @@
 {
   "realm": "latam-bank",
   "enabled": true,
-  "displayName": "LATAM Bank (hackathon test realm)",
+  "displayName": "NiceBank",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": false,
@@ -14,9 +14,18 @@
   "otpPolicyPeriod": 30,
   "roles": {
     "realm": [
-      { "name": "customer", "description": "Bank customer using the self-service chat" },
-      { "name": "agent", "description": "Human service agent receiving handoffs" },
-      { "name": "supervisor", "description": "Supervisor with access to audit and metrics views" }
+      {
+        "name": "customer",
+        "description": "Bank customer using the self-service chat"
+      },
+      {
+        "name": "agent",
+        "description": "Human service agent receiving handoffs"
+      },
+      {
+        "name": "supervisor",
+        "description": "Supervisor with access to audit and metrics views"
+      }
     ]
   },
   "clients": [
@@ -28,9 +37,18 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
-      "redirectUris": ["http://localhost:5173/*"],
-      "webOrigins": ["http://localhost:5173"],
-      "attributes": { "pkce.code.challenge.method": "S256", "post.logout.redirect.uris": "http://localhost:5173/*" },
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:8088/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:8088"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:8088/*"
+      },
       "protocolMappers": [
         {
           "name": "customer_id",
@@ -49,7 +67,10 @@
           "name": "audience-disputes-api",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-audience-mapper",
-          "config": { "included.custom.audience": "disputes-api", "access.token.claim": "true" }
+          "config": {
+            "included.custom.audience": "disputes-api",
+            "access.token.claim": "true"
+          }
         }
       ]
     },
@@ -79,7 +100,10 @@
           "name": "audience-disputes-api",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-audience-mapper",
-          "config": { "included.custom.audience": "disputes-api", "access.token.claim": "true" }
+          "config": {
+            "included.custom.audience": "disputes-api",
+            "access.token.claim": "true"
+          }
         }
       ]
     }
@@ -105,9 +129,27 @@
       "lastName": "Customer 01",
       "email": "cliente01@example.test",
       "emailVerified": true,
-      "attributes": { "customer_id": ["CUST-PLACEHOLDER-01"] },
-      "credentials": [{ "type": "password", "value": "Test-Only-cliente01", "temporary": false }],
-      "realmRoles": ["customer"]
+      "attributes": {
+        "customer_id": [
+          "CLI-042J7UU4ZQIS"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente01",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente01\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
     },
     {
       "username": "cliente02",
@@ -116,19 +158,798 @@
       "lastName": "Customer 02",
       "email": "cliente02@example.test",
       "emailVerified": true,
-      "attributes": { "customer_id": ["CUST-PLACEHOLDER-02"] },
-      "credentials": [{ "type": "password", "value": "Test-Only-cliente02", "temporary": false }],
-      "realmRoles": ["customer"]
+      "attributes": {
+        "customer_id": [
+          "CLI-VM73XFOSSQUZ"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente02",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente02\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente03",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 03",
+      "email": "cliente03@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-GUYCE3L8D4PS"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente03",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente03\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente04",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 04",
+      "email": "cliente04@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-PNBG4LORLYZ2"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente04",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente04\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente05",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 05",
+      "email": "cliente05@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-PV2IOX2KV6TD"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente05",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente05\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente06",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 06",
+      "email": "cliente06@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-SB8Q5OPXM42J"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente06",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente06\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente07",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 07",
+      "email": "cliente07@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-HSP8YDOGC8OP"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente07",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente07\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente08",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 08",
+      "email": "cliente08@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-UY2IGZU4GILI"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente08",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente08\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente09",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 09",
+      "email": "cliente09@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-4NBKTA108LTC"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente09",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente09\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente10",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 10",
+      "email": "cliente10@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-TP4TG93ZH227"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente10",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente10\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente11",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 11",
+      "email": "cliente11@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-UW68N0Q2DOFJ"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente11",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente11\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente12",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 12",
+      "email": "cliente12@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-CNRQFKQ4RRMH"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente12",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente12\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente13",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 13",
+      "email": "cliente13@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-5H96PLFFQXSS"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente13",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente13\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente14",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 14",
+      "email": "cliente14@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-OZCB5ZQ55SZB"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente14",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente14\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente15",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 15",
+      "email": "cliente15@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-TZOFYDS4B5NR"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente15",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente15\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente16",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 16",
+      "email": "cliente16@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-QYFHRG5ZH713"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente16",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente16\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente17",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 17",
+      "email": "cliente17@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-UR8G68PDYGL7"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente17",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente17\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente18",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 18",
+      "email": "cliente18@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-0GCKBSK16FOX"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente18",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente18\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente19",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 19",
+      "email": "cliente19@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-X1VDJVYAWXTO"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente19",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente19\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "cliente20",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Customer 20",
+      "email": "cliente20@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_id": [
+          "CLI-NJJML84FE1PR"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-cliente20",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "demo-totp",
+          "secretData": "{\"value\": \"nicebank-demo-otp-cliente20\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
     },
     {
       "username": "agente01",
       "enabled": true,
       "firstName": "Test",
-      "lastName": "Agent 01",
+      "lastName": "Agente01",
       "email": "agente01@example.test",
       "emailVerified": true,
-      "credentials": [{ "type": "password", "value": "Test-Only-agente01", "temporary": false }],
-      "realmRoles": ["agent"]
+      "realmRoles": [
+        "agent"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-agente01",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "agente02",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Agente02",
+      "email": "agente02@example.test",
+      "emailVerified": true,
+      "realmRoles": [
+        "agent"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-agente02",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "supervisor01",
+      "enabled": true,
+      "firstName": "Test",
+      "lastName": "Supervisor01",
+      "email": "supervisor01@example.test",
+      "emailVerified": true,
+      "realmRoles": [
+        "supervisor"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-supervisor01",
+          "temporary": false
+        }
+      ]
     }
-  ]
+  ],
+  "browserFlow": "browser-step-up",
+  "authenticationFlows": [
+    {
+      "alias": "browser-step-up",
+      "description": "Browser flow with levels of authentication: LoA1 password, LoA2 password + TOTP",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "browser-step-up-forms",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "authenticatorFlow": true,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "browser-step-up-forms",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "flowAlias": "loa1-password",
+          "requirement": "CONDITIONAL",
+          "priority": 10,
+          "authenticatorFlow": true,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "loa2-otp",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "authenticatorFlow": true,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "loa1-password",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-level-of-authentication",
+          "authenticatorConfig": "loa1-condition",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-username-password-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "loa2-otp",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-level-of-authentication",
+          "authenticatorConfig": "loa2-condition",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-verified",
+      "description": "Password recovery: email link, then VERIFY the existing TOTP (never reset it), then new password",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "reset-credentials-choose-user",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "reset-credential-email",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "flowAlias": "reset-credentials-verified-otp",
+          "requirement": "CONDITIONAL",
+          "priority": 30,
+          "authenticatorFlow": true,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "reset-password",
+          "requirement": "REQUIRED",
+          "priority": 40,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "reset-credentials-verified-otp",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-configured",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "authenticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfig": [
+    {
+      "alias": "loa1-condition",
+      "config": {
+        "loa-condition-level": "1",
+        "loa-max-age": "36000"
+      }
+    },
+    {
+      "alias": "loa2-condition",
+      "config": {
+        "loa-condition-level": "2",
+        "loa-max-age": "300"
+      }
+    }
+  ],
+  "attributes": {
+    "acr.loa.map": "{\"1\": 1, \"2\": 2}"
+  },
+  "loginTheme": "nicebank",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "es",
+    "pt-BR",
+    "en"
+  ],
+  "defaultLocale": "es",
+  "resetPasswordAllowed": true,
+  "emailTheme": "nicebank",
+  "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1) and notUsername",
+  "actionTokenGeneratedByUserLifespan": 600,
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@nicebank.test",
+    "fromDisplayName": "NiceBank",
+    "replyTo": "",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
+  "resetCredentialsFlow": "reset-credentials-verified"
 }
