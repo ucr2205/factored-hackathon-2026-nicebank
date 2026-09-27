@@ -11,9 +11,13 @@ const CARD_TYPES: Record<string, { es: string; pt: string }> = {
 };
 
 function dayLabel(iso: string, lang: "es" | "pt") {
-  return new Intl.DateTimeFormat(lang === "pt" ? "pt-BR" : "es-MX", { day: "numeric", month: "long", timeZone: "UTC" })
-    .format(new Date(iso))
-    .toUpperCase();
+  try {
+    return new Intl.DateTimeFormat(lang === "pt" ? "pt-BR" : "es-MX", { day: "numeric", month: "long", timeZone: "UTC" })
+      .format(new Date(iso))
+      .toUpperCase();
+  } catch {
+    return iso;
+  }
 }
 
 /** Mockup-style account card: burgundy header with the customer's cards, then recent movements. */

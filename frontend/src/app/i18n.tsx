@@ -92,12 +92,21 @@ export function useLang() {
 
 const LOCALES: Record<Lang, string> = { es: "es-MX", pt: "pt-BR" };
 
+// Intl throws on a non-ISO currency or an unparseable date; one bad dataset row must not blank the page.
 export function formatMoney(amount: number, currency: string, lang: Lang) {
-  return new Intl.NumberFormat(LOCALES[lang], { style: "currency", currency }).format(amount);
+  try {
+    return new Intl.NumberFormat(LOCALES[lang], { style: "currency", currency }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
 }
 
 export function formatDateTime(iso: string, lang: Lang) {
-  return new Intl.DateTimeFormat(LOCALES[lang], { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  try {
+    return new Intl.DateTimeFormat(LOCALES[lang], { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
 }
 
 /** Customer-voice message that starts a dispute for a movement picked from the account panel. */
