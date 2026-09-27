@@ -6,9 +6,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
+
+const maxResponseBytes = 64 << 10
 
 type Classification struct {
 	Label        string  `json:"label"`
@@ -47,7 +50,7 @@ func (c *Client) Classify(ctx context.Context, maskedText, lang string) (Classif
 			continue
 		}
 		var out Classification
-		err = json.NewDecoder(resp.Body).Decode(&out)
+		err = json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(&out)
 		resp.Body.Close()
 		if resp.StatusCode != http.StatusOK || err != nil {
 			lastErr = fmt.Errorf("classify: status %d: %v", resp.StatusCode, err)
@@ -69,6 +72,6 @@ func (c *Client) ModelVersion(ctx context.Context) string {
 	var h struct {
 		ModelVersion string `json:"model_version"`
 	}
-	_ = json.NewDecoder(resp.Body).Decode(&h)
+	_ = json.NewDecoder(io.LimitReader(resp.Body, maxResponseBytes)).Decode(&h)
 	return h.ModelVersion
 }

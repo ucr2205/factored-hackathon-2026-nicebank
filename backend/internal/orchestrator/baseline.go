@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"strings"
 
+	"github.com/factored-hackathon-2026/disputes/backend/internal/guard"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/textnorm"
 )
 
@@ -23,7 +24,7 @@ func (t *turn) baseline(msg string) error {
 	default:
 		return t.clarify("clarify_type", "CLARIFY-TYPE")
 	}
-	st.FirstMessage = msg
+	st.FirstMessage = guard.Mask(msg, t.names...)
 	return t.escalate("baseline_human_review", "BASELINE-01", "handoff_created", nil, "disputes", nil)
 }
 

@@ -8,11 +8,13 @@ receivers:
 processors:
   batch: {}
   # Defense in depth: drop attributes that could carry personal data if a service sets them by mistake.
+  # Patterns rather than exact keys, so naming variants are caught too.
   attributes/strip_pii:
     actions:
-      - { key: customer.name, action: delete }
-      - { key: customer.document_number, action: delete }
-      - { key: user.email, action: delete }
+      - { pattern: '^(customer|user|enduser)\..*', action: delete }
+      - { pattern: '(?i).*(email|first_name|last_name|full_name|document_number|phone|card_number|customer_ref|prompt|completion|message\.text|authorization|cookie).*', action: delete }
+      - { key: client.address, action: delete }
+      - { key: network.peer.address, action: delete }
 
 exporters:
   otlp/jaeger:
