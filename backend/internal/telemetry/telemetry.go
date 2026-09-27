@@ -42,4 +42,13 @@ var (
 	LLMTokens = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "llm_tokens_total", Help: "Tokens used by the language model provider.",
 	}, []string{"provider", "direction"})
+	LLMCalls = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "llm_calls_total", Help: "Language model calls by model, operation and result.",
+	}, []string{"provider", "model", "op", "status"})
+	Notifications = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "notifications_total", Help: "Customer email notifications by kind and delivery result.",
+	}, []string{"kind", "status"})
+	PIIMaskDegraded = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "pii_mask_degraded_total", Help: "Turns where customer names could not be decrypted for masking.",
+	})
 )

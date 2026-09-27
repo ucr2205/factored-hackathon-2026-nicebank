@@ -24,6 +24,8 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/guard"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/llm"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/mlclient"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/notify"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/pii"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/policy"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/store"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/telemetry"
@@ -43,6 +45,7 @@ const (
 	stageAwaitingConfirm   = "awaiting_confirm"
 	stageClosed            = "closed"
 	searchWindowDays       = 30
+	maxMessageBytes        = 2000
 )
 
 type Orchestrator struct {
@@ -52,6 +55,7 @@ type Orchestrator struct {
 	LLM    llm.Provider
 	Today  time.Time
 	Idle   time.Duration
+	PII    *pii.Cipher // decrypts customer_identity; nil disables names (masking falls back to patterns)
 	tracer trace.Tracer
 }
 
@@ -85,6 +89,7 @@ type actionPayload struct {
 	DisputeType   string  `json:"dispute_type"`
 	ProductID     string  `json:"product_id,omitempty"`
 	CardLast4     string  `json:"card_last4,omitempty"`
+	CardBrand     string  `json:"card_brand,omitempty"`
 	RuleID        string  `json:"rule_id"`
 	Reason        string  `json:"reason,omitempty"`
 	Queue         string  `json:"queue,omitempty"`
@@ -94,17 +99,18 @@ type actionPayload struct {
 
 // turn carries one request through the state machine inside a customer-scoped transaction.
 type turn struct {
-	o       *Orchestrator
-	ctx     context.Context
-	tx      pgx.Tx
-	p       auth.Principal
-	s       *session
-	lang    string
-	mode    string
-	traceID string
-	out     contract.ChatTurn
-	usage   llm.Usage
-	names   []string
+	o        *Orchestrator
+	ctx      context.Context
+	tx       pgx.Tx
+	p        auth.Principal
+	s        *session
+	lang     string
+	mode     string
+	traceID  string
+	out      contract.ChatTurn
+	usage    llm.Usage
+	names    []string
+	notified []string // notification kinds queued in this turn
 }
 
 // HandleMessage processes one customer message. mode is "system" or "baseline".
@@ -115,16 +121,16 @@ func (o *Orchestrator) HandleMessage(ctx context.Context, p auth.Principal, req 
 	if msg == "" && req.SelectTransactionID == nil {
 		return contract.ChatTurn{}, ErrBadRequest
 	}
-	if len(msg) > 2000 {
-		msg = msg[:2000]
+	if len(msg) > maxMessageBytes {
+		msg = strings.ToValidUTF8(msg[:maxMessageBytes], "")
 	}
 	ctx, span := o.tracer.Start(ctx, "chat.turn", trace.WithAttributes(
 		attribute.String("chat.mode", mode), attribute.String("chat.lang", lang)))
 	defer span.End()
 
 	var out contract.ChatTurn
-	err := o.Store.WithCustomer(ctx, p.CustomerID, func(tx pgx.Tx) error {
-		s, err := o.loadOrCreate(ctx, tx, req.SessionID, p.CustomerID, lang)
+	err := o.Store.WithCustomer(ctx, p.CustomerRef, func(tx pgx.Tx) error {
+		s, err := o.loadOrCreate(ctx, tx, req.SessionID, lang)
 		if err != nil {
 			return err
 		}
@@ -157,16 +163,17 @@ func (o *Orchestrator) Confirm(ctx context.Context, p auth.Principal, req contra
 
 	var out contract.ChatTurn
 	var lang string
-	err := o.Store.WithCustomer(ctx, p.CustomerID, func(tx pgx.Tx) error {
-		s, err := o.loadOrCreate(ctx, tx, &req.SessionID, p.CustomerID, "")
+	err := o.Store.WithCustomer(ctx, p.CustomerRef, func(tx pgx.Tx) error {
+		s, err := o.loadOrCreate(ctx, tx, &req.SessionID, "")
 		if err != nil {
 			return err
 		}
 		lang = s.Lang
 		var actionType string
 		var raw []byte
+		// FOR UPDATE serializes concurrent confirms: the second one waits, re-checks status and finds nothing.
 		err = tx.QueryRow(ctx, `SELECT action_type, payload FROM pending_actions
-			WHERE action_id = $1 AND session_id = $2 AND status = 'pending'`, req.ActionID, s.ID).Scan(&actionType, &raw)
+			WHERE action_id = $1 AND session_id = $2 AND status = 'pending' FOR UPDATE`, req.ActionID, s.ID).Scan(&actionType, &raw)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotFound
 		} else if err != nil {
@@ -194,9 +201,12 @@ func (o *Orchestrator) Confirm(ctx context.Context, p auth.Principal, req contra
 func (o *Orchestrator) newTurn(ctx context.Context, tx pgx.Tx, p auth.Principal, s *session, lang, mode string, span trace.Span) *turn {
 	t := &turn{o: o, ctx: ctx, tx: tx, p: p, s: s, lang: lang, mode: mode, traceID: span.SpanContext().TraceID().String()}
 	t.out = contract.ChatTurn{SessionID: s.ID, ActionsVerified: []contract.VerifiedAction{}, RuleIDs: []string{}, Mode: mode}
-	var first, last string
-	if err := tx.QueryRow(ctx, `SELECT first_name, last_name FROM customers LIMIT 1`).Scan(&first, &last); err == nil {
+	// Names are decrypted only in memory, to mask them in the customer's text before it reaches any model.
+	if first, last, err := o.customerNames(ctx, tx); err == nil {
 		t.names = strings.Fields(first + " " + last)
+	} else {
+		telemetry.PIIMaskDegraded.Inc()
+		t.audit("understand", "pii", "customer names unavailable; masking falls back to patterns only", "degraded", "", 0)
 	}
 	return t
 }
@@ -211,14 +221,13 @@ func (o *Orchestrator) record(span trace.Span, out contract.ChatTurn, mode, lang
 	telemetry.TurnDuration.WithLabelValues(mode).Observe(time.Since(start).Seconds())
 }
 
-func (o *Orchestrator) loadOrCreate(ctx context.Context, tx pgx.Tx, id *string, customerID, lang string) (*session, error) {
+func (o *Orchestrator) loadOrCreate(ctx context.Context, tx pgx.Tx, id *string, lang string) (*session, error) {
 	s := &session{}
 	if id == nil || *id == "" {
 		if lang == "" {
 			lang = "es"
 		}
-		err := tx.QueryRow(ctx, `INSERT INTO chat_sessions (customer_id, lang) VALUES ($1, $2) RETURNING session_id`,
-			customerID, lang).Scan(&s.ID)
+		err := tx.QueryRow(ctx, `INSERT INTO chat_sessions (lang) VALUES ($1) RETURNING session_id`, lang).Scan(&s.ID)
 		s.Lang = lang
 		return s, err
 	}
@@ -424,7 +433,7 @@ func (t *turn) proposeBlock(txn *tools.Transaction, dec policy.Decision) error {
 	if card == nil { // nothing to block: go straight to a human
 		return t.escalate(dec.Reason, dec.RuleID, "handoff_created", txn, dec.Queue, nil)
 	}
-	pl := actionPayload{DisputeType: t.s.State.DisputeType, ProductID: card.ProductID, CardLast4: card.Last4,
+	pl := actionPayload{DisputeType: t.s.State.DisputeType, ProductID: card.ProductID, CardLast4: card.Last4, CardBrand: card.Brand,
 		RuleID: dec.RuleID, Reason: dec.Reason, Queue: dec.Queue, ThenHandoff: true}
 	if txn != nil {
 		pl.TransactionID = txn.ID
@@ -436,8 +445,8 @@ func (t *turn) proposeBlock(txn *tools.Transaction, dec policy.Decision) error {
 func (t *turn) propose(actionType string, pl actionPayload, intent string, facts map[string]string, ruleID string) error {
 	raw, _ := json.Marshal(pl)
 	var id string
-	if err := t.tx.QueryRow(t.ctx, `INSERT INTO pending_actions (session_id, customer_id, action_type, payload)
-		VALUES ($1, $2, $3, $4) RETURNING action_id`, t.s.ID, t.p.CustomerID, actionType, raw).Scan(&id); err != nil {
+	if err := t.tx.QueryRow(t.ctx, `INSERT INTO pending_actions (session_id, action_type, payload)
+		VALUES ($1, $2, $3) RETURNING action_id`, t.s.ID, actionType, raw).Scan(&id); err != nil {
 		return err
 	}
 	t.s.State.Stage, t.s.State.PendingAction = stageAwaitingConfirm, id
@@ -501,7 +510,7 @@ func (t *turn) decide(actionID, actionType string, pl actionPayload, confirm boo
 	switch actionType {
 	case "open_dispute_case":
 		desc := fmt.Sprintf("%s reported via assistant: %s", pl.DisputeType, t.s.State.FirstMessage)
-		v, err := tools.OpenDisputeCase(t.ctx, t.tx, t.p.CustomerID, pl.TransactionID, pl.DisputeType, desc, actionID)
+		v, err := tools.OpenDisputeCase(t.ctx, t.tx, pl.TransactionID, pl.DisputeType, desc, actionID)
 		if err != nil {
 			return t.actionFailed(actionID, actionType, pl, txn, err)
 		}
@@ -515,15 +524,17 @@ func (t *turn) decide(actionID, actionType string, pl actionPayload, confirm boo
 				facts[k] = val
 			}
 		}
+		t.queueNotification(notify.KindCaseOpened, facts)
 		return t.reply("resolve", "case_opened", facts, pl.RuleID)
 	case "block_card":
-		v, err := tools.BlockCard(t.ctx, t.tx, t.p.CustomerID, pl.ProductID, pl.Reason)
+		v, err := tools.BlockCard(t.ctx, t.tx, pl.ProductID, pl.Reason)
 		if err != nil {
 			return t.actionFailed(actionID, actionType, pl, txn, err)
 		}
 		t.markExecuted(actionID)
 		t.verified(actionType, v, pl.RuleID, time.Since(began))
 		taken := []contract.ActionTaken{{Action: "block_card", Status: "verified", Reference: v.Reference, At: v.VerifiedAt}}
+		t.queueNotification(notify.KindCardBlocked, map[string]string{"last4": pl.CardLast4, "brand": pl.CardBrand, "block_id": v.Reference})
 		return t.escalateWithFacts(pl.Reason, pl.RuleID, "card_blocked_handoff", txn, pl.Queue, taken,
 			map[string]string{"last4": pl.CardLast4, "block_id": v.Reference})
 	}
@@ -582,13 +593,13 @@ func (t *turn) audit(step, tool, summary, result, ruleID string, took time.Durat
 	_, span := t.o.tracer.Start(t.ctx, "step."+step, trace.WithAttributes(
 		attribute.String("step.tool", tool), attribute.String("step.result", result), attribute.String("policy.rule_id", ruleID)))
 	span.End()
-	_ = audit.Write(t.ctx, t.tx, t.p.CustomerID, audit.Event{SessionID: t.s.ID, Step: step, Tool: tool, Summary: summary,
+	_ = audit.Write(t.ctx, t.tx, audit.Event{SessionID: t.s.ID, Step: step, Tool: tool, Summary: summary,
 		Result: result, RuleID: ruleID, TraceID: t.traceID, Latency: took, Lang: t.lang, Mode: t.mode})
 }
 
 func (t *turn) saveMessage(role, text string) error {
-	_, err := t.tx.Exec(t.ctx, `INSERT INTO messages (session_id, customer_id, role, text, lang, mode) VALUES ($1, $2, $3, $4, $5, $6)`,
-		t.s.ID, t.p.CustomerID, role, text, t.lang, t.mode)
+	_, err := t.tx.Exec(t.ctx, `INSERT INTO messages (session_id, role, text, lang, mode) VALUES ($1, $2, $3, $4, $5)`,
+		t.s.ID, role, text, t.lang, t.mode)
 	return err
 }
 
@@ -601,8 +612,8 @@ func (t *turn) finish(start time.Time) (contract.ChatTurn, error) {
 		t.s.ID, raw, t.lang); err != nil {
 		return t.out, err
 	}
-	if _, err := t.tx.Exec(t.ctx, `INSERT INTO messages (session_id, customer_id, role, text, outcome, mode, latency_ms, lang)
-		VALUES ($1, $2, 'assistant', $3, $4, $5, $6, $7)`, t.s.ID, t.p.CustomerID, t.out.Reply, t.out.Outcome, t.mode,
+	if _, err := t.tx.Exec(t.ctx, `INSERT INTO messages (session_id, role, text, outcome, mode, latency_ms, lang)
+		VALUES ($1, 'assistant', $2, $3, $4, $5, $6)`, t.s.ID, t.out.Reply, t.out.Outcome, t.mode,
 		t.out.LatencyMS, t.lang); err != nil {
 		return t.out, err
 	}

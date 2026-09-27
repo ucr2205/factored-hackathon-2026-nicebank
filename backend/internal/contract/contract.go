@@ -176,3 +176,10 @@ type Overview struct {
 	Recent    []Candidate `json:"recent"`
 	Today     string      `json:"today"`
 }
+
+// CustomerIdentity is revealed only to the agent who claimed a handoff, and every reveal is audited.
+type CustomerIdentity struct {
+	CustomerRef string `json:"customer_ref"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+}

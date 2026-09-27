@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,7 +17,9 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/httpapi"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/llm"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/mlclient"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/notify"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/orchestrator"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/pii"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/policy"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/store"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/telemetry"
@@ -45,8 +48,38 @@ func main() {
 	defer db.Close()
 
 	ml := mlclient.New(cfg.MLServiceURL)
-	var model llm.Provider = llm.Fake{} // real provider plugged in on D2 behind the same interface
+	var model llm.Provider = llm.Fake{}
+	switch cfg.LLMProvider {
+	case "fake":
+	case "deepseek":
+		if cfg.LLMAPIKey == "" {
+			slog.Error("LLM_PROVIDER=deepseek needs DEEPSEEK_API_KEY in the environment (.env); refusing to start")
+			os.Exit(1)
+		}
+		model = llm.NewDeepSeek(cfg.LLMBaseURL, cfg.LLMAPIKey, cfg.LLMModel, cfg.LLMFallbackModel, cfg.LLMComposeWithAI)
+	default:
+		slog.Error("unknown LLM_PROVIDER; refusing to start", "provider", cfg.LLMProvider)
+		os.Exit(1)
+	}
+	slog.Info("llm provider", "provider", model.Name(), "version", model.Version())
 	orch := orchestrator.New(db, pol, ml, model, cfg.DemoToday, cfg.SessionIdle)
+	if orch.PII, err = pii.New(cfg.PIIKey, 1); err != nil {
+		slog.Error("PII_KEY missing or invalid (run `make env`); refusing to start", "err", err)
+		os.Exit(1)
+	}
+
+	if cfg.NotifyEnabled {
+		mailer, err := newMailer(cfg)
+		if err != nil {
+			slog.Error("email notifications misconfigured; refusing to start", "err", err)
+			os.Exit(1)
+		}
+		worker := &notify.Worker{Pool: db.Pool, PII: orch.PII, Mailer: mailer, Interval: cfg.NotifyPollInterval, Batch: 10, MaxAttempts: 4,
+			AppURL: cfg.MailAppURL}
+		go worker.Run(ctx)
+		slog.Info("email notifications on", "smtp_host", cfg.SMTPHost, "security", cfg.SMTPSecurity,
+			"from", cfg.MailFrom, "redirected", cfg.MailRedirectTo != "")
+	}
 
 	srv := &httpapi.Server{
 		Orch:     orch,
@@ -87,4 +120,24 @@ func main() {
 	if shutdownTracing != nil {
 		_ = shutdownTracing(shutdownCtx)
 	}
+}
+
+// newMailer validates the SMTP settings. A real server (TLS) needs credentials, and every message is redirected
+// to MAIL_REDIRECT_TO unless MAIL_ALLOW_REAL_RECIPIENTS=true: the demo data holds realistic-looking addresses.
+func newMailer(cfg config.Config) (*notify.SMTPMailer, error) {
+	switch cfg.SMTPSecurity {
+	case "none":
+	case "ssl", "starttls":
+		if cfg.EmailUsername == "" || cfg.EmailPassword == "" {
+			return nil, errors.New("EMAIL_USERNAME and EMAIL_PASSWORD are required for a real SMTP server")
+		}
+		if cfg.MailRedirectTo == "" && !cfg.MailAllowRealRcpt {
+			return nil, errors.New("set MAIL_REDIRECT_TO (test inbox) or MAIL_ALLOW_REAL_RECIPIENTS=true")
+		}
+	default:
+		return nil, errors.New("SMTP_SECURITY must be ssl, starttls or none")
+	}
+	return &notify.SMTPMailer{Host: cfg.SMTPHost, Port: cfg.SMTPPort, Security: cfg.SMTPSecurity,
+		Username: cfg.EmailUsername, Password: cfg.EmailPassword, From: cfg.MailFrom, FromName: cfg.MailFromName,
+		RedirectTo: cfg.MailRedirectTo, Bcc: cfg.MailBcc}, nil
 }

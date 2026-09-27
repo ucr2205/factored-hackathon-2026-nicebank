@@ -1,5 +1,6 @@
 // Package auth verifies Keycloak access tokens and exposes the caller as a Principal.
-// The customer identity comes only from the verified token, never from request bodies or model output.
+// The customer identity comes only from the verified token, never from request bodies or model output. The
+// token carries an opaque customer_ref, not the bank's customer_id; Postgres resolves it per transaction.
 package auth
 
 import (
@@ -16,7 +17,7 @@ import (
 type Principal struct {
 	Subject    string
 	Username   string
-	CustomerID string
+	CustomerRef string // opaque pseudonym from the token; see store.WithCustomer
 	Roles      []string
 	ACR        int // level of authentication: 1 = password, 2 = password + TOTP
 }
@@ -62,7 +63,7 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 	}
 	var claims struct {
 		Username    string `json:"preferred_username"`
-		CustomerID  string `json:"customer_id"`
+		CustomerRef string `json:"customer_ref"`
 		ACR         string `json:"acr"`
 		RealmAccess struct {
 			Roles []string `json:"roles"`
@@ -73,7 +74,7 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 	}
 	acr, _ := strconv.Atoi(claims.ACR)
 	return Principal{
-		Subject: tok.Subject, Username: claims.Username, CustomerID: claims.CustomerID,
+		Subject: tok.Subject, Username: claims.Username, CustomerRef: claims.CustomerRef,
 		Roles: claims.RealmAccess.Roles, ACR: acr,
 	}, nil
 }

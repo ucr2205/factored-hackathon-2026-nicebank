@@ -15,8 +15,8 @@ import (
 // Overview returns the customer's own cards and latest card movements (RLS-scoped).
 func (o *Orchestrator) Overview(ctx context.Context, p auth.Principal) (contract.Overview, error) {
 	v := contract.Overview{Cards: []contract.Card{}, Recent: []contract.Candidate{}, Today: o.Today.Format("2006-01-02")}
-	err := o.Store.WithCustomer(ctx, p.CustomerID, func(tx pgx.Tx) error {
-		_ = tx.QueryRow(ctx, `SELECT first_name FROM customers LIMIT 1`).Scan(&v.FirstName)
+	err := o.Store.WithCustomer(ctx, p.CustomerRef, func(tx pgx.Tx) error {
+		v.FirstName, _, _ = o.customerNames(ctx, tx)
 		cards, err := tools.ActiveCards(ctx, tx)
 		if err != nil {
 			return err
@@ -41,7 +41,7 @@ func (o *Orchestrator) Overview(ctx context.Context, p auth.Principal) (contract
 // Session returns the customer's own conversation (used to restore the chat after a step-up redirect).
 func (o *Orchestrator) Session(ctx context.Context, p auth.Principal, id string) (contract.SessionView, error) {
 	var v contract.SessionView
-	err := o.Store.WithCustomer(ctx, p.CustomerID, func(tx pgx.Tx) error {
+	err := o.Store.WithCustomer(ctx, p.CustomerRef, func(tx pgx.Tx) error {
 		var raw []byte
 		err := tx.QueryRow(ctx, `SELECT session_id, lang, state FROM chat_sessions WHERE session_id = $1`, id).Scan(&v.SessionID, &v.Lang, &raw)
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -81,7 +81,7 @@ func (o *Orchestrator) Session(ctx context.Context, p auth.Principal, id string)
 
 func (o *Orchestrator) ListHandoffs(ctx context.Context, p auth.Principal, status string) ([]contract.HandoffSummary, error) {
 	out := []contract.HandoffSummary{}
-	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `SELECT handoff_id, created_at, status, language, reason, priority,
 			payload->>'suggested_queue', coalesce(payload->>'dispute_type', ''), claimed_by
 			FROM handoffs WHERE ($1 = '' OR status = $1)
@@ -100,14 +100,14 @@ func (o *Orchestrator) ListHandoffs(ctx context.Context, p auth.Principal, statu
 
 func (o *Orchestrator) GetHandoff(ctx context.Context, p auth.Principal, id string) (contract.Handoff, error) {
 	var h contract.Handoff
-	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error { return loadHandoff(ctx, tx, id, &h) })
+	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error { return loadHandoff(ctx, tx, id, &h) })
 	return h, err
 }
 
 // ClaimHandoff assigns an open handoff to the calling agent.
 func (o *Orchestrator) ClaimHandoff(ctx context.Context, p auth.Principal, id string) (contract.Handoff, error) {
 	var h contract.Handoff
-	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
 		tag, err := tx.Exec(ctx, `UPDATE handoffs SET status = 'claimed', claimed_by = $2, claimed_at = now()
 			WHERE handoff_id = $1 AND status = 'open'`, id, p.Username)
 		if err != nil {
@@ -142,7 +142,7 @@ func loadHandoff(ctx context.Context, tx pgx.Tx, id string, h *contract.Handoff)
 
 func (o *Orchestrator) SessionAudit(ctx context.Context, p auth.Principal, sessionID string) ([]contract.AuditEvent, error) {
 	out := []contract.AuditEvent{}
-	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `SELECT ts, step, tool, summary, result, policy_rule_id, trace_id, coalesce(latency_ms, 0)
 			FROM audit_events WHERE session_id = $1 ORDER BY id`, sessionID)
 		if err != nil {
@@ -160,7 +160,7 @@ func (o *Orchestrator) SessionAudit(ctx context.Context, p auth.Principal, sessi
 // Summary aggregates completed turns from the audit trail (staff-visible, no personal data).
 func (o *Orchestrator) Summary(ctx context.Context, p auth.Principal) (contract.Summary, error) {
 	s := contract.Summary{ByOutcome: []contract.OutcomeCount{}}
-	err := o.Store.WithStaff(ctx, p.StaffRole(), func(tx pgx.Tx) error {
+	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
 		if err := tx.QueryRow(ctx, `SELECT count(*), coalesce(percentile_cont(0.5) WITHIN GROUP (ORDER BY latency_ms), 0),
 			coalesce(percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms), 0)
 			FROM audit_events WHERE step = 'respond'`).Scan(&s.Turns, &s.P50LatencyMS, &s.P95LatencyMS); err != nil {

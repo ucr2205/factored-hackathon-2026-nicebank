@@ -28,6 +28,7 @@ type Transaction struct {
 	Country   string    `json:"country"`
 	Status    string    `json:"-"`
 	CardLast4 string    `json:"card_last4"`
+	CardBrand string    `json:"card_brand"`
 }
 
 type Filter struct {
@@ -39,12 +40,12 @@ type Filter struct {
 
 const txnColumns = `t.transaction_id, t.product_id, t.transaction_date, t.transaction_type, t.amount::float8,
 	t.currency, t.amount_usd::float8, coalesce(t.merchant_name, ''), coalesce(t.transaction_city, ''),
-	coalesce(t.transaction_country, ''), t.transaction_status, coalesce(p.card_last4, '')`
+	coalesce(t.transaction_country, ''), t.transaction_status, coalesce(p.card_last4, ''), coalesce(p.card_brand, '')`
 
 func scanTxn(row pgx.Row) (Transaction, error) {
 	var t Transaction
 	err := row.Scan(&t.ID, &t.ProductID, &t.Date, &t.Type, &t.Amount, &t.Currency, &t.AmountUSD,
-		&t.Merchant, &t.City, &t.Country, &t.Status, &t.CardLast4)
+		&t.Merchant, &t.City, &t.Country, &t.Status, &t.CardLast4, &t.CardBrand)
 	return t, err
 }
 
@@ -123,20 +124,21 @@ func AmountUSD(ctx context.Context, tx pgx.Tx, t Transaction) (float64, string, 
 type Card struct {
 	ProductID string
 	Last4     string
+	Brand     string
 	Status    string
 	Type      string
 }
 
 // ActiveCards lists the customer's cards, active first.
 func ActiveCards(ctx context.Context, tx pgx.Tx) ([]Card, error) {
-	rows, err := tx.Query(ctx, `SELECT product_id, coalesce(card_last4, ''), product_status, product_type
+	rows, err := tx.Query(ctx, `SELECT product_id, coalesce(card_last4, ''), coalesce(card_brand, ''), product_status, product_type
 		FROM products WHERE product_type LIKE 'Tarjeta%' ORDER BY (product_status = 'Active') DESC, product_id`)
 	if err != nil {
 		return nil, err
 	}
 	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (Card, error) {
 		var c Card
-		return c, r.Scan(&c.ProductID, &c.Last4, &c.Status, &c.Type)
+		return c, r.Scan(&c.ProductID, &c.Last4, &c.Brand, &c.Status, &c.Type)
 	})
 }
 
@@ -148,10 +150,10 @@ type Verified struct {
 var ErrNotVerified = errors.New("action could not be verified")
 
 // OpenDisputeCase inserts the case (idempotent on key) and verifies it by reading it back.
-func OpenDisputeCase(ctx context.Context, tx pgx.Tx, customerID, txnID, disputeType, description, idempotencyKey string) (Verified, error) {
-	_, err := tx.Exec(ctx, `INSERT INTO dispute_cases (customer_id, transaction_id, dispute_type, description, idempotency_key)
-		VALUES ($1, $2, $3, $4, $5) ON CONFLICT (idempotency_key) DO NOTHING`,
-		customerID, txnID, disputeType, description, idempotencyKey)
+func OpenDisputeCase(ctx context.Context, tx pgx.Tx, txnID, disputeType, description, idempotencyKey string) (Verified, error) {
+	_, err := tx.Exec(ctx, `INSERT INTO dispute_cases (transaction_id, dispute_type, description, idempotency_key)
+		VALUES ($1, $2, $3, $4) ON CONFLICT (idempotency_key) DO NOTHING`,
+		txnID, disputeType, description, idempotencyKey)
 	if err != nil {
 		return Verified{}, err
 	}
@@ -176,7 +178,7 @@ func OpenCaseFor(ctx context.Context, tx pgx.Tx, txnID string) (string, bool, er
 }
 
 // BlockCard sets the card to Blocked and verifies the new status by reading it back.
-func BlockCard(ctx context.Context, tx pgx.Tx, customerID, productID, reason string) (Verified, error) {
+func BlockCard(ctx context.Context, tx pgx.Tx, productID, reason string) (Verified, error) {
 	tag, err := tx.Exec(ctx, `UPDATE products SET product_status = 'Blocked' WHERE product_id = $1`, productID)
 	if err != nil {
 		return Verified{}, err
@@ -185,8 +187,8 @@ func BlockCard(ctx context.Context, tx pgx.Tx, customerID, productID, reason str
 		return Verified{}, ErrNotVerified
 	}
 	var v Verified
-	if err := tx.QueryRow(ctx, `INSERT INTO card_blocks (customer_id, product_id, reason) VALUES ($1, $2, $3)
-		RETURNING block_id, created_at`, customerID, productID, reason).Scan(&v.Reference, &v.VerifiedAt); err != nil {
+	if err := tx.QueryRow(ctx, `INSERT INTO card_blocks (product_id, reason) VALUES ($1, $2)
+		RETURNING block_id, created_at`, productID, reason).Scan(&v.Reference, &v.VerifiedAt); err != nil {
 		return Verified{}, err
 	}
 	var status string

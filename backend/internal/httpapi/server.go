@@ -50,6 +50,7 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/api/sessions/{id}/audit", s.sessionAudit)
 		})
 		r.With(auth.RequireAnyRole(writeError, "agent")).Post("/api/handoffs/{id}/claim", s.claimHandoff)
+		r.With(auth.RequireAnyRole(writeError, "agent")).Post("/api/handoffs/{id}/identity", s.revealIdentity)
 		r.With(auth.RequireAnyRole(writeError, "supervisor")).Group(func(r chi.Router) {
 			r.Get("/api/admin/config", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, http.StatusOK, s.Config(r)) })
 			r.Get("/api/admin/summary", s.summary)
@@ -113,6 +114,13 @@ func (s *Server) getHandoff(w http.ResponseWriter, r *http.Request) {
 func (s *Server) claimHandoff(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.ClaimHandoff(r.Context(), p, chi.URLParam(r, "id"))
+	respond(w, out, err)
+}
+
+// revealIdentity is a POST because every call writes an audit event.
+func (s *Server) revealIdentity(w http.ResponseWriter, r *http.Request) {
+	p, _ := auth.FromContext(r.Context())
+	out, err := s.Orch.RevealIdentity(r.Context(), p, chi.URLParam(r, "id"))
 	respond(w, out, err)
 }
 

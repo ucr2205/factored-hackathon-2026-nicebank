@@ -1,5 +1,6 @@
 // Package store wraps the Postgres pool. Every query on customer data runs inside WithCustomer, which pins
-// the transaction to one customer via `SET LOCAL app.customer_id`, so row-level security applies.
+// the transaction to one customer via `SET LOCAL app.customer_id`, so row-level security applies. The pin is
+// computed inside Postgres from the token's opaque customer_ref, so the backend never handles the bank id.
 package store
 
 import (
@@ -22,28 +23,35 @@ func Open(ctx context.Context, url string) (*Store, error) {
 
 func (s *Store) Close() { s.Pool.Close() }
 
-var ErrNoCustomer = errors.New("token has no customer_id")
+var ErrNoCustomer = errors.New("token has no known customer_ref")
 
-// WithCustomer runs fn in a transaction scoped to customerID (taken from the verified token).
-func (s *Store) WithCustomer(ctx context.Context, customerID string, fn func(pgx.Tx) error) error {
-	if customerID == "" {
+// WithCustomer runs fn in a transaction scoped to the customer behind customerRef (from the verified token).
+// An unknown ref pins nothing and fails, so it can never fall through to another customer's rows.
+func (s *Store) WithCustomer(ctx context.Context, customerRef string, fn func(pgx.Tx) error) error {
+	if customerRef == "" {
 		return ErrNoCustomer
 	}
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, "SELECT set_config('app.customer_id', $1, true)", customerID); err != nil {
+		var pinned string
+		if err := tx.QueryRow(ctx, "SELECT set_config('app.customer_id', coalesce(resolve_customer($1), ''), true)",
+			customerRef).Scan(&pinned); err != nil {
 			return err
+		}
+		if pinned == "" {
+			return ErrNoCustomer
 		}
 		return fn(tx)
 	})
 }
 
-// WithStaff runs fn in a transaction scoped to a staff role ("agent" or "supervisor").
-func (s *Store) WithStaff(ctx context.Context, role string, fn func(pgx.Tx) error) error {
+// WithStaff runs fn in a transaction scoped to a staff role ("agent" or "supervisor") and staff username.
+func (s *Store) WithStaff(ctx context.Context, role, username string, fn func(pgx.Tx) error) error {
 	if role != "agent" && role != "supervisor" {
 		return errors.New("invalid staff role")
 	}
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, "SELECT set_config('app.staff_role', $1, true)", role); err != nil {
+		if _, err := tx.Exec(ctx, "SELECT set_config('app.staff_role', $1, true), set_config('app.staff_user', $2, true)",
+			role, username); err != nil {
 			return err
 		}
 		return fn(tx)

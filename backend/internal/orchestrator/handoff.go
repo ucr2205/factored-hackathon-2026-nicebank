@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/factored-hackathon-2026/disputes/backend/internal/contract"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/notify"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/tools"
 )
 
@@ -77,14 +78,17 @@ func (t *turn) escalateWithFacts(reason, ruleID, intent string, txn *tools.Trans
 
 	raw, _ := json.Marshal(h)
 	var id, status string
-	if err := t.tx.QueryRow(t.ctx, `INSERT INTO handoffs (customer_id, session_id, language, reason, priority, payload)
-		VALUES ($1, $2, $3, $4, $5, $6) RETURNING handoff_id, status`, t.p.CustomerID, t.s.ID, t.lang, reason, h.Priority, raw).Scan(&id, &status); err != nil {
+	if err := t.tx.QueryRow(t.ctx, `INSERT INTO handoffs (session_id, language, reason, priority, payload)
+		VALUES ($1, $2, $3, $4, $5) RETURNING handoff_id, status`, t.s.ID, t.lang, reason, h.Priority, raw).Scan(&id, &status); err != nil {
 		return err
 	}
 	if status != "open" {
 		return fmt.Errorf("handoff %s not verified", id)
 	}
 	t.audit("handoff", "create_handoff", fmt.Sprintf("handoff %s to queue %s (reason %s)", id, h.SuggestedQueue, reason), "verified", ruleID, 0)
+	if !t.hasNotified(notify.KindCardBlocked) { // the card-blocked email already says a specialist has the case
+		t.queueNotification(notify.KindHandoffCreated, map[string]string{"reference": shortRef(id)})
+	}
 	t.out.HandoffID = &id
 	st.Stage = stageClosed
 	if err := t.reply("escalate", intent, facts, ""); err != nil {
@@ -103,7 +107,7 @@ func (t *turn) txnFacts(txn tools.Transaction) map[string]string {
 	}
 	return map[string]string{
 		"amount": money(txn.Amount, txn.Currency, t.lang), "merchant": orDash(txn.Merchant),
-		"date": date(txn.Date, t.lang), "last4": txn.CardLast4, "type": name,
+		"date": date(txn.Date, t.lang), "last4": txn.CardLast4, "brand": txn.CardBrand, "type": name,
 	}
 }
 

@@ -22,11 +22,12 @@ type Event struct {
 	Mode      string
 }
 
-func Write(ctx context.Context, tx pgx.Tx, customerID string, e Event) error {
+// Write records an event for the customer pinned in the transaction (the column default).
+func Write(ctx context.Context, tx pgx.Tx, e Event) error {
 	_, err := tx.Exec(ctx, `INSERT INTO audit_events
-		(session_id, customer_id, step, tool, summary, result, policy_rule_id, trace_id, latency_ms, lang, mode)
-		VALUES ($1, $2, $3, NULLIF($4, ''), $5, NULLIF($6, ''), NULLIF($7, ''), NULLIF($8, ''), $9, NULLIF($10, ''), NULLIF($11, ''))`,
-		nullUUID(e.SessionID), customerID, e.Step, e.Tool, e.Summary, e.Result, e.RuleID, e.TraceID,
+		(session_id, step, tool, summary, result, policy_rule_id, trace_id, latency_ms, lang, mode)
+		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, ''), NULLIF($6, ''), NULLIF($7, ''), $8, NULLIF($9, ''), NULLIF($10, ''))`,
+		nullUUID(e.SessionID), e.Step, e.Tool, e.Summary, e.Result, e.RuleID, e.TraceID,
 		int(e.Latency.Milliseconds()), e.Lang, e.Mode)
 	return err
 }
