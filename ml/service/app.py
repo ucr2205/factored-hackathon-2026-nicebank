@@ -28,6 +28,8 @@ KEYWORDS: dict[str, list[str]] = {
     "wrong_amount": ["monto incorrecto", "cobraron de mas", "valor errado", "cobraram a mais"],
     "not_received": ["no llego", "no recibi", "nao chegou", "nao recebi"],
     "atm_cash_not_dispensed": ["cajero", "no entrego", "caixa eletronico", "nao liberou"],
+    "card_lost_stolen": ["robaron", "me robaron", "perdi mi tarjeta", "perdi la tarjeta", "roubaram",
+                         "perdi meu cartao", "tarjeta robada", "cartao roubado", "extravie"],
     "out_of_scope": ["prestamo", "credito", "emprestimo", "inversion", "investimento"],
 }
 
