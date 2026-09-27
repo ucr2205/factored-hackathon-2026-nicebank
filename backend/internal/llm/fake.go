@@ -90,7 +90,11 @@ func (Fake) Extract(_ context.Context, text, _ string, today time.Time) (Extract
 				}
 			}
 			if mo >= 1 && mo <= 12 && d >= 1 && d <= 31 {
-				setDay(time.Date(y, time.Month(mo), d, 0, 0, 0, 0, time.UTC))
+				date := time.Date(y, time.Month(mo), d, 0, 0, 0, 0, time.UTC)
+				if m[3] == "" && date.After(day) {
+					date = date.AddDate(-1, 0, 0) // no year given: the most recent past occurrence
+				}
+				setDay(date)
 			}
 		}
 	}
@@ -170,6 +174,10 @@ var templates = map[string]map[string]string{
 	"clarify_notfound": {
 		"es": "No encontré ese movimiento en tus tarjetas. ¿Me das la fecha aproximada, el monto o el nombre del comercio?",
 		"pt": "Não encontrei essa movimentação nos seus cartões. Pode me dizer a data aproximada, o valor ou o nome do estabelecimento?",
+	},
+	"clarify_notfound_searched": {
+		"es": "No encontré ningún movimiento{searched} en tus tarjetas. ¿Me confirmas la fecha y el monto, o me dices el nombre del comercio?",
+		"pt": "Não encontrei nenhuma movimentação{searched} nos seus cartões. Pode confirmar a data e o valor, ou me dizer o nome do estabelecimento?",
 	},
 	"clarify_multi": {
 		"es": "Encontré {count} movimientos que podrían ser. ¿Cuál es el que quieres disputar?",

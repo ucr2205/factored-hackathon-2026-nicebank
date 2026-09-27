@@ -58,6 +58,7 @@ Today is %s (%s). Answer only with a json object of this exact shape:
 Rules:
 - amount: the charge amount as written, no currency conversion. "1.200" and "1,200" mean 1200; "89,90" means 89.9.
 - dates: resolve relative days (hoy/hoje, ayer/ontem, weekday names = the most recent past one) against today.
+  A day and month without a year ("23/12", "23 de diciembre") is its most recent past occurrence.
   One day -> date_from = date_to. "semana pasada/passada" -> the 7 days ending 7 days ago.
 - merchant_hint: the merchant or store name if mentioned, lowercase.
 - Use null for anything not stated. Never guess.`
@@ -212,7 +213,13 @@ func (d *DeepSeek) Extract(ctx context.Context, maskedText, lang string, today t
 			return nil
 		}
 		t, err := time.Parse(time.DateOnly, *s)
-		if err != nil || t.After(today) || t.Before(today.AddDate(0, -13, 0)) {
+		if err != nil {
+			return nil
+		}
+		if t.After(today) && !strings.Contains(maskedText, fmt.Sprint(t.Year())) {
+			t = t.AddDate(-1, 0, 0) // the model assumed this year for a day and month without one
+		}
+		if t.After(today) || t.Before(today.AddDate(0, -13, 0)) {
 			return nil
 		}
 		return &t

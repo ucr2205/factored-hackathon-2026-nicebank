@@ -107,7 +107,7 @@ func (t *turn) txnFacts(txn tools.Transaction) map[string]string {
 	}
 	return map[string]string{
 		"amount": money(txn.Amount, txn.Currency, t.lang), "merchant": orDash(txn.Merchant),
-		"date": date(txn.Date, t.lang), "last4": txn.CardLast4, "brand": txn.CardBrand, "type": name,
+		"date": t.dateText(txn.Date), "last4": txn.CardLast4, "brand": txn.CardBrand, "type": name,
 	}
 }
 
@@ -133,6 +133,14 @@ var monthNames = map[string][]string{
 
 func date(d time.Time, lang string) string {
 	return fmt.Sprintf("%d de %s", d.Day(), monthNames[lang][d.Month()-1])
+}
+
+// dateText is date() plus the year when it differs from "today" (the dataset spans several years).
+func (t *turn) dateText(d time.Time) string {
+	if d.Year() != t.o.Today.Year() {
+		return fmt.Sprintf("%s de %d", date(d, t.lang), d.Year())
+	}
+	return date(d, t.lang)
 }
 
 func orDash(s string) string {

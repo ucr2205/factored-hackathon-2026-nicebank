@@ -18,6 +18,7 @@ func TestExtractAmountAndDate(t *testing.T) {
 		{"me cobraram duas vezes 89,90 ontem", 89.90, 16},
 		{"cargo de $450.50 el 10/06", 450.50, 10},
 		{"no reconozco un cargo de ayer", 0, 16},
+		{"No reconozco el cargo de 324,48 en Teatro Nacional del 23/12", 324.48, 23},
 	}
 	for _, c := range cases {
 		ex, _, _ := Fake{}.Extract(context.Background(), c.text, "es", today)
@@ -30,6 +31,21 @@ func TestExtractAmountAndDate(t *testing.T) {
 		if ex.DateFrom == nil || ex.DateFrom.Day() != c.dateDay {
 			t.Errorf("%q: date = %v, want day %d", c.text, ex.DateFrom, c.dateDay)
 		}
+		if ex.DateFrom != nil && ex.DateFrom.After(today) {
+			t.Errorf("%q: date %v is in the future", c.text, ex.DateFrom)
+		}
+	}
+}
+
+// A day and month without a year is the most recent past occurrence: "23/12" on 2026-06-17 is 2025-12-23.
+func TestDateWithoutYearIsInThePast(t *testing.T) {
+	ex, _, _ := Fake{}.Extract(context.Background(), "te acabo de dar la fecha de 23/12", "es", today)
+	if ex.DateFrom == nil || ex.DateFrom.Format("2006-01-02") != "2025-12-23" {
+		t.Fatalf("date = %v, want 2025-12-23", ex.DateFrom)
+	}
+	ex, _, _ = Fake{}.Extract(context.Background(), "el 23/12/2024", "es", today)
+	if ex.DateFrom == nil || ex.DateFrom.Year() != 2024 {
+		t.Fatalf("explicit year must be kept: %v", ex.DateFrom)
 	}
 }
 

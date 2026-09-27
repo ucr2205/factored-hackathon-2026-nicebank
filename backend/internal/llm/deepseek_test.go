@@ -70,11 +70,19 @@ func TestDeepSeekFallsBackToSecondModelThenToFake(t *testing.T) {
 
 func TestDeepSeekDiscardsImplausibleDates(t *testing.T) {
 	var seen []string
-	srv := fakeAPI(t, map[string]string{"deepseek-flash": `{"amount": null, "date_from": "2027-01-01", "date_to": null}`}, &seen)
+	srv := fakeAPI(t, map[string]string{"deepseek-flash": `{"amount": null, "date_from": "2028-03-01", "date_to": null}`}, &seen)
 	defer srv.Close()
 	ex, _, _ := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "un cargo raro", "es", today)
 	if ex.DateFrom != nil || ex.Amount != nil {
 		t.Fatalf("future date must be dropped: %+v", ex)
+	}
+
+	// The model put a year-less "23/12" in the current year: it is moved back to the last 23 December.
+	srv2 := fakeAPI(t, map[string]string{"deepseek-flash": `{"amount": 324.48, "date_from": "2026-12-23", "date_to": "2026-12-23"}`}, &seen)
+	defer srv2.Close()
+	ex, _, _ = NewDeepSeek(srv2.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "cargo de 324,48 del 23/12", "es", today)
+	if ex.DateFrom == nil || ex.DateFrom.Format("2006-01-02") != "2025-12-23" {
+		t.Fatalf("year-less date must be the last past occurrence: %+v", ex)
 	}
 }
 

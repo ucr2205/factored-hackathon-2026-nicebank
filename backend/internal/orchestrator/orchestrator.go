@@ -44,7 +44,8 @@ const (
 	stageAwaitingCandidate = "awaiting_candidate"
 	stageAwaitingConfirm   = "awaiting_confirm"
 	stageClosed            = "closed"
-	searchWindowDays       = 30
+	searchWindowDays       = 30  // no date, amount or merchant: recent movements only
+	wideSearchDays         = 400 // amount or merchant without a date: the whole loaded history
 	maxMessageBytes        = 2000
 )
 
@@ -333,6 +334,9 @@ func (t *turn) system(msg string, selected *string) error {
 
 	switch len(cands) {
 	case 0:
+		if searched := t.searchedFacts(); searched != "" {
+			return t.clarifyWith("clarify_notfound_searched", "CLARIFY-NOTFOUND", map[string]string{"searched": searched})
+		}
 		return t.clarify("clarify_notfound", "CLARIFY-NOTFOUND")
 	case 1:
 		return t.evaluate(cands[0].ID)
@@ -352,6 +356,9 @@ func (t *turn) findCandidates() ([]tools.Transaction, error) {
 	st := &t.s.State
 	to := t.o.Today
 	from := to.AddDate(0, 0, -searchWindowDays)
+	if st.Extraction.Amount != nil || st.Extraction.MerchantHint != "" {
+		from = to.AddDate(0, 0, -wideSearchDays)
+	}
 	if st.Extraction.DateFrom != nil {
 		from, to = *st.Extraction.DateFrom, *st.Extraction.DateTo
 	}
@@ -559,13 +566,30 @@ func (t *turn) verified(actionType string, v tools.Verified, ruleID string, took
 	t.out.ActionsVerified = append(t.out.ActionsVerified, contract.VerifiedAction{Type: actionType, Reference: v.Reference, VerifiedAt: v.VerifiedAt})
 }
 
-func (t *turn) clarify(intent, ruleID string) error {
+func (t *turn) clarify(intent, ruleID string) error { return t.clarifyWith(intent, ruleID, nil) }
+
+// searchedFacts words what was searched ("de 324,48 del 23 de diciembre de 2025"), or "" if nothing was given.
+func (t *turn) searchedFacts() string {
+	ex, parts := t.s.State.Extraction, []string{}
+	if ex.Amount != nil {
+		parts = append(parts, "de "+strings.Replace(fmt.Sprintf("%.2f", *ex.Amount), ".", ",", 1))
+	}
+	if ex.DateFrom != nil && ex.DateTo != nil && ex.DateFrom.Format(time.DateOnly) == ex.DateTo.Format(time.DateOnly) {
+		parts = append(parts, map[string]string{"es": "del ", "pt": "de "}[t.lang]+t.dateText(*ex.DateFrom))
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return " " + strings.Join(parts, " ")
+}
+
+func (t *turn) clarifyWith(intent, ruleID string, facts map[string]string) error {
 	st := &t.s.State
 	st.Clarifications++
 	if st.Clarifications > t.o.Policy.Globals.MaxClarifications {
 		return t.escalate("could_not_identify_transaction", "ESC-CLARIFY-LIMIT", "handoff_created", nil, "disputes", nil)
 	}
-	return t.reply("clarify", intent, nil, ruleID)
+	return t.reply("clarify", intent, facts, ruleID)
 }
 
 // reply composes the customer-facing text from verified facts only.
