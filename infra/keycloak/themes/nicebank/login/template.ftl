@@ -12,7 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>${msg("loginTitle",(realm.displayName!''))}</title>
-    <link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/nicebank-mark.svg" />
+    <link rel="icon" type="image/png" href="${url.resourcesPath}/img/nicebank-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -48,7 +48,7 @@
         </div>
 
         <div class="nb-logo nb-rise">
-            <img src="${url.resourcesPath}/img/nicebank-mark.svg" alt="" width="44" height="44">
+            <img src="${url.resourcesPath}/img/nicebank-mark.png" alt="" width="44" height="44">
             <span>NiceBank</span>
         </div>
 

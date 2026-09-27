@@ -51,12 +51,12 @@
       },
       "protocolMappers": [
         {
-          "name": "customer_id",
+          "name": "customer_ref",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "config": {
-            "user.attribute": "customer_id",
-            "claim.name": "customer_id",
+            "user.attribute": "customer_ref",
+            "claim.name": "customer_ref",
             "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true",
@@ -85,12 +85,12 @@
       "directAccessGrantsEnabled": true,
       "protocolMappers": [
         {
-          "name": "customer_id",
+          "name": "customer_ref",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "config": {
-            "user.attribute": "customer_id",
-            "claim.name": "customer_id",
+            "user.attribute": "customer_ref",
+            "claim.name": "customer_ref",
             "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true"
@@ -115,7 +115,7 @@
         "subComponents": {},
         "config": {
           "kc.user.profile.config": [
-            "{\"unmanagedAttributePolicy\":\"ADMIN_VIEW\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255}}},{\"name\":\"email\",\"displayName\":\"${email}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"email\":{}}},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}},{\"name\":\"customer_id\",\"displayName\":\"Customer ID\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]}}],\"groups\":[]}"
+            "{\"unmanagedAttributePolicy\":\"ADMIN_VIEW\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"length\":{\"min\":3,\"max\":255}}},{\"name\":\"email\",\"displayName\":\"${email}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"validations\":{\"email\":{}}},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}},{\"name\":\"customer_ref\",\"displayName\":\"Customer reference (opaque)\",\"permissions\":{\"view\":[\"admin\"],\"edit\":[\"admin\"]}}],\"groups\":[]}"
           ]
         }
       }
@@ -130,8 +130,8 @@
       "email": "cliente01@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-042J7UU4ZQIS"
+        "customer_ref": [
+          "cr_MTrzMegZ-scdlcFuxuuvly2e"
         ]
       },
       "realmRoles": [
@@ -159,8 +159,8 @@
       "email": "cliente02@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-VM73XFOSSQUZ"
+        "customer_ref": [
+          "cr_Eo5ELBGtjcj6uNlRzzXt4F1a"
         ]
       },
       "realmRoles": [
@@ -188,8 +188,8 @@
       "email": "cliente03@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-GUYCE3L8D4PS"
+        "customer_ref": [
+          "cr_SoVeYUGEReOHX2AfR1H7MFks"
         ]
       },
       "realmRoles": [
@@ -217,8 +217,8 @@
       "email": "cliente04@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-PNBG4LORLYZ2"
+        "customer_ref": [
+          "cr_PZd_KkQE4YW0qtT5QnzZaPzP"
         ]
       },
       "realmRoles": [
@@ -246,8 +246,8 @@
       "email": "cliente05@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-PV2IOX2KV6TD"
+        "customer_ref": [
+          "cr__z4UcdVlbDQN5diMFRwWz3k7"
         ]
       },
       "realmRoles": [
@@ -275,8 +275,8 @@
       "email": "cliente06@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-SB8Q5OPXM42J"
+        "customer_ref": [
+          "cr_igRvGncigN33RY6SP5mAnABo"
         ]
       },
       "realmRoles": [
@@ -304,8 +304,8 @@
       "email": "cliente07@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-HSP8YDOGC8OP"
+        "customer_ref": [
+          "cr_oI7KL8aBkMuxN5-Wgi9nr-7v"
         ]
       },
       "realmRoles": [
@@ -333,8 +333,8 @@
       "email": "cliente08@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-UY2IGZU4GILI"
+        "customer_ref": [
+          "cr_FG3rE2u65WFl8wR9NCCtOW1E"
         ]
       },
       "realmRoles": [
@@ -362,8 +362,8 @@
       "email": "cliente09@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-4NBKTA108LTC"
+        "customer_ref": [
+          "cr_qeTbXFnqQe9yPo96YnfXMnLl"
         ]
       },
       "realmRoles": [
@@ -391,8 +391,8 @@
       "email": "cliente10@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-TP4TG93ZH227"
+        "customer_ref": [
+          "cr__VqRkiTLIA4XJmUiSX0awudn"
         ]
       },
       "realmRoles": [
@@ -420,8 +420,8 @@
       "email": "cliente11@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-UW68N0Q2DOFJ"
+        "customer_ref": [
+          "cr_whoDF0EYj1de0nPPiafLKXCN"
         ]
       },
       "realmRoles": [
@@ -449,8 +449,8 @@
       "email": "cliente12@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-CNRQFKQ4RRMH"
+        "customer_ref": [
+          "cr_8mHLcbogOu1PpbmGA1QfDyKo"
         ]
       },
       "realmRoles": [
@@ -478,8 +478,8 @@
       "email": "cliente13@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-5H96PLFFQXSS"
+        "customer_ref": [
+          "cr_6qqMQDyEXLtHZrpuNWTI_iiW"
         ]
       },
       "realmRoles": [
@@ -507,8 +507,8 @@
       "email": "cliente14@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-OZCB5ZQ55SZB"
+        "customer_ref": [
+          "cr_pCZrHfdRegudtCxdvivwxXl8"
         ]
       },
       "realmRoles": [
@@ -536,8 +536,8 @@
       "email": "cliente15@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-TZOFYDS4B5NR"
+        "customer_ref": [
+          "cr_nb-k-NQ5ltupn61aiNGJRcLF"
         ]
       },
       "realmRoles": [
@@ -565,8 +565,8 @@
       "email": "cliente16@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-QYFHRG5ZH713"
+        "customer_ref": [
+          "cr_efPhnBhlSXOQoI45WTsRO-gO"
         ]
       },
       "realmRoles": [
@@ -594,8 +594,8 @@
       "email": "cliente17@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-UR8G68PDYGL7"
+        "customer_ref": [
+          "cr_Q5hhPunEFbAPABCX3iuK-mhw"
         ]
       },
       "realmRoles": [
@@ -623,8 +623,8 @@
       "email": "cliente18@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-0GCKBSK16FOX"
+        "customer_ref": [
+          "cr_NViLy9GHAc9jq-hJ5RTEVZcy"
         ]
       },
       "realmRoles": [
@@ -652,8 +652,8 @@
       "email": "cliente19@example.test",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-X1VDJVYAWXTO"
+        "customer_ref": [
+          "cr_sBNAa9LI21vR7VGK2R2XnkhV"
         ]
       },
       "realmRoles": [
@@ -678,11 +678,11 @@
       "enabled": true,
       "firstName": "Test",
       "lastName": "Customer 20",
-      "email": "cliente20@example.test",
+      "email": "${KC_DEMO_RESET_EMAIL:cliente20@example.test}",
       "emailVerified": true,
       "attributes": {
-        "customer_id": [
-          "CLI-NJJML84FE1PR"
+        "customer_ref": [
+          "cr_R0sYcOd4I5EXe02PScumdwzB"
         ]
       },
       "realmRoles": [
@@ -699,6 +699,466 @@
           "userLabel": "demo-totp",
           "secretData": "{\"value\": \"nicebank-demo-otp-cliente20\"}",
           "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "carga01",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 01",
+      "email": "carga01@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_MTrzMegZ-scdlcFuxuuvly2e"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga01",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga02",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 02",
+      "email": "carga02@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_Eo5ELBGtjcj6uNlRzzXt4F1a"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga02",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga03",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 03",
+      "email": "carga03@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_SoVeYUGEReOHX2AfR1H7MFks"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga03",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga04",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 04",
+      "email": "carga04@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_PZd_KkQE4YW0qtT5QnzZaPzP"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga04",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga05",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 05",
+      "email": "carga05@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr__z4UcdVlbDQN5diMFRwWz3k7"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga05",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga06",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 06",
+      "email": "carga06@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_igRvGncigN33RY6SP5mAnABo"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga06",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga07",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 07",
+      "email": "carga07@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_oI7KL8aBkMuxN5-Wgi9nr-7v"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga07",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga08",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 08",
+      "email": "carga08@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_FG3rE2u65WFl8wR9NCCtOW1E"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga08",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga09",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 09",
+      "email": "carga09@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_qeTbXFnqQe9yPo96YnfXMnLl"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga09",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga10",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 10",
+      "email": "carga10@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr__VqRkiTLIA4XJmUiSX0awudn"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga10",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga11",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 11",
+      "email": "carga11@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_whoDF0EYj1de0nPPiafLKXCN"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga11",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga12",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 12",
+      "email": "carga12@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_8mHLcbogOu1PpbmGA1QfDyKo"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga12",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga13",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 13",
+      "email": "carga13@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_6qqMQDyEXLtHZrpuNWTI_iiW"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga13",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga14",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 14",
+      "email": "carga14@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_pCZrHfdRegudtCxdvivwxXl8"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga14",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga15",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 15",
+      "email": "carga15@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_nb-k-NQ5ltupn61aiNGJRcLF"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga15",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga16",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 16",
+      "email": "carga16@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_efPhnBhlSXOQoI45WTsRO-gO"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga16",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga17",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 17",
+      "email": "carga17@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_Q5hhPunEFbAPABCX3iuK-mhw"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga17",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga18",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 18",
+      "email": "carga18@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_NViLy9GHAc9jq-hJ5RTEVZcy"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga18",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga19",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 19",
+      "email": "carga19@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_sBNAa9LI21vR7VGK2R2XnkhV"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga19",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "carga20",
+      "enabled": true,
+      "firstName": "Load",
+      "lastName": "Test 20",
+      "email": "carga20@example.test",
+      "emailVerified": true,
+      "attributes": {
+        "customer_ref": [
+          "cr_R0sYcOd4I5EXe02PScumdwzB"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test-Only-carga20",
+          "temporary": false
         }
       ]
     },
@@ -942,14 +1402,17 @@
   "passwordPolicy": "length(8) and upperCase(1) and lowerCase(1) and digits(1) and notUsername",
   "actionTokenGeneratedByUserLifespan": 600,
   "smtpServer": {
-    "host": "mailpit",
-    "port": "1025",
-    "from": "no-reply@nicebank.test",
+    "host": "${KC_SMTP_HOST:mailpit}",
+    "port": "${KC_SMTP_PORT:1025}",
+    "from": "${KC_SMTP_FROM:nicebank@evon.solutions}",
     "fromDisplayName": "NiceBank",
+    "envelopeFrom": "${KC_SMTP_ENVELOPE_FROM:}",
     "replyTo": "",
-    "ssl": "false",
+    "ssl": "${KC_SMTP_SSL:false}",
     "starttls": "false",
-    "auth": "false"
+    "auth": "${KC_SMTP_AUTH:false}",
+    "user": "${KC_SMTP_USER:}",
+    "password": "${KC_SMTP_PASSWORD:}"
   },
   "resetCredentialsFlow": "reset-credentials-verified"
 }
