@@ -51,7 +51,8 @@ step-up and structured handoff. Metrics must compare a baseline and the system o
 | `eval/` | Evaluation harness and held-out cases (to be created) | P4 |
 | `scripts/` | `sync_data.py`, `smoke_chat.py` (end-to-end scenarios; good base for the eval harness) | Lead |
 | `qa/jmeter/` | JMeter load plan (`nicebank-load.jmx`), load users `users.csv`, profiles and KPIs in its README | Lead + P4 |
-| `docs/` | `data_inventory.md`, `api/contracts.md`, `adr/0001`..`0005` | All |
+| `docs/` | `data_inventory.md`, `api/contracts.md`, `adr/0001`..`0005`, `brand/` | All |
+| `vault/` | Obsidian team documentation (Spanish): architecture, modules, per-member guides, plans, QA | All |
 
 ## How to run
 
@@ -61,7 +62,7 @@ make env             # creates .env with a local PII_KEY (paste DEEPSEEK_API_KEY
 make data            # full dataset from S3 into data/raw/ (AWS profile "factored")
 docker compose up -d --build
 make seed            # 20 demo customers into Postgres (resets demo data)
-make smoke           # reseed + 21 end-to-end API checks (must stay green)
+make smoke           # reseed + 22 end-to-end API checks in 9 scenarios (must stay green)
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
 ```
@@ -93,7 +94,7 @@ account panel, agent console, supervisor view; NiceBank-branded Keycloak login, 
 recovery; pseudonymized identity (opaque `customer_ref`, encrypted names, reveal-on-claim); DeepSeek provider
 (`LLM_PROVIDER=deepseek`, Flash with Pro fallback, Fake as last resort; default is still `fake`); Go unit
 tests; customer email notifications (outbox + worker, HTML template, `NiceBank <nicebank@evon.solutions>`,
-Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 21/21 green. The classifier is still a **keyword stub** behind contract C2.
+Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 22/22 green. The classifier is still a **keyword stub** behind contract C2.
 
 Data findings to explain (P2): fact tables hold 84–88% of the published row counts, `digital_events` 156%,
 `daily_exchange_rates` 439% (12 currency pairs per day); every table has one header across partitions (look for
@@ -118,8 +119,8 @@ schema evolution in content); Mexico transactions are all in USD; "Mexico" vs "M
   threshold for precision ≥ 0.95; evaluate on Portuguese dev cases.
 - Replace the stub in `ml/service/app.py` keeping contract C2 exactly (the backend already calls it).
 - RAG over `policies/` + `knowledge/faq/{es,pt}` into `kb_chunks` (pgvector); versioned prompts in `prompts/`.
-- LLM provider is DeepSeek (ADR 0004, `backend/internal/llm/deepseek.go`): tune `deepseek-prompts-v1`, compare
-  `deepseek-flash` vs `deepseek-v4-pro` (and `LLM_COMPOSE=template|ai`) on dev cases, keep masked input only.
+- LLM provider is DeepSeek (ADR 0004, `backend/internal/llm/deepseek.go`): tune `deepseek-prompts-v2` (rerun
+  `go run ./cmd/llmcheck` after any prompt change), compare `deepseek-flash` vs `deepseek-v4-pro` (and `LLM_COMPOSE=template|ai`) on dev cases, keep masked input only.
 
 ### P4 — Policies / evaluation / docs / pitch
 - Own `policies/disputes.yaml` (v0 exists; keep rule ids stable, amounts in USD, fairness: no rule by segment,
@@ -136,10 +137,11 @@ schema evolution in content); Mexico transactions are all in USD; "Mexico" vs "M
 
 ## Team documentation
 
-The human-facing documentation (Spanish, plain language) lives in an Obsidian vault outside this repo
-(`NiceBank-Vault`, shared by the team lead): global architecture, one note per module, one note per teammate with
-ready-to-use prompts, the infrastructure/code/test backlogs, the QA strategy and the JMeter guide. Keep this file
-and the vault consistent at every gate.
+The human-facing documentation lives in the Obsidian vault at `vault/` (open that folder as a vault in Obsidian):
+global architecture, one note per module, one note per teammate with ready-to-use prompts, the
+infrastructure/code/test backlogs, the QA strategy and the JMeter guide. It is the one deliberate exception to the
+English rule: it is written in Spanish, in plain language, for the team. Keep this file and the vault consistent at
+every gate, and never put secrets in it (per-user Obsidian files are git-ignored).
 
 ## Gates
 

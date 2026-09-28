@@ -29,7 +29,7 @@ cost per case reported, and a safe path when the provider fails.
 
 - Only masked text and verified facts leave the system. The dataset is synthetic; a real bank would need a data
   processing agreement and data-residency review for any external provider (see `docs/production_gap.md`).
-- Evaluation must record `prompt_version` (`deepseek-prompts-v1`) and the model, and compare Flash vs Pro on the
+- Evaluation must record `prompt_version` (currently `deepseek-prompts-v2`) and the model, and compare Flash vs Pro on the
   same held-out cases before the final configuration is frozen.
 
 ## Evidence (2026-09-27, `go run ./cmd/llmcheck`, 16 labeled ES/PT messages, prompts v1)

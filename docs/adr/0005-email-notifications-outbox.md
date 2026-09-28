@@ -17,7 +17,7 @@ so a real SMTP server must never deliver to them.
 - **Worker.** `notify.Worker` runs in the backend, claims due rows with `claim_notifications()` (`FOR UPDATE
   SKIP LOCKED`, 5-minute lease so a crashed send is retried), decrypts the address and first name in memory
   (`customer_identity.email_ct`, ADR 0003), renders `backend/internal/notify/templates/layout.html`
-  (`html/template`, auto-escaped, text/plain alternative; design follows the team's viaticos emails: dark card, accent color per kind, facts table, "Important" note, call-to-action to `MAIL_APP_URL`) and sends it. `finish_notification()` records the
+  (`html/template`, auto-escaped, text/plain alternative; design follows the team's viaticos emails: dark card, NiceBank burgundy palette only (#7A1F3D line and button, logo rose #E5769A titles), inline logo, facts table with the card brand, "Important" note, call-to-action to `MAIL_APP_URL`) and sends it. `finish_notification()` records the
   result and writes an audit event without the address. Up to 4 attempts with growing back-off.
 - **Transport.** `SMTP_SECURITY=ssl|starttls|none`. Default: local Mailpit (`none`). Real server:
   `mail.netnovation.com:465` (`ssl`, the server the blueprint project uses for `blue@evon.solutions`), login `EMAIL_USERNAME` / `EMAIL_PASSWORD` (local `.env` only), visible sender
