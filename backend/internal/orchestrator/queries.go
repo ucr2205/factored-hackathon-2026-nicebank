@@ -83,15 +83,19 @@ func (o *Orchestrator) ListHandoffs(ctx context.Context, p auth.Principal, statu
 	out := []contract.HandoffSummary{}
 	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
 		rows, err := tx.Query(ctx, `SELECT handoff_id, created_at, status, language, reason, priority,
-			payload->>'suggested_queue', coalesce(payload->>'dispute_type', ''), claimed_by
+			payload->>'suggested_queue', coalesce(payload->>'dispute_type', ''), claimed_by, claimed_at
 			FROM handoffs WHERE ($1 = '' OR status = $1)
-			ORDER BY (priority = 'high') DESC, created_at DESC LIMIT 100`, status)
+			-- Open: most urgent first, then whoever has waited longest. Claimed: most recently taken first.
+			ORDER BY CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+			         CASE WHEN status = 'open' THEN created_at END ASC,
+			         claimed_at DESC NULLS LAST, created_at DESC
+			LIMIT 100`, status)
 		if err != nil {
 			return err
 		}
 		out, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (contract.HandoffSummary, error) {
 			var h contract.HandoffSummary
-			return h, r.Scan(&h.HandoffID, &h.CreatedAt, &h.Status, &h.Language, &h.Reason, &h.Priority, &h.Queue, &h.DisputeType, &h.ClaimedBy)
+			return h, r.Scan(&h.HandoffID, &h.CreatedAt, &h.Status, &h.Language, &h.Reason, &h.Priority, &h.Queue, &h.DisputeType, &h.ClaimedBy, &h.ClaimedAt)
 		})
 		return err
 	})

@@ -26,7 +26,8 @@ import { useResource } from "../../api/useResource";
 import { formatDateTime } from "../../app/i18n";
 import { useAuth } from "../../auth/AuthProvider";
 import { describeAudit, resultLabel, RULE_NAMES } from "./auditText";
-import { ACTION_NAMES, ACTION_STATUS, DISPUTE_TYPES, LANGS, PRIORITY_COLOR, PRIORITY_LABEL, queueLabel, REASONS, SOURCES, STEPS } from "./labels";
+import { ACTION_NAMES, ACTION_STATUS, DISPUTE_TYPES, LANGS, queueLabel, REASONS, SOURCES, STEPS } from "./labels";
+import { PriorityBadge } from "./priority";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -86,7 +87,7 @@ export default function HandoffDetailPage() {
         <Box sx={{ flex: 1 }}>
           <Typography variant="h5">{REASONS[h.reason] ?? h.reason}</Typography>
           <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap", rowGap: 1 }}>
-            <Chip size="small" color={PRIORITY_COLOR[h.priority]} label={`Prioridad ${PRIORITY_LABEL[h.priority]}`} />
+            <PriorityBadge priority={h.priority} />
             <Chip size="small" label={DISPUTE_TYPES[h.dispute_type] ?? h.dispute_type} />
             <Chip size="small" label={LANGS[h.language]} />
             <Chip size="small" variant="outlined" label={`Cola: ${queueLabel(h.suggested_queue)}`} />

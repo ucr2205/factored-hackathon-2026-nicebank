@@ -116,15 +116,16 @@ type Handoff struct {
 }
 
 type HandoffSummary struct {
-	HandoffID   string    `json:"handoff_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	Status      string    `json:"status"`
-	Language    string    `json:"language"`
-	Reason      string    `json:"reason"`
-	Priority    string    `json:"priority"`
-	Queue       string    `json:"suggested_queue"`
-	DisputeType string    `json:"dispute_type"`
-	ClaimedBy   *string   `json:"claimed_by,omitempty"`
+	HandoffID   string     `json:"handoff_id"`
+	CreatedAt   time.Time  `json:"created_at"`
+	Status      string     `json:"status"`
+	Language    string     `json:"language"`
+	Reason      string     `json:"reason"`
+	Priority    string     `json:"priority"`
+	Queue       string     `json:"suggested_queue"`
+	DisputeType string     `json:"dispute_type"`
+	ClaimedBy   *string    `json:"claimed_by,omitempty"`
+	ClaimedAt   *time.Time `json:"claimed_at,omitempty"`
 }
 
 type AuditEvent struct {
