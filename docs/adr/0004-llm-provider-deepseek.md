@@ -31,3 +31,16 @@ cost per case reported, and a safe path when the provider fails.
   processing agreement and data-residency review for any external provider (see `docs/production_gap.md`).
 - Evaluation must record `prompt_version` (`deepseek-prompts-v1`) and the model, and compare Flash vs Pro on the
   same held-out cases before the final configuration is frozen.
+
+## Evidence (2026-09-27, `go run ./cmd/llmcheck`, 16 labeled ES/PT messages, prompts v1)
+
+| Provider | Amount | Date | Merchant | p50 latency | Cost (16 calls) |
+|---|---|---|---|---|---|
+| fake (rules) | 81% | 87% | 0% | 0 ms | 0 |
+| deepseek-flash | 100% | 93% | 100% | 1.0 s | USD 0.0017 |
+| deepseek-v4-pro | 100% | 93% | 100% | 1.55 s | USD 0.0045 |
+
+Flash matches Pro at lower latency and less than half the cost, so it stays primary with Pro as fallback. The
+only miss for both is a range boundary ("semana passada" ending on day 9 vs 10). The fake extractor misses
+amounts in words, "3 de enero"-style dates and merchants. Rerun after any prompt change and before the final
+evaluation freeze.
