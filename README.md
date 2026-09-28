@@ -35,6 +35,7 @@ poetry install                            # Python deps into ./.venv (ML deps: p
 make data                                 # sync the full dataset (~5.3 GB) into data/raw/
 make inventory                            # regenerate docs/data_inventory.md
 make profile                              # data-quality profile -> docs/data_quality_report.md (~4 min)
+make eda                                  # Gate 1 business EDA -> docs/eda_findings.md (after make profile)
 docker compose up -d --build              # Postgres, Keycloak, ml-service, backend, frontend, Jaeger, Prometheus
 make seed                                 # load 20 demo customers (resets demo data)
 make smoke                                # reseed + run the scripted end-to-end scenarios against the API
