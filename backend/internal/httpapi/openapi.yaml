@@ -1,0 +1,429 @@
+openapi: 3.1.0
+info:
+  title: NiceBank disputes API
+  version: 0.1.0
+  description: |
+    Backend of the NiceBank AI-first dispute-intake assistant (Factored AI & Data Hackathon 2026).
+    Every turn follows Understand → Decide → Act → Verify → Escalate: the LLM only proposes, deterministic
+    code decides, executes simulated bank tools, verifies each write by reading it back and audits it.
+
+    **Authentication.** All endpoints except health, readiness and metrics need a Keycloak access token of the
+    `latam-bank` realm (audience `disputes-api`). Local test tokens (test users only):
+
+    ```bash
+    curl -s http://localhost:8080/realms/latam-bank/protocol/openid-connect/token \
+      -d grant_type=password -d client_id=eval-harness -d client_secret=eval-harness-local-secret \
+      -d username=carga01 -d password=Test-Only-carga01 | jq -r .access_token
+    ```
+    Demo customers (`cliente01`..`20`) also need a `totp` form field; `carga01`..`20` do not (load users).
+    Paste the token in **Authorize**.
+
+    **Identity.** The customer is taken only from the token's opaque `customer_ref` claim (ADR 0003); request
+    bodies never carry a customer id. Every response has an `X-Request-ID` header, also returned in error bodies.
+servers:
+  - url: http://localhost:8081
+    description: Local docker compose
+tags:
+  - name: customer
+    description: Customer chat and home screen (role `customer`)
+  - name: agent
+    description: Human agent console (roles `agent`, `supervisor`)
+  - name: supervisor
+    description: Supervisor view (role `supervisor`)
+  - name: ops
+    description: Health, readiness and metrics (no token)
+security:
+  - bearerAuth: []
+
+paths:
+  /api/chat:
+    post:
+      tags: [customer]
+      summary: Send one customer message (a turn)
+      description: |
+        Runs a full turn. `outcome` tells the client what happened: `resolve`, `clarify` (with optional
+        `candidates` to pick from), `abstain` (out of scope or blocked), `escalate` (handed to a human, see
+        `handoff_id`) or `confirm` (an action awaits confirmation, see `pending_action`).
+        `?mode=baseline` runs the rules-only baseline (every in-scope dispute goes to a human).
+      parameters:
+        - name: mode
+          in: query
+          schema: { type: string, enum: [system, baseline], default: system }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+            examples:
+              normal: { value: { message: "No reconozco un cobro de 385,71 de hoy", lang: es } }
+              pick: { value: { session_id: "8b1c…", message: "", lang: es, select_transaction_id: "TRX-…" } }
+      responses:
+        "200": { description: Turn result, content: { application/json: { schema: { $ref: "#/components/schemas/ChatTurn" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+
+  /api/chat/confirm:
+    post:
+      tags: [customer]
+      summary: Confirm or decline the pending action
+      description: |
+        `block_card` needs a token with `acr` = 2 (password + TOTP). With a weaker token the answer is
+        `403 step_up_required`; the client re-authenticates with `acr_values=2` and repeats the call.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConfirmRequest" }
+      responses:
+        "200": { description: Turn result after the action, content: { application/json: { schema: { $ref: "#/components/schemas/ChatTurn" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Role not allowed, or step-up required for this action
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - { $ref: "#/components/schemas/Error" }
+                  - { $ref: "#/components/schemas/StepUpRequired" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/sessions/{id}:
+    get:
+      tags: [customer]
+      summary: Messages of one of the caller's own sessions
+      parameters: [{ $ref: "#/components/parameters/SessionID" }]
+      responses:
+        "200": { description: Session, content: { application/json: { schema: { $ref: "#/components/schemas/SessionView" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { description: Not found (also what row-level security returns for another customer's session), content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+
+  /api/me/overview:
+    get:
+      tags: [customer]
+      summary: Home screen data (first name, cards, recent card movements)
+      responses:
+        "200": { description: Overview, content: { application/json: { schema: { $ref: "#/components/schemas/Overview" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/handoffs:
+    get:
+      tags: [agent]
+      summary: Escalated cases queue
+      description: Open cases by priority, then longest waiting; claimed cases by when they were taken.
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, claimed, closed] }
+      responses:
+        "200":
+          description: Handoff summaries
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/HandoffSummary" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/handoffs/{id}:
+    get:
+      tags: [agent]
+      summary: Structured handoff (contract C5)
+      description: Verified facts, actions, evidence, open questions and suggested agents. Never the raw chat or the customer identity.
+      parameters: [{ $ref: "#/components/parameters/HandoffID" }]
+      responses:
+        "200": { description: Handoff, content: { application/json: { schema: { $ref: "#/components/schemas/Handoff" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/handoffs/{id}/claim:
+    post:
+      tags: [agent]
+      summary: Claim an open handoff (role agent)
+      parameters: [{ $ref: "#/components/parameters/HandoffID" }]
+      responses:
+        "200": { description: The claimed handoff, content: { application/json: { schema: { $ref: "#/components/schemas/Handoff" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: Not found or no longer open, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+
+  /api/handoffs/{id}/identity:
+    post:
+      tags: [agent]
+      summary: Reveal the customer's identity (claiming agent only, audited)
+      description: POST because every call writes an `identity / reveal_identity` audit event. Anyone but the agent who claimed the handoff gets 404.
+      parameters: [{ $ref: "#/components/parameters/HandoffID" }]
+      responses:
+        "200": { description: Identity, content: { application/json: { schema: { $ref: "#/components/schemas/CustomerIdentity" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/sessions/{id}/audit:
+    get:
+      tags: [agent]
+      summary: Audit trail of a conversation
+      parameters: [{ $ref: "#/components/parameters/SessionID" }]
+      responses:
+        "200":
+          description: Audit events in order
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/AuditEvent" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/admin/config:
+    get:
+      tags: [supervisor]
+      summary: Active configuration (policy, LLM, classifier, demo date)
+      responses:
+        "200": { description: Configuration, content: { application/json: { schema: { $ref: "#/components/schemas/AdminConfig" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/admin/summary:
+    get:
+      tags: [supervisor]
+      summary: Turn counts by outcome, latency percentiles and open handoffs
+      responses:
+        "200": { description: Summary, content: { application/json: { schema: { $ref: "#/components/schemas/Summary" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/health:
+    get:
+      tags: [ops]
+      summary: Liveness
+      security: []
+      responses:
+        "200": { description: The process is up, content: { application/json: { schema: { type: object, properties: { status: { type: string, const: ok } } } } } }
+
+  /api/ready:
+    get:
+      tags: [ops]
+      summary: Readiness (database and ml-service reachable)
+      security: []
+      responses:
+        "200": { description: Ready, content: { application/json: { schema: { $ref: "#/components/schemas/Readiness" } } } }
+        "503": { description: Degraded, content: { application/json: { schema: { $ref: "#/components/schemas/Readiness" } } } }
+
+  /metrics:
+    get:
+      tags: [ops]
+      summary: Prometheus metrics
+      security: []
+      responses:
+        "200": { description: Prometheus text exposition format, content: { text/plain: { schema: { type: string } } } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    SessionID:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    HandoffID:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    BadRequest: { description: Invalid request, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    Unauthorized: { description: Missing, invalid or expired token, or conversation expired (session_expired), content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    Forbidden: { description: Role not allowed or token without customer identity, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    NotFound: { description: Not found, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+    Unavailable: { description: A dependency failed; safe to retry, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+
+  schemas:
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error: { type: string, examples: [unauthorized, forbidden, not_found, bad_request, session_expired, dependency_unavailable, internal_error] }
+        message: { type: string }
+        request_id: { type: string, description: Same value as the X-Request-ID response header }
+    StepUpRequired:
+      type: object
+      properties:
+        error: { type: string, const: step_up_required }
+        acr: { type: string, const: "2" }
+        message: { type: string }
+    ChatRequest:
+      type: object
+      required: [message, lang]
+      properties:
+        session_id: { type: [string, "null"], format: uuid, description: Omit to start a new conversation }
+        message: { type: string, maxLength: 2000, description: "Longer messages are truncated to 2000 bytes" }
+        lang: { type: string, enum: [es, pt] }
+        select_transaction_id: { type: [string, "null"], description: Set when the customer picks one of the candidates }
+    ConfirmRequest:
+      type: object
+      required: [session_id, action_id, confirm]
+      properties:
+        session_id: { type: string, format: uuid }
+        action_id: { type: string, format: uuid }
+        confirm: { type: boolean }
+    Candidate:
+      type: object
+      properties:
+        transaction_id: { type: string }
+        date: { type: string, format: date-time }
+        amount: { type: number }
+        currency: { type: string }
+        merchant: { type: string }
+        city: { type: string }
+        country: { type: string }
+        card_last4: { type: string }
+    PendingAction:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        type: { type: string, enum: [open_dispute_case, block_card] }
+        summary: { type: string }
+        requires_step_up: { type: boolean }
+    VerifiedAction:
+      type: object
+      properties:
+        type: { type: string }
+        reference: { type: string, examples: [DSP-001000, BLK-005000] }
+        verified_at: { type: string, format: date-time }
+    ChatTurn:
+      type: object
+      properties:
+        session_id: { type: string, format: uuid }
+        reply: { type: string, description: Customer-facing text (es/pt) }
+        outcome: { type: string, enum: [resolve, clarify, abstain, escalate, confirm] }
+        candidates: { type: array, items: { $ref: "#/components/schemas/Candidate" } }
+        pending_action: { $ref: "#/components/schemas/PendingAction" }
+        actions_verified: { type: array, items: { $ref: "#/components/schemas/VerifiedAction" } }
+        case_id: { type: [string, "null"] }
+        handoff_id: { type: [string, "null"] }
+        rule_ids: { type: array, items: { type: string }, description: Policy rules that justified the outcome }
+        trace_id: { type: string, description: OpenTelemetry trace id (Jaeger) }
+        latency_ms: { type: integer }
+        cost_usd: { type: number, description: LLM cost of this turn }
+        mode: { type: string, enum: [system, baseline] }
+    SessionView:
+      type: object
+      properties:
+        session_id: { type: string, format: uuid }
+        lang: { type: string }
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role: { type: string, enum: [customer, assistant] }
+              text: { type: string }
+              at: { type: string, format: date-time }
+        pending_action: { $ref: "#/components/schemas/PendingAction" }
+    Overview:
+      type: object
+      properties:
+        first_name: { type: string }
+        cards:
+          type: array
+          items:
+            type: object
+            properties:
+              last4: { type: string }
+              type: { type: string }
+              status: { type: string }
+        recent: { type: array, items: { $ref: "#/components/schemas/Candidate" } }
+        today: { type: string, format: date }
+    HandoffSummary:
+      type: object
+      properties:
+        handoff_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+        status: { type: string, enum: [open, claimed, closed] }
+        language: { type: string, enum: [es, pt] }
+        reason: { type: string, examples: [possible_fraud_high_amount, outside_automatic_window] }
+        priority: { type: string, enum: [high, medium, low] }
+        suggested_queue: { type: string, examples: [fraud_es, disputes_pt] }
+        dispute_type: { type: string }
+        claimed_by: { type: string }
+        claimed_at: { type: string, format: date-time }
+    Handoff:
+      allOf:
+        - $ref: "#/components/schemas/HandoffSummary"
+        - type: object
+          properties:
+            customer_request: { type: string, description: The customer's first message, already masked }
+            verified_facts: { type: array, items: { type: object, properties: { fact: { type: string }, source: { type: string } } } }
+            actions_taken:
+              type: array
+              items:
+                type: object
+                properties:
+                  action: { type: string }
+                  status: { type: string }
+                  reference: { type: string }
+                  at: { type: string, format: date-time }
+            evidence: { type: array, items: { type: object, properties: { type: { type: string }, id: { type: string } } } }
+            open_questions: { type: array, items: { type: string } }
+            suggested_agents:
+              type: array
+              items:
+                type: object
+                properties:
+                  agent_id: { type: string }
+                  name: { type: string }
+                  languages: { type: string }
+                  specialty: { type: string }
+            session_id: { type: string, format: uuid }
+            trace_id: { type: string }
+    CustomerIdentity:
+      type: object
+      properties:
+        customer_ref: { type: string, examples: [cr_MTrzMegZ-scdlcFuxuuvly2e] }
+        first_name: { type: string }
+        last_name: { type: string }
+    AuditEvent:
+      type: object
+      properties:
+        ts: { type: string, format: date-time }
+        step: { type: string, examples: [understand, extract, find_transactions, policy, propose, confirm, act, verify, handoff, identity, notify, respond] }
+        tool: { type: [string, "null"] }
+        summary: { type: string, description: Technical English summary; never personal data }
+        result: { type: [string, "null"] }
+        rule_id: { type: [string, "null"] }
+        trace_id: { type: [string, "null"] }
+        latency_ms: { type: integer }
+    Summary:
+      type: object
+      properties:
+        turns: { type: integer }
+        p50_latency_ms: { type: number }
+        p95_latency_ms: { type: number }
+        by_outcome:
+          type: array
+          items:
+            type: object
+            properties:
+              outcome: { type: string }
+              lang: { type: string }
+              mode: { type: string }
+              count: { type: integer }
+        open_handoffs: { type: integer }
+    AdminConfig:
+      type: object
+      properties:
+        policy_version: { type: string }
+        policy_origin: { type: string }
+        policy: { type: object, description: The parsed policies/disputes.yaml (contract C3) }
+        llm_provider: { type: string, examples: [fake, deepseek] }
+        prompt_version: { type: string }
+        classifier_model: { type: string }
+        demo_today: { type: string, format: date }
+    Readiness:
+      type: object
+      properties:
+        status: { type: string, enum: [ready, degraded] }
+        database: { type: string }
+        ml_service: { type: string }
