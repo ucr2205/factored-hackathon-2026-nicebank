@@ -44,3 +44,12 @@ Flash matches Pro at lower latency and less than half the cost, so it stays prim
 only miss for both is a range boundary ("semana passada" ending on day 9 vs 10). The fake extractor misses
 amounts in words, "3 de enero"-style dates and merchants. Rerun after any prompt change and before the final
 evaluation freeze.
+
+### Prompt v2 and concurrent extraction (2026-09-27)
+
+- `deepseek-prompts-v2` keeps the system prompt byte-identical on every call (today's date moved to the user turn) so
+  DeepSeek's automatic context cache applies. Same accuracy as v1 (100% amount, 93% date, 100% merchant); p50 870 ms.
+- The orchestrator starts the extraction together with classification (`orchestrator/speculative.go`); a turn takes
+  max(classify, extract). Out-of-scope messages cancel the call within a few ms. JMeter (5 users, 60 s, DeepSeek
+  Flash): dispute turns p50 970 ms / p95 1,299 ms, out-of-scope p50 12 ms / p95 138 ms, 0 errors.
+- Metrics: `llm_speculative_extractions_total{outcome=used|discarded}`, `llm_calls_total{status="cancelled"}`.
