@@ -19,8 +19,12 @@ Prioridad: **P0** imprescindible · **P1** importante · **P2** si hay tiempo.
 - [x] Endurecimiento de seguridad: enmascarado de documentos/CPF/teléfonos con etiqueta, límite de tamaño de las
       respuestas de ml-service, limpieza de trazas, cabeceras de seguridad (commit `2468283`)
 - [x] Consola del agente en español claro; nombres de colas legibles; "Ver detalle técnico"
-- [x] Barra de navegación con íconos, "Casos", menú de cuenta; supervisión explicada (en la copia de trabajo, falta commit)
+- [x] Barra de navegación con íconos, "Casos", menú de cuenta; supervisión explicada
 - [x] Marca NiceBank en app, login y correos (`scripts/build_brand_assets.py`)
+- [x] Cola de casos con prioridad (insignias de marca), tiempo de espera y orden por urgencia y antigüedad
+- [x] **Logs estructurados**: una línea por petición, turno y correo, con `request_id`/`trace_id`; recuperación de
+      pánicos en JSON; IP real con `TRUSTED_PROXIES`; `LOG_LEVEL`/`LOG_FORMAT`
+- [x] **Swagger / OpenAPI 3.1** en `/api/docs`, con una prueba que exige documentar cada ruta
 
 ## Backend (Go) — [[Líder]]
 

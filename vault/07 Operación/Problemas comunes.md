@@ -25,5 +25,6 @@ tags: [operacion, troubleshooting]
 | `docker compose up` falla con "PII_KEY is missing" | No existe la llave de cifrado en `.env` | `make env` (o `poetry run python scripts/make_env.py`) y luego `make seed` |
 | El backend no arranca con un servidor de correo real | Falta `MAIL_REDIRECT_TO` (protección para no escribir a correos del dataset) | Poner tu bandeja de prueba en `MAIL_REDIRECT_TO` |
 | "No encontré ningún movimiento…" con una fecha sin año | Antes se leía como fecha futura (ya corregido el 27 sep) | Actualizar a `main`; ahora "23/12" es el último 23 de diciembre |
+| Un usuario ve un error y no sabes qué pasó | Pídele el `request_id` (sale en el error) o toma el `X-Request-ID` de la respuesta, y busca `docker compose logs backend \| grep <id>` |
 
 Para reportar algo nuevo usa la plantilla [[Reporte de bug]].

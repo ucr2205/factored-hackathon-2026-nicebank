@@ -13,6 +13,9 @@ actualizado: 2026-09-27
 Este vault es la memoria del equipo: qué construimos, cómo funciona cada pieza, qué le toca a cada quien y
 cómo probarlo. Está escrito para entenderse sin ser experto; lo técnico está explicado paso a paso.
 
+> [!important] ¿Cómo vamos?
+> La foto de hoy (qué funciona, qué falta, riesgos y decisiones pendientes) está en [[Estado del proyecto]].
+
 ## ¿Por dónde empiezo?
 
 | Si eres… | Lee primero |
@@ -36,6 +39,7 @@ cómo probarlo. Está escrito para entenderse sin ser experto; lo técnico está
 - **Plan de trabajo** — [[Infraestructura]] · [[Código]] · [[Pruebas]]
 - **QA y rendimiento** — [[Estrategia de pruebas]] · [[Pruebas de carga con JMeter]]
 - **Operación** — [[Levantar el proyecto]] · [[Problemas comunes]] · [[Credenciales y accesos]]
+- **Seguimiento** — [[Estado del proyecto]]
 - [[08 Glosario|Glosario]] · Plantillas: [[Reunión diaria]] · [[Decisión]] · [[Reporte de bug]]
 
 ## Estado hoy (27 sep, día 2 de 10)

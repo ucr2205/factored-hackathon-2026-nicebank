@@ -45,3 +45,13 @@ tags: [glosario]
 | **TOTP** | Código de 6 dígitos que cambia cada 30 s en una app autenticadora |
 | **Traza** | El recorrido de una petición paso a paso, con tiempos (Jaeger) |
 | **Wilson (intervalo)** | Forma honesta de dar un rango de error cuando hay pocos casos |
+
+## Logs y API
+
+- **Log estructurado** — Registro en formato JSON (un objeto por línea) en vez de texto libre: se puede filtrar
+  por campo (`level`, `route`, `request_id`) y lo entienden las herramientas de logs.
+- **Access log** — La línea que deja cada petición HTTP: ruta, estado, duración.
+- **`request_id` / `X-Request-ID`** — Identificador único de cada petición. Viaja en la respuesta y en los logs:
+  sirve para encontrar exactamente qué pasó cuando alguien reporta un error.
+- **OpenAPI / Swagger** — OpenAPI es el formato estándar para describir un API (rutas, datos, errores); Swagger UI
+  es la página web que lo muestra y permite probarlo.

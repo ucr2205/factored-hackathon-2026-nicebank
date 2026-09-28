@@ -47,4 +47,16 @@ versión del prompt y los tokens, **sin el texto**. Los correos aparecen como `n
 > `customer_ref`, texto del prompt, cookies…) y la IP del cliente, por si alguno se cuela
 > (`infra/otel/config.yaml`).
 
+## Logs
+
+Los logs del backend son JSON, una línea por evento, y cada una lleva `request_id` y `trace_id`: el mismo
+`trace_id` que buscas en Jaeger. Hay una línea por petición HTTP, una por turno del chat y una por correo. El
+detalle está en [[Backend (Go)#Logs]].
+
+```bash
+docker compose logs -f backend                            # en vivo
+docker compose logs backend | grep '"level":"ERROR"'      # solo errores
+docker compose logs backend | grep <request_id>           # lo que pasó en una petición concreta
+```
+
 Pendiente opcional: un dashboard de Grafana para el video. Relacionado: [[Pruebas de carga con JMeter]].

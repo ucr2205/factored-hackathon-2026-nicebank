@@ -28,7 +28,8 @@ step-up and structured handoff. Metrics must compare a baseline and the system o
    `customer_ref` (opaque; Postgres resolves it, ADR 0003); every customer query runs in `store.WithCustomer`
    (RLS via `SET LOCAL app.customer_id`); the backend never writes `customer_id` itself (column defaults);
    names are only in `customer_identity` as AES-GCM ciphertext (`PII_KEY`) and agents see them only through
-   the audited reveal of a handoff they claimed; emails go only through the notifications outbox and never to
+   the audited reveal of a handoff they claimed; logs never carry message text, names, emails, tokens or card data
+   (use `slog.*Context` so records get `request_id`/`trace_id`; new routes must be added to `openapi.yaml`); emails go only through the notifications outbox and never to
    dataset addresses on a real SMTP server (`MAIL_REDIRECT_TO`);
    actions require explicit customer confirmation; `block_card` requires `acr >= 2` (TOTP); the password-reset
    flow verifies the existing TOTP and must never reset it; no personal data in traces or metric labels.
@@ -66,7 +67,8 @@ make smoke           # reseed + 22 end-to-end API checks in 9 scenarios (must st
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
 ```
-Web app http://localhost:5173 (dev) or :8088 (container) · API :8081 · Keycloak :8080 · Mailpit :8025 ·
+Web app http://localhost:5173 (dev) or :8088 (container) · API :8081 (Swagger UI at `/api/docs`, spec at
+`backend/internal/httpapi/openapi.yaml`) · Keycloak :8080 · Mailpit :8025 ·
 Jaeger :16686 · Prometheus :9090 · Postgres host port **5433**. Test users: `cliente01..20`, `agente01..02`,
 `supervisor01`, and `carga01..20` for load tests only (no TOTP, so they can never pass step-up). Local test realm
 only; the team lead has the handout.

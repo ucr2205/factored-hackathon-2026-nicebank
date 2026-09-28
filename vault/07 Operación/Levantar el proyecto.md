@@ -75,6 +75,7 @@ Después de cambiar el `.env`: `docker compose up -d backend` y, si tocaste el c
 |---|---|
 | App (dev / contenedor) | http://localhost:5173 · http://localhost:8088 |
 | API | http://localhost:8081/api/health |
+| **Documentación del API (Swagger)** | http://localhost:8081/api/docs |
 | Keycloak | http://localhost:8080 |
 | Mailpit (correos) | http://localhost:8025 |
 | Jaeger | http://localhost:16686 |
