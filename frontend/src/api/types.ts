@@ -55,6 +55,7 @@ export type HandoffSummary = {
   suggested_queue: string;
   dispute_type: string;
   claimed_by?: string;
+  claimed_at?: string;
 };
 
 export type Handoff = HandoffSummary & {
@@ -89,19 +90,33 @@ export type Summary = {
 
 export type PolicyRule = { rule_id: string; when: string; outcome: string; description: string };
 
+export type PolicyEscalation = { rule_id: string; condition?: string; reason: string; suggest_action?: string; queue: string };
+
+export type PolicyDisputeType = {
+  id: string;
+  display_name: Record<string, string>;
+  max_auto_amount_usd: number;
+  auto_action: string;
+  eligible_if: { max_age_days: number; transaction_status?: string[] | null };
+  escalate_if: PolicyEscalation[] | null;
+  always_escalate?: PolicyEscalation;
+  rules: { auto: string; ineligible: string };
+};
+
 export type AdminConfig = {
   policy_version: string;
   policy_origin: string;
   policy: {
-    globals: { rules: PolicyRule[]; step_up_actions: string[]; confirm_actions: string[]; max_clarifications: number };
-    dispute_types: {
-      id: string;
-      display_name: Record<string, string>;
-      max_auto_amount_usd: number;
-      auto_action: string;
-      eligible_if: { max_age_days: number };
-      escalate_if: { rule_id: string; reason: string; suggest_action?: string }[] | null;
-    }[];
+    globals: {
+      rules: PolicyRule[];
+      never: string[];
+      step_up_actions: string[];
+      confirm_actions: string[];
+      session_idle_minutes: number;
+      max_candidates_shown: number;
+      max_clarifications: number;
+    };
+    dispute_types: PolicyDisputeType[];
   };
   llm_provider: string;
   prompt_version: string;
