@@ -62,6 +62,7 @@ poetry install
 make env             # creates .env with a local PII_KEY (paste DEEPSEEK_API_KEY there yourself)
 make data            # full dataset from S3 into data/raw/ (AWS profile "factored"), or junction a local copy there
 make profile         # data-quality profile of the 13 tables -> docs/data_quality_report.md (~4 min)
+make eda             # Gate 1 business EDA -> docs/eda_findings.md (~30 s, after make profile)
 docker compose up -d --build
 make seed            # 20 demo customers into Postgres (resets demo data)
 make smoke           # reseed + 22 end-to-end API checks in 9 scenarios (must stay green)
@@ -113,14 +114,24 @@ published counts, evenly spread over the 3 years (not data still in transit); `d
 - "Mexico" (no accent) in `transactions.transaction_country` marks international transactions, like USA/Spain/Brazil.
 - Mexican phones use +54, ~half of coordinates are near (0, 0), `customers.registration_branch_id` never resolves.
 
+Gate 1 EDA (P2, `make eda` → `docs/eda_findings.md`, 2026-09-28): **recommends confirming the dispute flow**. Card-
+charge disputes are 40% of complaints (27,133 in 3 years, stable monthly, same share in every country, segment and
+channel) and take ~15 days, with 20% SLA breaches and 75% still open. But the data cannot train or seed the system:
+- No dispute utterances anywhere: the 171,321 transcripts come from 2 balance-inquiry templates (42 customer texts,
+  Spanish only, 0 mention a charge). Classifier training/dev data and eval utterances are `team_generated` (ES/PT).
+- Complaints cannot be tied to a transaction: `claimed_amount` is uniform noise (50–5,000 in any currency, MXN
+  included), so true-customer and random-customer matching both find a candidate for 0.1% of claims. Transaction
+  lookup relies on what the customer says in the chat. `origin_interaction_id` is always empty.
+- `contact_reason` has 6 generic values; complaints are the only source that names disputes. Draft C6 mapping:
+  `analysis/mappings/contact_reason_to_flow.csv` (`Fees`/"Cobro indebido" type still to agree with P3/P4).
+
 ## Workstreams (what each person owns next)
 
 ### P2 — Data / ETL / data quality
 - ~~`analysis/01_profile.py` → `docs/data_quality_report.md`~~ done 2026-09-28; its "What this means for the ETL"
   section lists the rules the pipeline must follow.
-- `analysis/02_business.py` → `docs/eda_findings.md`: share of dispute-related `contact_reason`, FCR/escalation/SLA
-  for those contacts, cuts by country/segment/channel/month, and the complaint↔transaction matching experiment.
-  **Gate 1 (2026-09-28 18:00)**: confirm the dispute flow with data or switch to plan B (card support).
+- ~~`analysis/02_business.py` → `docs/eda_findings.md`~~ done 2026-09-28 (Gate 1: confirm the dispute flow, see
+  above); agree the C6 mapping draft with P3 and P4.
 - `etl/pipeline/`: raw → silver Parquet with Pandera contracts, dedup, quarantine, lineage (`etl_runs`),
   incremental watermark, USD normalization (ADR 0002), late-arrival test fixture; `docs/freshness_policy.md`.
 - Replace `etl/seed_demo.py` with a loader into C1 that keeps its idempotency and the demo mapping file.

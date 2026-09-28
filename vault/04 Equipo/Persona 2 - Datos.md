@@ -28,8 +28,8 @@ cargados por un script provisional. Tú lo reemplazas por una tubería de datos 
 | Fecha                | Tarea                                                                   | Entregable                                               | Hecho |
 | -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- | ----- |
 | dom 27 – lun 28 sep  | Perfilado de calidad de las 13 tablas                                   | `analysis/01_profile.py` → `docs/data_quality_report.md` | ✅     |
-| **lun 28 sep 18:00** | EDA de negocio + experimento reclamo ↔ transacción (**Gate 1**)         | `analysis/02_business.py` → `docs/eda_findings.md`       | ☐     |
-| lun 28 sep           | Taxonomía de tipos de disputa (C6) con P3 y P4                          | `analysis/mappings/contact_reason_to_flow.csv`           | ☐     |
+| **lun 28 sep 18:00** | EDA de negocio + experimento reclamo ↔ transacción (**Gate 1**)         | `analysis/02_business.py` → `docs/eda_findings.md`       | ✅     |
+| lun 28 sep           | Taxonomía de tipos de disputa (C6) con P3 y P4                          | `analysis/mappings/contact_reason_to_flow.csv`           | 🟡 borrador, falta acordar con P3 y P4 |
 | mar 29 – mié 30 sep  | ETL raw → silver con contratos, deduplicación, cuarentena, linaje y USD | `etl/pipeline/`, `docs/freshness_policy.md`              | ☐     |
 | mié 30 sep           | Fixture de llegada tardía + tests                                       | `etl/tests/`, `make test-etl`                            | ☐     |
 | mié 30 sep           | Loader a Postgres que reemplaza `seed_demo.py`                          | `etl/load_postgres.py`                                   | ☐     |
@@ -56,6 +56,17 @@ y fecha hasta 60 días antes. Reporta % con 0, 1 o más candidatas. Eso define c
 > [!warning] No uses `affected_product_id` para este cruce
 > El perfilado mostró que **nunca** es un producto del cliente que reclama (0 de 44.570). Busca entre las
 > tarjetas del propio cliente (`products.customer_id = complaints.customer_id`).
+
+> [!success] EDA del Gate 1 hecho (lun 28 sep): se confirma el flujo de disputas
+> `make eda` (~30 s, después de `make profile`) regenera `docs/eda_findings.md` y el borrador de taxonomía
+> `analysis/mappings/contact_reason_to_flow.csv`.
+> - **Volumen:** el 40% de los reclamos son disputas por cargos (27.133 en 3 años, ~700–800 al mes).
+> - **Dolor:** ~15 días para resolver, 20% incumple el SLA, 75% sigue abierto; las llamadas de "Queja" solo se
+>   resuelven al primer contacto el 44% de las veces (vs 92% las transaccionales).
+> - **Datos:** ⚠️ el reclamo **no se puede ligar** a su transacción: con el cliente real y con uno al azar se
+>   encuentra candidata en el mismo 0,1% (los montos reclamados son ruido). Y **no hay texto real de disputas**:
+>   las 171.321 transcripciones salen de 2 plantillas de consulta de saldo. Resumen en
+>   [[Datos del proyecto#Lo que dice el EDA del Gate 1]].
 
 ## Terminado cuando
 

@@ -10,7 +10,8 @@ actualizado: 2026-09-28
 > líder. Se actualiza **cada vez que cambia algo** en el código, la infraestructura o el plan. Si algo aquí no
 > coincide con lo que ves en el repo, el repo manda y esta página se corrige.
 
-**Hoy:** lunes 28 sep 2026 (día 3 de 10) · **Próximo hito:** Gate 1, hoy 18:00 ·
+**Hoy:** lunes 28 sep 2026 (día 3 de 10) · **Gate 1:** hoy 18:00, el EDA recomienda confirmar el flujo ·
+**Siguiente:** Gate 2, miércoles 30 sep ·
 **Congelamiento:** domingo 4 oct 20:00 · **Entrega:** lunes 5 oct. Ver [[Calendario y gates]].
 
 ## Semáforo por área
@@ -26,7 +27,7 @@ actualizado: 2026-09-28
 | Documentación del API | ✅ Listo | Swagger UI en http://localhost:8081/api/docs | [[Backend (Go)]] |
 | Pruebas | 🟡 Parcial | 32 pruebas en Go, smoke 22/22, JMeter sin errores; faltan pruebas de integración | [[Estrategia de pruebas]] |
 | Clasificador de casos | 🔴 Provisional | Sigue siendo por palabras clave | [[ml-service (clasificador)]] |
-| Datos y ETL | 🟡 Parcial | Dataset completo y **perfilado de calidad hecho**; falta el análisis del Gate 1 y el ETL; el sistema usa 20 clientes de demo | [[ETL y calidad de datos]] |
+| Datos y ETL | 🟡 Parcial | **Perfilado de calidad y EDA del Gate 1 hechos**; falta el ETL (Gate 2); el sistema usa 20 clientes de demo | [[ETL y calidad de datos]] |
 | **Evaluación (sistema vs baseline)** | 🔴 **Falta** | Sin arnés ni casos held-out: es entregable obligatorio | [[Evaluación]] |
 | Entregables (README, slides, video) | 🔴 Falta | Aún no empiezan | [[Persona 4 - Evaluación y pitch]] |
 | Despliegue | 🟡 Pendiente | Lo hace la empresa; falta URL pública y quitar lo de prueba | [[Infraestructura]] |
@@ -54,6 +55,9 @@ actualizado: 2026-09-28
 - **Perfilado de calidad de las 13 tablas** (`make profile` → `docs/data_quality_report.md`): explica las
   desviaciones de filas, mide vacíos, duplicados, llegadas tardías, huérfanos y `amount_usd`, y deja 9 reglas
   para el ETL. Resumen en [[Datos del proyecto#Lo que encontró el perfilado]].
+- **EDA del Gate 1** (`make eda` → `docs/eda_findings.md`): el 40% de los reclamos son disputas por cargos y
+  tardan ~15 días con 20% fuera de SLA, así que **se confirma el flujo**. Pero los datos no traen frases reales de
+  disputa ni permiten ligar un reclamo con su transacción. Resumen en [[Datos del proyecto#Lo que dice el EDA del Gate 1]].
 
 ## Qué falta, por prioridad
 
@@ -61,8 +65,8 @@ actualizado: 2026-09-28
    del sistema contra el baseline con intervalos de confianza, p50/p95 y costo. → [[Persona 4 - Evaluación y pitch]]
 2. 🔴 **Clasificador real** que reemplace las palabras clave (baselines, TF-IDF, embeddings; Laya como
    candidato). → [[Persona 3 - IA y ML]]
-3. 🟡 **Datos para el Gate 1:** ~~reporte de calidad~~ (hecho); falta el análisis que confirme el flujo de
-   disputas (`docs/eda_findings.md`) y luego el ETL completo. → [[Persona 2 - Datos]]
+3. 🟡 **Datos:** ~~reporte de calidad~~ y ~~EDA del Gate 1~~ (hechos); falta el ETL raw → silver y el loader a
+   Postgres para el Gate 2. → [[Persona 2 - Datos]]
 4. 🔴 **Entregables:** README, `docs/architecture.md`, `docs/production_gap.md`, 4–6 slides y video.
 5. 🟡 **Producto:** "Mis disputas" para el cliente, cerrar y resolver casos en la consola, correo al resolver.
 6. 🟡 **Pruebas de integración en Go:** aislamiento RLS, expiración de sesión y fallas de herramientas.
@@ -78,6 +82,9 @@ actualizado: 2026-09-28
 - [ ] Aprobar la **descarga de Laya** (~300–400 MB) para probarlo como clasificador.
 - [ ] Limpiar la cola de casos de prueba (`make seed`): hay casos "Revisión humana (baseline)" creados por
   pruebas.
+- [ ] **Gate 1:** confirmar el flujo de disputas (el EDA lo recomienda, ver [[Datos del proyecto#Lo que dice el EDA del Gate 1]]).
+- [ ] **Taxonomía C6** (P2 + P3 + P4): "Cobro indebido" → `other_in_scope` o `wrong_amount` (borrador en
+  `analysis/mappings/contact_reason_to_flow.csv`).
 
 ## Riesgos
 
@@ -88,7 +95,8 @@ actualizado: 2026-09-28
 | DeepSeek se cae o tarda | Pro de respaldo y reglas locales; el cliente nunca se queda sin respuesta |
 | Los datos traen 84–88% de las filas anunciadas | ✅ Explicado en el reporte de calidad: el faltante está repartido parejo en el tiempo, no son datos por llegar |
 | No hay ningún cargo duplicado real en los datos | El tipo `duplicate_charge` se demuestra y evalúa con casos `team_generated` (P4) |
-| `complaints.affected_product_id` nunca es del cliente que reclama | El cruce reclamo ↔ transacción busca por las tarjetas del propio cliente (P2) |
+| Un reclamo no se puede ligar a su transacción (`affected_product_id` ajeno, montos reclamados al azar) | La transacción se busca con lo que dice el cliente en el chat, como ya hace el backend |
+| No hay frases reales de disputa en los datos (las transcripciones son 2 plantillas de saldo, sin portugués) | P3 entrena y P4 evalúa con frases `team_generated` en ES y PT |
 | Correos a direcciones reales del dataset | Con servidor real, todo va a `MAIL_REDIRECT_TO`; sin eso el backend no arranca |
 
 ## Números de hoy

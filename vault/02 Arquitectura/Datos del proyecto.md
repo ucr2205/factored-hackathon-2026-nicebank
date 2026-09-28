@@ -58,7 +58,24 @@ Informe completo: `docs/data_quality_report.md`. Lo que más le importa al equip
 | `amount_usd` = conversión exacta × ruido de ±2%, y vacío en el 57% (todas las de USD) | El ETL lo recalcula con la tasa del día (ADR 0002) | P2 |
 | Teléfonos de México con prefijo +54; ~48–50% de coordenadas en (0, 0) | No sirven para inferir país ni ubicación | P2, P3 |
 | `customers.registration_branch_id` apunta a sucursales que no existen (100%) | No se trata como llave foránea en el ETL | P2 |
-| `complaints.description` es texto de plantilla ("Queja relacionada con…") | El texto real de los clientes está en `call_transcripts` | P3 |
+| `complaints.description` es texto de plantilla ("Queja relacionada con…") | Tampoco hay texto real en `call_transcripts` (ver el EDA abajo): las frases de disputa son `team_generated` | P3 |
+
+### Lo que dice el EDA del Gate 1
+
+Informe completo: `docs/eda_findings.md` (`make eda`). **Decisión: se confirma el flujo de disputas**, con dos
+condiciones que imponen los datos.
+
+| Pregunta | Respuesta | Qué implica |
+|---|---|---|
+| ¿Hay volumen? | ✅ El **40%** de los reclamos son disputas por cargos: "Cargo no reconocido" 20,2% + "Cobro indebido" 20,2% (27.133 en 3 años, ~700–800 al mes, estable). Mismo 40% en cada país, segmento y canal | El problema es grande y parejo |
+| ¿Duele? | ✅ ~15 días para resolver, 20% incumple el SLA, 75% sigue abierto, ~38 h hasta la primera respuesta. Las llamadas de "Queja" se resuelven al primer contacto solo el 44% (vs 92% las transaccionales) y tienen el CSAT más bajo (2,4 de 5) | El argumento del pitch: tiempo y SLA. Ojo: en estos datos sintéticos las disputas no duelen *más* que otras categorías |
+| ¿Podemos ligar el reclamo a su transacción? | ❌ Con el cliente real y con un cliente al azar se encuentra candidata en el **mismo 0,1%**: `claimed_amount` es un número al azar entre 50 y 5.000 en cualquier moneda (hasta MXN, que no existe en transacciones) | La transacción se busca con lo que dice el cliente en el chat (monto, fecha, comercio), como ya hace el backend |
+| ¿Hay texto real de disputas? | ❌ Las 171.321 transcripciones salen de **2 plantillas** de consulta de saldo (42 textos de cliente distintos), todo en español; 0 mencionan un cargo, fraude, cajero o robo. No hay nada en portugués | P3 entrena y P4 evalúa con frases `team_generated` (ES y PT); las transcripciones solo sirven como ejemplos fuera de alcance |
+| ¿Contactos por tipo de disputa? | ❌ `contact_reason` solo tiene 6 valores genéricos; "Queja" y "Transaccional" mezclan todo | Los reclamos son la única fuente que nombra disputas |
+
+Borrador de taxonomía (C6) en `analysis/mappings/contact_reason_to_flow.csv`: `Transactions` →
+`unrecognized_charge`, `Fees` → `other_in_scope` (o `wrong_amount`: **falta acordarlo con P3 y P4**), el resto →
+`out_of_scope`.
 
 > [!warning] Fuga de información
 > `is_fraud`, `was_resolved`, `was_escalated`, y `resolution`/`status`/`compensation_granted` de los reclamos
