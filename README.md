@@ -34,6 +34,7 @@ aws configure --profile factored          # read-only dataset credentials (share
 poetry install                            # Python deps into ./.venv (ML deps: poetry install --with ml)
 make data                                 # sync the full dataset (~5.3 GB) into data/raw/
 make inventory                            # regenerate docs/data_inventory.md
+make profile                              # data-quality profile -> docs/data_quality_report.md (~4 min)
 docker compose up -d --build              # Postgres, Keycloak, ml-service, backend, frontend, Jaeger, Prometheus
 make seed                                 # load 20 demo customers (resets demo data)
 make smoke                                # reseed + run the scripted end-to-end scenarios against the API
@@ -58,7 +59,8 @@ Python dependencies are managed **only with Poetry** (`poetry add <pkg>`, `poetr
 ## Data
 
 - Source: organizer-provided **synthetic** dataset (read-only S3 bucket), 13 tables, Mexico/Colombia/Argentina,
-  June 2023 – June 2026. See [`docs/data_inventory.md`](docs/data_inventory.md).
+  June 2023 – June 2026. See [`docs/data_inventory.md`](docs/data_inventory.md) (files and partitions) and
+  [`docs/data_quality_report.md`](docs/data_quality_report.md) (quality profile and the rules it sets for the ETL).
 - Raw and processed data are **never committed** (`data/` is git-ignored). Everything is reproducible from scripts.
 - Team-generated data (e.g. Portuguese test cases) is labeled `origin: team_generated`.
 - `is_fraud` and resolution fields are used **only as evaluation labels**, never as system inputs.
