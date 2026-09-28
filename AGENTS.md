@@ -1,7 +1,7 @@
 # AGENTS.md — shared context for AI coding agents (opencode, Claude Code, others)
 
 Read this before changing anything. It is the team's working memory: what exists, the rules, and who owns what.
-Last updated: 2026-09-27 (sprint day 2 of 10). Submission deadline: **2026-10-05**; code freeze **2026-10-04 20:00**.
+Last updated: 2026-09-28 (sprint day 3 of 10). Submission deadline: **2026-10-05**; code freeze **2026-10-04 20:00**.
 
 ## What we are building
 
@@ -60,7 +60,8 @@ step-up and structured handoff. Metrics must compare a baseline and the system o
 ```bash
 poetry install
 make env             # creates .env with a local PII_KEY (paste DEEPSEEK_API_KEY there yourself)
-make data            # full dataset from S3 into data/raw/ (AWS profile "factored")
+make data            # full dataset from S3 into data/raw/ (AWS profile "factored"), or junction a local copy there
+make profile         # data-quality profile of the 13 tables -> docs/data_quality_report.md (~4 min)
 docker compose up -d --build
 make seed            # 20 demo customers into Postgres (resets demo data)
 make smoke           # reseed + 22 end-to-end API checks in 9 scenarios (must stay green)
@@ -87,9 +88,9 @@ only; the team lead has the handout.
 Outcomes returned per turn: `resolve | clarify | abstain | escalate | confirm`. `POST /api/chat?mode=baseline`
 runs the rules-only baseline (every in-scope dispute goes to a human) on the same workload.
 
-## Current status (2026-09-27)
+## Current status (2026-09-28)
 
-Done: full dataset synced (7,671 CSV files, 5 GB) and inventoried; Docker stack (Postgres+pgvector, Keycloak,
+Done: full dataset synced (7,671 CSV files, 5 GB), inventoried and profiled; Docker stack (Postgres+pgvector, Keycloak,
 ml-service stub, backend, frontend, Mailpit, OTel collector, Jaeger, Prometheus); backend orchestrator with policy
 engine, verified tools, handoffs, audit trail, tracing and metrics; prompt-injection guard; customer chat with
 account panel, agent console, supervisor view; NiceBank-branded Keycloak login, TOTP step-up and password
@@ -98,16 +99,25 @@ recovery; pseudonymized identity (opaque `customer_ref`, encrypted names, reveal
 tests; customer email notifications (outbox + worker, HTML template, `NiceBank <nicebank@evon.solutions>`,
 Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 22/22 green. The classifier is still a **keyword stub** behind contract C2.
 
-Data findings to explain (P2): fact tables hold 84–88% of the published row counts, `digital_events` 156%,
-`daily_exchange_rates` 439% (12 currency pairs per day); every table has one header across partitions (look for
-schema evolution in content); Mexico transactions are all in USD; "Mexico" vs "México"; `complaints` has no
-`transaction_id`.
+Data quality (P2, `make profile` → `docs/data_quality_report.md`, 2026-09-28): 23.5 M rows, no duplicates (not
+even content repeated under a new key), no late arrivals, no unreadable lines. Fact tables hold 84–88% of the
+published counts, evenly spread over the 3 years (not data still in transit); `daily_exchange_rates` is exactly
+12 pairs × 1,097 days; `digital_events` is simply larger. Facts every module must respect:
+- Partitions and `process_date` use a day cut-off (06:00 transactions/events/campaigns, 08:00 complaints/calls):
+  business dates come from the event timestamp. Surveys carry the interaction's `process_date`; use `survey_date`.
+- `complaints.affected_product_id` never belongs to the complaining customer (0 of 44,570): never join on it;
+  complaint ↔ transaction matching searches the customer's own cards. `complaints.description` is templated text.
+- No organic duplicate charges (same card, merchant and amount within 2 days: 0 pairs): `duplicate_charge` demo
+  and eval cases must be `team_generated`.
+- `amount_usd` = exact conversion × ±2% noise and is null in 57% of rows (all USD ones): recompute it (ADR 0002).
+- "Mexico" (no accent) in `transactions.transaction_country` marks international transactions, like USA/Spain/Brazil.
+- Mexican phones use +54, ~half of coordinates are near (0, 0), `customers.registration_branch_id` never resolves.
 
 ## Workstreams (what each person owns next)
 
 ### P2 — Data / ETL / data quality
-- `analysis/01_profile.py` → `docs/data_quality_report.md` (nulls, duplicates by PK, orphans, schema drift by
-  month, late arrivals, the row-count deviations above).
+- ~~`analysis/01_profile.py` → `docs/data_quality_report.md`~~ done 2026-09-28; its "What this means for the ETL"
+  section lists the rules the pipeline must follow.
 - `analysis/02_business.py` → `docs/eda_findings.md`: share of dispute-related `contact_reason`, FCR/escalation/SLA
   for those contacts, cuts by country/segment/channel/month, and the complaint↔transaction matching experiment.
   **Gate 1 (2026-09-28 18:00)**: confirm the dispute flow with data or switch to plan B (card support).

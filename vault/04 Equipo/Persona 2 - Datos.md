@@ -25,15 +25,15 @@ cargados por un script provisional. Tú lo reemplazas por una tubería de datos 
 
 ## Qué te toca
 
-| Fecha | Tarea | Entregable | Hecho |
-|---|---|---|---|
-| dom 27 – lun 28 sep | Perfilado de calidad de las 13 tablas | `analysis/01_profile.py` → `docs/data_quality_report.md` | ☐ |
-| **lun 28 sep 18:00** | EDA de negocio + experimento reclamo ↔ transacción (**Gate 1**) | `analysis/02_business.py` → `docs/eda_findings.md` | ☐ |
-| lun 28 sep | Taxonomía de tipos de disputa (C6) con P3 y P4 | `analysis/mappings/contact_reason_to_flow.csv` | ☐ |
-| mar 29 – mié 30 sep | ETL raw → silver con contratos, deduplicación, cuarentena, linaje y USD | `etl/pipeline/`, `docs/freshness_policy.md` | ☐ |
-| mié 30 sep | Fixture de llegada tardía + tests | `etl/tests/`, `make test-etl` | ☐ |
-| mié 30 sep | Loader a Postgres que reemplaza `seed_demo.py` | `etl/load_postgres.py` | ☐ |
-| jue 1 – sáb 3 oct | Números y gráficos para el pitch (supuestos y proyecciones marcados) | `analysis/03_business_case.py` | ☐ |
+| Fecha                | Tarea                                                                   | Entregable                                               | Hecho |
+| -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- | ----- |
+| dom 27 – lun 28 sep  | Perfilado de calidad de las 13 tablas                                   | `analysis/01_profile.py` → `docs/data_quality_report.md` | ✅     |
+| **lun 28 sep 18:00** | EDA de negocio + experimento reclamo ↔ transacción (**Gate 1**)         | `analysis/02_business.py` → `docs/eda_findings.md`       | ☐     |
+| lun 28 sep           | Taxonomía de tipos de disputa (C6) con P3 y P4                          | `analysis/mappings/contact_reason_to_flow.csv`           | ☐     |
+| mar 29 – mié 30 sep  | ETL raw → silver con contratos, deduplicación, cuarentena, linaje y USD | `etl/pipeline/`, `docs/freshness_policy.md`              | ☐     |
+| mié 30 sep           | Fixture de llegada tardía + tests                                       | `etl/tests/`, `make test-etl`                            | ☐     |
+| mié 30 sep           | Loader a Postgres que reemplaza `seed_demo.py`                          | `etl/load_postgres.py`                                   | ☐     |
+| jue 1 – sáb 3 oct    | Números y gráficos para el pitch (supuestos y proyecciones marcados)    | `analysis/03_business_case.py`                           | ☐     |
 
 ### Detalle de lo más importante
 
@@ -41,12 +41,21 @@ cargados por un script provisional. Tú lo reemplazas por una tubería de datos 
 rangos de fechas, huérfanos contra tablas padre, **evolución de esquema por contenido** (nulos por mes) y
 **llegadas tardías** (`process_date` vs fecha del evento). Explica las desviaciones de filas (84–88%, 156%, 439%).
 
+> [!success] Perfilado hecho (lun 28 sep)
+> `make profile` (~4 min) regenera `docs/data_quality_report.md`; el detalle queda en `analysis/out/profile/`.
+> Lo que encontró está resumido en [[Datos del proyecto#Hallazgos que hay que explicar]], y el informe termina con
+> las **9 reglas para el ETL** ("What this means for the ETL").
+
 **EDA para el Gate 1** — ¿qué parte de los contactos son disputas? ¿Cómo les va hoy (resolución al primer
 contacto, escalamiento, duración, SLA)? Cortes por país, segmento, canal y mes. **El criterio para confirmar el
 flujo:** volumen relevante + dolor medible + datos suficientes. Si no se cumple, se pasa al plan B.
 
-**Experimento clave** — `complaints` no tiene `transaction_id`: busca transacciones del mismo producto, monto ±1%
+**Experimento clave** — `complaints` no tiene `transaction_id`: busca transacciones del mismo cliente, monto ±1%
 y fecha hasta 60 días antes. Reporta % con 0, 1 o más candidatas. Eso define cómo buscamos la transacción.
+
+> [!warning] No uses `affected_product_id` para este cruce
+> El perfilado mostró que **nunca** es un producto del cliente que reclama (0 de 44.570). Busca entre las
+> tarjetas del propio cliente (`products.customer_id = complaints.customer_id`).
 
 ## Terminado cuando
 

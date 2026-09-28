@@ -29,6 +29,12 @@ make seed                             # 20 clientes de demo (cifra sus nombres c
 make smoke                            # debe decir "All scenarios passed."
 ```
 
+> [!tip] ¿Ya tienes el dataset descargado (zip del equipo)? No necesitas AWS
+> Descomprímelo en cualquier carpeta y enlázala como `data/raw` en vez de `aws configure` + `make data`. En
+> Windows, desde la raíz del repo, en **cmd**: `mkdir data` y luego
+> `mklink /J data\raw C:\ruta\a\tu\dataset` (no copia nada ni ocupa espacio; `data/` está fuera de Git).
+> Todos los scripts (`make inventory`, `make profile`, `make seed`) leen de `data/raw/` igual que con AWS.
+
 Luego abre http://localhost:5173 (desarrollo: `cd frontend && npm install && npm run dev`) o http://localhost:8088.
 
 > [!info] ¿Qué es la `PII_KEY`?
