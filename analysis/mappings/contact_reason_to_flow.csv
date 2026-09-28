@@ -1,0 +1,12 @@
+source,value,subcategory,flow,dispute_type,note
+complaints.category,Transactions,Cargo no reconocido,dispute_intake,unrecognized_charge,Customer does not recognize a charge: the core dispute flow.
+complaints.category,Fees,Cobro indebido,dispute_intake,other_in_scope,"Charge the customer considers undue (fees); in scope, type to confirm (wrong_amount vs other_in_scope)."
+complaints.category,Technical,Problema con app,out_of_scope,out_of_scope,App problems.
+complaints.category,Service,Calidad de servicio,out_of_scope,out_of_scope,Service quality.
+complaints.category,Branch,Atención en sucursal,out_of_scope,out_of_scope,Branch service.
+call_center_interactions.contact_reason,Queja,,mixed,,Complaint contacts; the dataset does not say which ones are about charges.
+call_center_interactions.contact_reason,Transaccional,,mixed,,"Transactional contacts (movements, payments); may include charge questions, not distinguishable."
+call_center_interactions.contact_reason,Producto,,out_of_scope,out_of_scope,Product questions.
+call_center_interactions.contact_reason,Técnico,,out_of_scope,out_of_scope,Technical support.
+call_center_interactions.contact_reason,Comercial,,out_of_scope,out_of_scope,Sales.
+call_center_interactions.contact_reason,Retención,,out_of_scope,out_of_scope,Retention.
