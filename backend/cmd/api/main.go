@@ -16,6 +16,7 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/contract"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/httpapi"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/llm"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/logging"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/mlclient"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/notify"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/orchestrator"
@@ -26,8 +27,9 @@ import (
 )
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	cfg := config.Load()
+	logger := logging.New(os.Stdout, logging.ParseLevel(cfg.LogLevel), cfg.LogFormat)
+	slog.SetDefault(logger)
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -82,9 +84,11 @@ func main() {
 	}
 
 	srv := &httpapi.Server{
-		Orch:     orch,
-		Verifier: auth.NewVerifier(ctx, cfg.OIDCIssuer, cfg.OIDCJWKSURL, cfg.OIDCAudience),
-		Origins:  cfg.AllowedOrigins,
+		Orch:           orch,
+		Verifier:       auth.NewVerifier(ctx, cfg.OIDCIssuer, cfg.OIDCJWKSURL, cfg.OIDCAudience),
+		Origins:        cfg.AllowedOrigins,
+		TrustedProxies: httpapi.ParseCIDRs(cfg.TrustedProxies),
+		DocsEnabled:    cfg.DocsEnabled,
 		ReadyFunc: func(r *http.Request) (int, map[string]string) {
 			status := map[string]string{"status": "ready", "database": "ok", "ml_service": "ok"}
 			code := http.StatusOK
@@ -104,9 +108,11 @@ func main() {
 	}
 
 	httpSrv := &http.Server{Addr: cfg.HTTPAddr, Handler: srv.Routes(), ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second}
+		ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second,
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelWarn)} // net/http's own errors, as JSON too
 	go func() {
-		slog.Info("backend listening", "addr", cfg.HTTPAddr, "policy_version", pol.Version)
+		slog.Info("backend listening", "addr", cfg.HTTPAddr, "policy_version", pol.Version, "log_level", cfg.LogLevel,
+			"docs", cfg.DocsEnabled, "trusted_proxies", cfg.TrustedProxies != "")
 		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("server failed", "err", err)
 			os.Exit(1)

@@ -44,6 +44,11 @@ type Config struct {
 	MailAllowRealRcpt  bool
 	NotifyPollInterval time.Duration
 	MailAppURL         string // link in the emails' button (the customer app)
+
+	LogLevel       string // debug | info | warn | error
+	LogFormat      string // json (default) | text
+	TrustedProxies string // CIDRs whose X-Forwarded-For is trusted; empty = the TCP peer is the client
+	DocsEnabled    bool   // serve /api/docs and /api/openapi.yaml
 }
 
 func Load() Config {
@@ -87,6 +92,11 @@ func Load() Config {
 		MailAllowRealRcpt:  os.Getenv("MAIL_ALLOW_REAL_RECIPIENTS") == "true",
 		NotifyPollInterval: 3 * time.Second,
 		MailAppURL:         envOr("MAIL_APP_URL", "http://localhost:8088/chat"),
+
+		LogLevel:       envOr("LOG_LEVEL", "info"),
+		LogFormat:      envOr("LOG_FORMAT", "json"),
+		TrustedProxies: os.Getenv("TRUSTED_PROXIES"),
+		DocsEnabled:    envOr("DOCS_ENABLED", "true") == "true",
 	}
 }
 

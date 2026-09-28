@@ -101,16 +101,19 @@ func (w *Worker) deliver(ctx context.Context, n claimed) {
 			retry, status = &secs, "retry"
 		}
 		span.SetStatus(codes.Error, "delivery failed")
-		slog.Warn("notifier: delivery failed", "id", n.ID, "kind", n.Kind, "attempt", n.Attempts, "status", status, "err", err)
+		slog.WarnContext(ctx, "notifier: delivery failed", "id", n.ID, "kind", n.Kind, "attempt", n.Attempts, "status", status, "err", err)
 	}
 	telemetry.Notifications.WithLabelValues(n.Kind, status).Inc()
+	if err == nil {
+		slog.InfoContext(ctx, "notification sent", "id", n.ID, "kind", n.Kind, "lang", n.Lang, "attempt", n.Attempts)
+	}
 
 	msg := ""
 	if err != nil {
 		msg = err.Error()
 	}
 	if _, ferr := w.Pool.Exec(ctx, `SELECT finish_notification($1, $2, $3, $4)`, n.ID, err == nil, msg, retry); ferr != nil {
-		slog.Error("notifier: could not record result", "id", n.ID, "err", ferr)
+		slog.ErrorContext(ctx, "notifier: could not record result", "id", n.ID, "err", ferr)
 	}
 }
 

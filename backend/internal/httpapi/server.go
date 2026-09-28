@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"slices"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
@@ -25,18 +25,37 @@ type Server struct {
 	Origins   []string
 	ReadyFunc func(*http.Request) (int, map[string]string)
 	Config    func(*http.Request) contract.AdminConfig
+	// TrustedProxies are the only peers whose X-Forwarded-For is believed (see clientIP).
+	TrustedProxies []*net.IPNet
+	// DocsEnabled serves the OpenAPI spec and Swagger UI (disable in production).
+	DocsEnabled bool
 }
 
 func (s *Server) Routes() http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID, middleware.RealIP, middleware.Recoverer, s.cors)
+	return otelhttp.NewHandler(s.router(), "http", otelhttp.WithFilter(func(r *http.Request) bool {
+		return r.URL.Path != "/metrics" && r.URL.Path != "/api/health"
+	}))
+}
 
-	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) { writeJSON(w, http.StatusOK, map[string]string{"status": "ok"}) })
+// router holds every route; Routes wraps it with tracing. Tests walk it to check the OpenAPI spec.
+func (s *Server) router() chi.Router {
+	r := chi.NewRouter()
+	// Order: access log (outermost, sees the final status) -> panic recovery -> CORS. otelhttp wraps the whole
+	// router, so the trace id is already in the context when requests are logged.
+	r.Use(s.requestLog, recoverer, s.cors)
+
+	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
 	r.Get("/api/ready", func(w http.ResponseWriter, r *http.Request) { code, body := s.ReadyFunc(r); writeJSON(w, code, body) })
-	r.Handle("/metrics", promhttp.Handler())
+	r.Method(http.MethodGet, "/metrics", promhttp.Handler())
+	if s.DocsEnabled {
+		r.Get("/api/openapi.yaml", serveSpec)
+		r.Get("/api/docs", serveDocs)
+	}
 
 	r.Group(func(r chi.Router) {
-		r.Use(s.Verifier.Middleware(writeError))
+		r.Use(s.Verifier.Middleware(writeError), notePrincipal)
 
 		r.With(auth.RequireAnyRole(writeError, "customer")).Group(func(r chi.Router) {
 			r.Post("/api/chat", s.chat)
@@ -56,9 +75,7 @@ func (s *Server) Routes() http.Handler {
 			r.Get("/api/admin/summary", s.summary)
 		})
 	})
-	return otelhttp.NewHandler(r, "http", otelhttp.WithFilter(func(r *http.Request) bool {
-		return r.URL.Path != "/metrics" && r.URL.Path != "/api/health"
-	}))
+	return r
 }
 
 func (s *Server) chat(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +90,7 @@ func (s *Server) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.HandleMessage(r.Context(), p, req, mode)
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) confirm(w http.ResponseWriter, r *http.Request) {
@@ -84,59 +101,59 @@ func (s *Server) confirm(w http.ResponseWriter, r *http.Request) {
 	}
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.Confirm(r.Context(), p, req)
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) session(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.Session(r.Context(), p, chi.URLParam(r, "id"))
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.Overview(r.Context(), p)
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) listHandoffs(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.ListHandoffs(r.Context(), p, r.URL.Query().Get("status"))
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) getHandoff(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.GetHandoff(r.Context(), p, chi.URLParam(r, "id"))
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) claimHandoff(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.ClaimHandoff(r.Context(), p, chi.URLParam(r, "id"))
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 // revealIdentity is a POST because every call writes an audit event.
 func (s *Server) revealIdentity(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.RevealIdentity(r.Context(), p, chi.URLParam(r, "id"))
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) sessionAudit(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.SessionAudit(r.Context(), p, chi.URLParam(r, "id"))
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
 func (s *Server) summary(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.Summary(r.Context(), p)
-	respond(w, out, err)
+	respond(w, r, out, err)
 }
 
-func respond(w http.ResponseWriter, body any, err error) {
+func respond(w http.ResponseWriter, r *http.Request, body any, err error) {
 	switch {
 	case err == nil:
 		writeJSON(w, http.StatusOK, body)
@@ -152,7 +169,7 @@ func respond(w http.ResponseWriter, body any, err error) {
 	case errors.Is(err, store.ErrNoCustomer):
 		writeError(w, http.StatusForbidden, "forbidden", "token has no customer identity")
 	default:
-		slog.Error("request failed", "err", err)
+		slog.ErrorContext(r.Context(), "request failed", "method", r.Method, "path", r.URL.Path, "err", err)
 		writeError(w, http.StatusServiceUnavailable, "dependency_unavailable", "temporary problem; please try again")
 	}
 }
@@ -181,6 +198,11 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	_ = json.NewEncoder(w).Encode(body)
 }
 
+// writeError answers {error, message, request_id}; the request id lets support find the matching log line.
 func writeError(w http.ResponseWriter, status int, code, msg string) {
-	writeJSON(w, status, map[string]string{"error": code, "message": msg})
+	body := map[string]string{"error": code, "message": msg}
+	if id := w.Header().Get(requestIDHeader); id != "" {
+		body["request_id"] = id
+	}
+	writeJSON(w, status, body)
 }

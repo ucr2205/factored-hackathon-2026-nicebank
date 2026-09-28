@@ -102,6 +102,10 @@ services:
       DEMO_TODAY: ${DEMO_TODAY:-2026-06-17}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
       OTEL_SERVICE_NAME: disputes-backend
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      DOCS_ENABLED: ${DOCS_ENABLED:-true}
       PII_KEY: ${PII_KEY:?PII_KEY is missing - run make env}
       LLM_PROVIDER: ${LLM_PROVIDER:-fake}
       # Email notifications: Mailpit by default; see .env.example for the real SMTP server.

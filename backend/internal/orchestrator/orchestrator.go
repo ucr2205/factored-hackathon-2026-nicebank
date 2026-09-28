@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 	"time"
@@ -152,7 +153,7 @@ func (o *Orchestrator) HandleMessage(ctx context.Context, p auth.Principal, req 
 		out, err = t.finish(start)
 		return err
 	})
-	o.record(span, out, mode, lang, start, err)
+	o.record(ctx, span, out, mode, lang, start, err)
 	return out, err
 }
 
@@ -195,7 +196,7 @@ func (o *Orchestrator) Confirm(ctx context.Context, p auth.Principal, req contra
 		out, err = t.finish(start)
 		return err
 	})
-	o.record(span, out, "system", lang, start, err)
+	o.record(ctx, span, out, "system", lang, start, err)
 	return out, err
 }
 
@@ -212,11 +213,16 @@ func (o *Orchestrator) newTurn(ctx context.Context, tx pgx.Tx, p auth.Principal,
 	return t
 }
 
-func (o *Orchestrator) record(span trace.Span, out contract.ChatTurn, mode, lang string, start time.Time, err error) {
+// record closes a turn: span status, metrics and one "chat turn" log line with the outcome, the policy rules
+// applied, latency and model cost. Never the customer's text or identity; session_id links it to the audit trail.
+func (o *Orchestrator) record(ctx context.Context, span trace.Span, out contract.ChatTurn, mode, lang string, start time.Time, err error) {
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		return
 	}
+	slog.InfoContext(ctx, "chat turn", "session_id", out.SessionID, "mode", mode, "lang", lang, "outcome", out.Outcome,
+		"rule_ids", out.RuleIDs, "latency_ms", time.Since(start).Milliseconds(), "llm", o.LLM.Name(),
+		"llm_cost_usd", out.CostUSD, "case_id", deref(out.CaseID), "handoff_id", deref(out.HandoffID))
 	span.SetAttributes(attribute.String("chat.outcome", out.Outcome), attribute.StringSlice("policy.rule_ids", out.RuleIDs))
 	telemetry.ChatTurns.WithLabelValues(lang, out.Outcome, mode).Inc()
 	telemetry.TurnDuration.WithLabelValues(mode).Observe(time.Since(start).Seconds())
@@ -682,4 +688,11 @@ func describeExtraction(e llm.Extraction) string {
 		return "no facts extracted"
 	}
 	return strings.Join(parts, " ")
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
