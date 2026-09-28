@@ -45,6 +45,9 @@ var (
 	LLMCalls = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "llm_calls_total", Help: "Language model calls by model, operation and result.",
 	}, []string{"provider", "model", "op", "status"})
+	SpeculativeExtractions = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "llm_speculative_extractions_total", Help: "Extractions started alongside classification: used or discarded.",
+	}, []string{"outcome"})
 	Notifications = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "notifications_total", Help: "Customer email notifications by kind and delivery result.",
 	}, []string{"kind", "status"})

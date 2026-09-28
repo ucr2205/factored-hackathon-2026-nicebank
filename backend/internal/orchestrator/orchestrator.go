@@ -290,6 +290,15 @@ func (t *turn) system(msg string, selected *string) error {
 		return t.repeatPending()
 	}
 
+	// Extraction starts now and runs while the classifier decides whether this message is a dispute at all.
+	waitExtraction, discardExtraction := t.startExtraction(masked)
+	extracted := false
+	defer func() {
+		if !extracted {
+			discardExtraction()
+		}
+	}()
+
 	// Understand: classify the dispute type with the learned component (ml-service).
 	began := time.Now()
 	cls, err := t.o.ML.Classify(t.ctx, masked, t.lang)
@@ -319,7 +328,9 @@ func (t *turn) system(msg string, selected *string) error {
 	}
 
 	// Understand: extract facts (the model proposes; nothing is trusted until matched against records).
-	ex, u, _ := t.o.LLM.Extract(t.ctx, masked, t.lang, t.o.Today)
+	extracted = true
+	r := waitExtraction()
+	ex, u := r.ex, r.u
 	t.addUsage(u)
 	st.Extraction = st.Extraction.Merge(ex)
 	t.audit("extract", t.o.LLM.Name(), describeExtraction(st.Extraction), "", "", 0)
