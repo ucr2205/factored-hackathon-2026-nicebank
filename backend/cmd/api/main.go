@@ -75,7 +75,7 @@ func main() {
 			os.Exit(1)
 		}
 		worker := &notify.Worker{Pool: db.Pool, PII: orch.PII, Mailer: mailer, Interval: cfg.NotifyPollInterval, Batch: 10, MaxAttempts: 4,
-			AppURL: cfg.MailAppURL}
+			AppURL: cfg.MailAppURL, Concurrency: 3}
 		go worker.Run(ctx)
 		slog.Info("email notifications on", "smtp_host", cfg.SMTPHost, "security", cfg.SMTPSecurity,
 			"from", cfg.MailFrom, "redirected", cfg.MailRedirectTo != "")

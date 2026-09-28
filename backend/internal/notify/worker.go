@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -27,6 +28,7 @@ type Worker struct {
 	Batch       int
 	MaxAttempts int
 	AppURL      string // customer app, used as the email's call-to-action link
+	Concurrency int    // parallel SMTP sends per batch (default 1)
 }
 
 func (w *Worker) Run(ctx context.Context) {
@@ -66,9 +68,19 @@ func (w *Worker) RunOnce(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	// Deliver in parallel with a small bound: each send opens its own SMTP connection and the pool is shared
+	// safely, while the bound keeps a burst from hammering the mail server.
+	sem := make(chan struct{}, max(1, w.Concurrency))
+	var wg sync.WaitGroup
 	for _, n := range batch {
-		w.deliver(ctx, n)
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer func() { <-sem; wg.Done() }()
+			w.deliver(ctx, n)
+		}()
 	}
+	wg.Wait()
 	return len(batch), nil
 }
 

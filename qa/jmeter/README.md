@@ -47,3 +47,14 @@ Parameters: `users`, `ramp`, `duration`, `think_min_ms`, `think_max_ms`, `api_ho
 
 Correlate with Prometheus (`chat_turn_duration_seconds`, `chat_turns_total`) and Jaeger traces during the run.
 Results are offline local measurements, not production numbers.
+
+## Last recorded run (2026-09-27, smoke profile: 5 users, 60 s, LLM = DeepSeek Flash)
+
+| Sampler | n | Errors | p50 | p95 |
+|---|---|---|---|---|
+| Keycloak token | 5 | 0 | 115 ms | 116 ms |
+| GET account overview | 38 | 0 | 5 ms | 9 ms |
+| POST chat, unrecognized charge (ES) | 38 | 0 | 970 ms | 1,299 ms |
+| POST chat, out of scope (PT) | 34 | 0 | 12 ms | 138 ms |
+
+With `LLM_PROVIDER=fake` the chat samplers answer in ~15-65 ms; the difference is the model call.
