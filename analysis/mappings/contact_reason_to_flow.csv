@@ -1,6 +1,6 @@
 source,value,subcategory,flow,dispute_type,note
 complaints.category,Transactions,Cargo no reconocido,dispute_intake,unrecognized_charge,Customer does not recognize a charge: the core dispute flow.
-complaints.category,Fees,Cobro indebido,dispute_intake,other_in_scope,"Charge the customer considers undue (fees); in scope, type to confirm (wrong_amount vs other_in_scope)."
+complaints.category,Fees,Cobro indebido,dispute_intake,wrong_amount,"Charge the customer considers undue or too high (fees): wrong_amount, which has policy rules (other_in_scope has none, so the backend would only ask and then hand off)."
 complaints.category,Technical,Problema con app,out_of_scope,out_of_scope,App problems.
 complaints.category,Service,Calidad de servicio,out_of_scope,out_of_scope,Service quality.
 complaints.category,Branch,Atención en sucursal,out_of_scope,out_of_scope,Branch service.

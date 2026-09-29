@@ -24,6 +24,17 @@ tags: [arquitectura, contratos]
 `not_received` (no recibido) · `atm_cash_not_dispensed` (cajero no entregó) · `card_lost_stolen` (perdida o
 robada) · `other_in_scope` · `out_of_scope` (préstamos, inversiones…).
 
+Cómo se mapean las categorías de reclamo del dataset (decidido el 28 sep, `analysis/mappings/contact_reason_to_flow.csv`):
+
+| Categoría del reclamo | Tipo C6 |
+|---|---|
+| `Transactions` — "Cargo no reconocido" | `unrecognized_charge` |
+| `Fees` — "Cobro indebido" | `wrong_amount` |
+| `Technical`, `Service`, `Branch` | `out_of_scope` |
+
+`other_in_scope` no tiene reglas en `policies/disputes.yaml`: el backend lo trata como tipo desconocido, pregunta qué
+pasó y, al llegar al límite de preguntas, pasa el caso a un humano.
+
 ## C4 — Un caso de prueba
 
 ```json

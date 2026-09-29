@@ -35,14 +35,15 @@ AMOUNT_TOLERANCES = (0.01, 0.05)
 SEED = 42                # shuffled-customer control
 
 # Complaint categories that are card-charge disputes (subcategory in parentheses) and their C6 dispute type.
-DISPUTE_CATEGORIES = {"Transactions": "unrecognized_charge", "Fees": "other_in_scope"}
+DISPUTE_CATEGORIES = {"Transactions": "unrecognized_charge", "Fees": "wrong_amount"}
 
-# Draft mapping for taxonomy C6, to agree with P3 and P4. flow: dispute_intake | out_of_scope | mixed.
+# Mapping for taxonomy C6 (decided 2026-09-28). flow: dispute_intake | out_of_scope | mixed.
 FLOW_MAPPING = [
     ("complaints.category", "Transactions", "Cargo no reconocido", "dispute_intake", "unrecognized_charge",
      "Customer does not recognize a charge: the core dispute flow."),
-    ("complaints.category", "Fees", "Cobro indebido", "dispute_intake", "other_in_scope",
-     "Charge the customer considers undue (fees); in scope, type to confirm (wrong_amount vs other_in_scope)."),
+    ("complaints.category", "Fees", "Cobro indebido", "dispute_intake", "wrong_amount",
+     "Charge the customer considers undue or too high (fees): wrong_amount, which has policy rules "
+     "(other_in_scope has none, so the backend would only ask and then hand off)."),
     ("complaints.category", "Technical", "Problema con app", "out_of_scope", "out_of_scope", "App problems."),
     ("complaints.category", "Service", "Calidad de servicio", "out_of_scope", "out_of_scope", "Service quality."),
     ("complaints.category", "Branch", "Atención en sucursal", "out_of_scope", "out_of_scope", "Branch service."),
@@ -414,10 +415,10 @@ def render(v: dict, p: dict, m: dict, d: dict) -> str:
           "of unrecognized-charge cases. Baseline numbers for the pitch come from the tables above.",
           "4. **Transaction lookup** stays as the backend does it: search the customer's own card transactions by "
           "amount, date and merchant from the conversation. Complaints cannot seed it.",
-          "5. **Taxonomy C6 draft** in [`analysis/mappings/contact_reason_to_flow.csv`](../analysis/mappings/"
-          "contact_reason_to_flow.csv): `Transactions` → `unrecognized_charge`, `Fees` → `other_in_scope` (or "
-          "`wrong_amount`, to agree with P3/P4), other categories → `out_of_scope`; `Queja`/`Transaccional` "
-          "contacts are mixed and cannot be mapped.", ""]
+          "5. **Taxonomy C6 mapping** in [`analysis/mappings/contact_reason_to_flow.csv`](../analysis/mappings/"
+          "contact_reason_to_flow.csv): `Transactions` → `unrecognized_charge`, `Fees` → `wrong_amount` (it has "
+          "policy rules; `other_in_scope` has none, so the backend would only ask and then hand off), other "
+          "categories → `out_of_scope`; `Queja`/`Transaccional` contacts are mixed and cannot be mapped.", ""]
     return "\n".join(L).rstrip() + "\n"
 
 
