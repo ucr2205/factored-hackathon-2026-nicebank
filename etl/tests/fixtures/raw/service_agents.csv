@@ -1,0 +1,3 @@
+agent_id,employee_code,first_name,last_name,email,phone,native_accent,country_of_origin,assigned_branch_id,agent_type,experience_level,languages,specialty,hire_date,avg_csat,total_monthly_interactions,agent_status,work_shift
+AGT-T1,E90001,Ana,Prueba,ana@bank.test,+52 55 9999 9999,mexican,Mexico,SUC-T1,Phone,Senior,español,Fraudes,2015-01-01,4.5,100,Active,Morning
+AGT-T2,E90001,Beto,Prueba,beto@bank.test,+57 1 8888 8888,colombian,Colombia,SUC-GONE,Digital,Junior,español,,2020-06-01,4.0,50,Active,Night

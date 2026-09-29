@@ -1,0 +1,7 @@
+transaction_id,transaction_date,process_date,product_id,customer_id,transaction_type,transaction_category,amount,currency,amount_usd,channel,branch_id,merchant_name,merchant_category,transaction_country,transaction_city,transaction_status,response_code,is_fraud,fraud_score,latitude,longitude
+TRX-T0001,2026-06-15 10:00:00,2026-06-15,PRD-T001,CLI-T001,Purchase,Food,100.00,USD,,POS,,Mercado Central,Food,México,CDMX,Pending,00,False,1.0,,
+TRX-T0002,2026-06-15 11:00:00,2026-06-15,PRD-T002,CLI-T002,Purchase,Food,40000.00,COP,9.99,POS,,Tienda Test,Food,Colombia,Bogotá,Approved,00,False,1.0,0.0,0.0
+TRX-T0003,2026-06-15 12:00:00,2026-06-15,PRD-T001,CLI-T001,Purchase,Services,55.00,USD,55.00,Web,,Internet Plus,Services,Mexico,CDMX,Approved,00,False,1.0,,
+TRX-T0004,2026-06-15 12:00:00,2026-06-15,PRD-T001,CLI-T001,Purchase,Services,55.00,USD,55.00,Web,,Internet Plus,Services,Mexico,CDMX,Approved,00,False,1.0,,
+TRX-T0005,2026-06-15 13:00:00,2026-06-15,PRD-T002,CLI-T002,Purchase,Food,-5.00,USD,,POS,,Tienda Test,Food,Colombia,Bogotá,Approved,00,False,1.0,,
+TRX-T0006,2026-06-15 14:00:00,2026-06-15,PRD-T002,CLI-T002,Purchase,Food,abc,USD,,POS,,Tienda Test,Food,Colombia,Bogotá,Approved,00,False,1.0,,

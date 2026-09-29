@@ -1,0 +1,4 @@
+product_id,customer_id,product_type,product_number,currency,current_balance,credit_limit,interest_rate,opening_date,expiration_date,opening_branch_id,product_status,opening_channel,has_linked_app,days_past_due,last_transaction_date,last_updated
+PRD-T001,CLI-T001,Tarjeta Crédito,4959310341316475,USD,1000.00,5000.00,0.30,2021-06-01,2027-06-01,SUC-T1,Active,Web,True,0,2026-06-01 00:00:00,2026-06-01 00:00:00
+PRD-T002,CLI-T002,Cuenta Corriente,9998887770,COP,500.00,,0.00,2019-01-01,,SUC-T1,Active,Branch,False,,2026-06-01 00:00:00,2026-06-01 00:00:00
+PRD-T003,CLI-T003,Cuenta Ahorro,9998887770,USD,50.00,,0.10,2023-01-01,,SUC-T2,Active,App,True,,2026-06-01 00:00:00,2026-06-01 00:00:00
