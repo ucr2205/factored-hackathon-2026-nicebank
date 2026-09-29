@@ -5,9 +5,10 @@ import { formatMoney, useLang } from "../../app/i18n";
 import { brand } from "../../app/theme";
 import Aurora from "../../components/Aurora";
 
+// Keys are the canonical dictionary values stored in the database (silver/operational vocabulary).
 const CARD_TYPES: Record<string, { es: string; pt: string }> = {
-  "Tarjeta Crédito": { es: "Tarjeta de crédito", pt: "Cartão de crédito" },
-  "Tarjeta Débito": { es: "Tarjeta de débito", pt: "Cartão de débito" },
+  "Credit Card": { es: "Tarjeta de crédito", pt: "Cartão de crédito" },
+  "Debit Card": { es: "Tarjeta de débito", pt: "Cartão de débito" },
 };
 
 function dayLabel(iso: string, lang: "es" | "pt") {

@@ -1,4 +1,7 @@
-"""Seed the operational Postgres with a small demo subset of the organizer dataset.
+"""DEPRECATED demo seeder: superseded by etl/load_postgres.py (make seed), which loads the full
+silver dataset in the canonical dictionary vocabulary. Kept for its identity/realm helpers, which
+the loader imports; running it directly would load raw Spanish values the backend no longer reads.
+
 
 Temporary until the full ETL loader (P2) exists. Picks 20 demo customers deterministically, loads their
 customers/products/recent transactions plus all service agents and exchange rates, adds a few clearly

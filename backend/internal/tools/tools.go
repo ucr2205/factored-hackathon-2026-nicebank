@@ -53,7 +53,7 @@ func scanTxn(row pgx.Row) (Transaction, error) {
 func FindTransactions(ctx context.Context, tx pgx.Tx, f Filter, limit int) ([]Transaction, error) {
 	rows, err := tx.Query(ctx, `SELECT `+txnColumns+`
 		FROM transactions t JOIN products p USING (product_id)
-		WHERE p.product_type LIKE 'Tarjeta%' AND t.transaction_date BETWEEN $1 AND $2
+		WHERE p.product_type IN ('Credit Card', 'Debit Card') AND t.transaction_date BETWEEN $1 AND $2
 		  AND t.transaction_type = ANY($3)
 		ORDER BY t.transaction_date DESC LIMIT 200`, f.From, f.To, f.Types)
 	if err != nil {
@@ -84,7 +84,7 @@ func FindTransactions(ctx context.Context, tx pgx.Tx, f Filter, limit int) ([]Tr
 func FindDuplicates(ctx context.Context, tx pgx.Tx, from, to time.Time, limit int) ([]Transaction, error) {
 	rows, err := tx.Query(ctx, `SELECT `+txnColumns+`
 		FROM transactions t JOIN products p USING (product_id)
-		WHERE p.product_type LIKE 'Tarjeta%' AND t.transaction_date BETWEEN $1 AND $2
+		WHERE p.product_type IN ('Credit Card', 'Debit Card') AND t.transaction_date BETWEEN $1 AND $2
 		  AND EXISTS (SELECT 1 FROM transactions o
 		              WHERE o.product_id = t.product_id AND o.transaction_id <> t.transaction_id
 		                AND o.amount = t.amount AND o.merchant_name = t.merchant_name
@@ -132,7 +132,7 @@ type Card struct {
 // ActiveCards lists the customer's cards, active first.
 func ActiveCards(ctx context.Context, tx pgx.Tx) ([]Card, error) {
 	rows, err := tx.Query(ctx, `SELECT product_id, coalesce(card_last4, ''), coalesce(card_brand, ''), product_status, product_type
-		FROM products WHERE product_type LIKE 'Tarjeta%' ORDER BY (product_status = 'Active') DESC, product_id`)
+		FROM products WHERE product_type IN ('Credit Card', 'Debit Card') ORDER BY (product_status = 'Active') DESC, product_id`)
 	if err != nil {
 		return nil, err
 	}

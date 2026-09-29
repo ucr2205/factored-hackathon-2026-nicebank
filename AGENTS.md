@@ -63,8 +63,10 @@ make env             # creates .env with a local PII_KEY (paste DEEPSEEK_API_KEY
 make data            # full dataset from S3 into data/raw/ (AWS profile "factored"), or junction a local copy there
 make profile         # data-quality profile of the 13 tables -> docs/data_quality_report.md (~4 min)
 make eda             # Gate 1 business EDA -> docs/eda_findings.md (~30 s, after make profile)
+make etl             # raw -> silver pipeline: contracts, quarantine, lineage (docs/etl_rules.md)
+make test-etl        # pipeline tests over the labeled fixture (late arrival, idempotency...)
 docker compose up -d --build
-make seed            # 20 demo customers into Postgres (resets demo data)
+make seed            # full silver dataset into Postgres via etl/load_postgres.py (needs make etl)
 make smoke           # reseed + 22 end-to-end API checks in 9 scenarios (must stay green)
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
@@ -122,8 +124,10 @@ channel) and take ~15 days, with 20% SLA breaches and 75% still open. But the da
 - Complaints cannot be tied to a transaction: `claimed_amount` is uniform noise (50–5,000 in any currency, MXN
   included), so true-customer and random-customer matching both find a candidate for 0.1% of claims. Transaction
   lookup relies on what the customer says in the chat. `origin_interaction_id` is always empty.
-- `contact_reason` has 6 generic values; complaints are the only source that names disputes. Draft C6 mapping:
-  `analysis/mappings/contact_reason_to_flow.csv` (`Fees`/"Cobro indebido" type still to agree with P3/P4).
+- `contact_reason` has 6 generic values; complaints are the only source that names disputes. C6 mapping
+  (`analysis/mappings/contact_reason_to_flow.csv`, decided 2026-09-28): `Transactions`/"Cargo no reconocido" →
+  `unrecognized_charge`, `Fees`/"Cobro indebido" → `wrong_amount` (`other_in_scope` has no policy rule, so the
+  backend would only clarify and hand off), every other category → `out_of_scope`.
 
 ## Workstreams (what each person owns next)
 
@@ -131,10 +135,21 @@ channel) and take ~15 days, with 20% SLA breaches and 75% still open. But the da
 - ~~`analysis/01_profile.py` → `docs/data_quality_report.md`~~ done 2026-09-28; its "What this means for the ETL"
   section lists the rules the pipeline must follow.
 - ~~`analysis/02_business.py` → `docs/eda_findings.md`~~ done 2026-09-28 (Gate 1: confirm the dispute flow, see
-  above); agree the C6 mapping draft with P3 and P4.
-- `etl/pipeline/`: raw → silver Parquet with Pandera contracts, dedup, quarantine, lineage (`etl_runs`),
-  incremental watermark, USD normalization (ADR 0002), late-arrival test fixture; `docs/freshness_policy.md`.
-- Replace `etl/seed_demo.py` with a loader into C1 that keeps its idempotency and the demo mapping file.
+  above); C6 mapping decided (`Fees` → `wrong_amount`).
+- ~~`etl/pipeline/` raw → silver~~ done 2026-09-29: declarative specs (`specs.py`) drive DuckDB stages
+  (cast, canonical-English standardization, derived columns, 3-level dedup, uniqueness policies) and
+  Pandera contracts; quarantine with rule ids, per-file watermark, lineage in `data/etl_state.duckdb`,
+  event-month partition rebuild for late arrivals. Rules: `docs/etl_rules.md`; freshness:
+  `docs/freshness_policy.md`; tests `make test-etl` (labeled fixture: late arrival, idempotency,
+  contract violation, content duplicate, uniqueness). Targeted 3NF: `contact_reason`, `subcategory`,
+  `state` and `merchant_category` normalized into `dim_cities`/`dim_merchants`/`dim_categories`.
+- ~~Loader~~ done 2026-09-29: `etl/load_postgres.py` (`make seed`) loads the **full** silver dataset
+  into C1 (COPY) in the same canonical dictionary vocabulary as silver (Credit Card, Mexico, ...);
+  the backend card queries (`internal/tools`) and the frontend product-type labels read those values,
+  so there is no translation layer. Keeps seed_demo's deterministic 20 demo customers, encrypted
+  identity, Keycloak mapping and team_generated fixtures; demo users get unique
+  `clienteNN@example.test` contact emails.
+- Next: business-case numbers for the pitch (`analysis/03_business_case.py`).
 
 ### P3 — AI / ML
 - Label quality of `detected_intents` vs `contact_reason` (circularity), dataset without leakage, temporal split.
