@@ -107,6 +107,7 @@ actualizado: 2026-09-29
 | Un reclamo no se puede ligar a su transacción (`affected_product_id` ajeno, montos reclamados al azar) | La transacción se busca con lo que dice el cliente en el chat, como ya hace el backend |
 | No hay frases reales de disputa en los datos (las transcripciones son 2 plantillas de saldo, sin portugués) | P3 entrena y P4 evalúa con frases `team_generated` en ES y PT |
 | 79.930 clientes comparten su correo con otro cliente (el generador lo arma con inicial + apellido) | Un aviso "a un cliente" llegaría a otras personas: hoy no pasa porque con servidor real todo va a `MAIL_REDIRECT_TO`; hay que anotarlo en la brecha a producción (P4) |
+| El ETL completo necesita mucho disco (DuckDB deja temporales de varios GB si se corta) | Antes de `make etl`, dejar ≥ 15 GB libres; si se cortó, borrar los `*.tmp` de DuckDB. Ver [[Problemas comunes]] |
 | Correos a direcciones reales del dataset | Con servidor real, todo va a `MAIL_REDIRECT_TO`; sin eso el backend no arranca |
 
 ## Números de hoy
@@ -120,6 +121,7 @@ actualizado: 2026-09-29
 | Costo de DeepSeek por mensaje | ~USD 0,0001 |
 | Calidad de datos (`make profile`) | 23,5 M filas · 0 duplicados · 0 llegadas tardías · 0 líneas ilegibles · `amount_usd` vacío en 57% y con ±2% de ruido |
 | ETL (`make etl`) | 23,5 M filas → silver en ~58 min (segunda corrida: 3 s, no reprocesa) · 0 en cuarentena · 33 hallazgos contados en el linaje · `amount_usd` recalculado (solo 607 sin tasa, 0,014%) · 8 pruebas verdes (`make test-etl`) |
+| Corrida local del líder (29 sep) | `make etl`: 14 de 15 tablas; `digital_events` se detuvo por falta de disco (el loader no la usa) · `make seed`: 150.000 clientes, 400.000 productos, 4.425.008 transacciones, 1.200 agentes, 13.164 tasas · smoke 22/22 contra el dataset completo |
 
 > [!note] Cómo mantener esta página
 > Cada vez que se termina algo: mover la fila del semáforo, tachar o agregar en "Qué falta", actualizar

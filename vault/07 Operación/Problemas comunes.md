@@ -26,5 +26,7 @@ tags: [operacion, troubleshooting]
 | El backend no arranca con un servidor de correo real | Falta `MAIL_REDIRECT_TO` (protección para no escribir a correos del dataset) | Poner tu bandeja de prueba en `MAIL_REDIRECT_TO` |
 | "No encontré ningún movimiento…" con una fecha sin año | Antes se leía como fecha futura (ya corregido el 27 sep) | Actualizar a `main`; ahora "23/12" es el último 23 de diciembre |
 | Un usuario ve un error y no sabes qué pasó | Pídele el `request_id` (sale en el error) o toma el `X-Request-ID` de la respuesta, y busca `docker compose logs backend \| grep <id>` |
+| `make etl` se detiene con "free disk space below 3 GB" (típico en `digital_events`) | El ETL completo usa mucho disco temporal, y si se corta DuckDB deja archivos `*.tmp` de varios GB | Borrar los temporales de DuckDB que quedaron (en la corrida del 29 sep fueron 8,8 GB), dejar ≥ 15 GB libres y repetir `make etl`: la marca de agua salta lo ya hecho |
+| Docker Desktop no arranca en Windows ("sailor-ingest.sock" o "engine.sock" en uso) | Sockets viejos en `%LOCALAPPDATA%\Docker\run` y `docker-secrets-engine` que Windows no deja borrar | Renombrar esas carpetas (p. ej. `run.broken-FECHA`), abrir Docker de nuevo y borrarlas después de reiniciar el PC |
 
 Para reportar algo nuevo usa la plantilla [[Reporte de bug]].
