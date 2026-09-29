@@ -24,7 +24,23 @@ por uno entrenado **sin cambiar su contrato (C2)**, así nada más se rompe, y c
 - `backend/cmd/llmcheck`: compara proveedores con 16 mensajes etiquetados ES/PT (acierto, latencia, costo). Úsalo
   cada vez que cambies un prompt: `cd backend && go run ./cmd/llmcheck`.
 - Tabla `kb_chunks` con `embedding vector(384)` lista en Postgres.
-- Datos: `call_transcripts` + `call_center_interactions` (unir por `interaction_id`).
+- Datos: la capa **silver** (`data/silver/`, tras `make etl`), no los CSV crudos. Modelo: [[Modelo ER]].
+
+> [!danger] Tu plan original cambió: el dataset NO trae texto de disputas (29 sep)
+> El EDA y el perfilado (P2) demostraron que las 171.321 transcripciones salen de **2 plantillas de
+> consulta de saldo** (42 textos de cliente distintos, solo español), `detected_intents` tiene **un**
+> valor (`consulta_general`) y `contact_reason` son 6 categorías genéricas. **No hay nada que aprender
+> de ahí sobre disputas**: la tarea de "calidad de etiquetas" quedó respondida (no sirven) y el
+> dataset de entrenamiento se construye con frases `team_generated`.
+> - **Entrenamiento:** genera/escribe frases en ES y PT etiquetadas con la taxonomía C6 (ya congelada:
+>   "Cobro indebido" → `wrong_amount`). Documenta el protocolo de generación en `docs/ml_labels.md`.
+> - **Sin fuga con la evaluación:** tus frases de entrenamiento y los ~200 casos held-out de P4 deben
+>   venir de lotes/autores/instrucciones distintos; acuérdalo con P4 antes de generar.
+> - Las transcripciones reales solo sirven como ejemplos de `out_of_scope` (consultas de saldo):
+>   léelas de `data/silver/call_transcripts/`.
+> - El stub por palabras clave clasifica "crédito" como `out_of_scope` (falla con "tarjeta de crédito")
+>   y no tiene palabras para "cobro indebido", que ahora es el 20% de los reclamos: tu modelo real
+>   debe cubrir ambos.
 
 > [!info] Resultado de la comparación (ya hecha)
 > Flash: 100% montos, 93% fechas, 100% comercios, p50 1,0 s, USD 0,0017 por 16 llamadas. Pro: mismo acierto,
@@ -36,9 +52,9 @@ por uno entrenado **sin cambiar su contrato (C2)**, así nada más se rompe, y c
 | Fecha | Tarea | Entregable | Hecho |
 |---|---|---|---|
 | dom 27 sep | Probar DeepSeek Flash vs Pro con mensajes ES/PT: calidad, latencia, costo | `llmcheck` + ADR 0004 (lo hizo el líder) | ☑ |
-| dom 27 – lun 28 sep | Calidad de etiquetas: ¿`detected_intents` es circular respecto de `contact_reason`? 50 textos revisados a mano | `docs/ml_labels.md` | ☐ |
-| lun 28 sep | Taxonomía (C6) con P2 y P4 | acuerdo | ☐ |
-| lun 28 – mar 29 sep | Dataset sin fuga + split temporal; B0, B1, M1 (TF-IDF), M2 (e5 + LogReg) en MLflow | `ml/data/`, `ml/train.py`, runs | ☐ |
+| dom 27 – lun 28 sep | ~~Calidad de etiquetas~~ → respondida por P2: las etiquetas del dataset no sirven (ver aviso). Documenta la evidencia y el protocolo de generación | `docs/ml_labels.md` | ◐ |
+| lun 28 sep | Taxonomía (C6) con P2 y P4 | ✅ decidida 28 sep: `Fees` → `wrong_amount` (`analysis/mappings/contact_reason_to_flow.csv`) | ✅ |
+| lun 28 – mar 29 sep | Corpus `team_generated` ES/PT etiquetado con C6, sin fuga con los casos de P4 (lotes separados); split por lote, no temporal; B0, B1, M1 (TF-IDF), M2 (e5 + LogReg) en MLflow | `ml/data/`, `ml/train.py`, runs | ☐ |
 | mar 29 sep | Umbral de confianza (precisión ≥ 0,95 en validación) | valor congelado + justificación | ☐ |
 | mié 30 sep | **ml-service real** con el contrato C2 (tests, p95 < 100 ms en CPU). "Laya" es un modelo candidato; **su descarga está pendiente de aprobación** | `ml/service/` | ☐ |
 | mié 30 sep – jue 1 oct | RAG: indexar políticas + FAQ en `kb_chunks`, evaluar recall@3 | `ml/rag/` | ☐ |
@@ -74,10 +90,12 @@ RAG) · [[Líder]] (integración del LLM en Go).
 > y la interfaz Provider, y propón un plan para reemplazar el stub sin cambiar las respuestas JSON."*
 
 > [!example] Entrenamiento
-> *"Crea `ml/data/build_dataset.py` que une call_transcripts con call_center_interactions, enmascara customer_text,
-> excluye detected_intents/keywords/topics/entities, hace split temporal (train ≤ 2025-12-31, val ene–mar 2026, test
-> abr–jun 2026) sin clientes de test en train, y guarda un manifiesto con hashes. Luego `ml/train.py` con B0, B1,
-> TF-IDF+LogReg y multilingual-e5-small+LogReg registrando todo en MLflow (file:ml/mlruns). Usa Poetry, grupo ml."*
+> *"Lee docs/eda_findings.md (sección de datos) y docs/etl_rules.md. Crea `ml/data/generate_utterances.py`
+> que produzca frases team_generated en ES y PT por tipo de disputa de la taxonomía C6 (incluye variantes con
+> errores de tipeo, montos en palabras y fechas sin año), etiquetadas y con un manifiesto (lote, plantilla,
+> hash) para garantizar que el lote de evaluación de P4 queda separado. Como out_of_scope usa muestras de
+> data/silver/call_transcripts. Luego `ml/train.py` con B0, B1, TF-IDF+LogReg y multilingual-e5-small+LogReg
+> registrando todo en MLflow (file:ml/mlruns). Usa Poetry, grupo ml."*
 
 > [!example] Calidad del LLM
 > *"Lee `backend/internal/llm/deepseek.go` y `backend/cmd/llmcheck/main.go`. Agrega a llmcheck 10 mensajes nuevos ES/PT

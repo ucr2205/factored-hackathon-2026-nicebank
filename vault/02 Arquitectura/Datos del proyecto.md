@@ -8,6 +8,8 @@ tags: [arquitectura, datos]
 17 jun 2023 → 17 jun 2026. Está en un bucket de S3 de solo lectura y ya lo tenemos completo en `data/raw/`
 (7.671 archivos CSV, 5 GB). Hay copia comprimida en Descargas del líder.
 
+**Diagrama entidad-relación** (silver y base operativa, se dibuja solo en Obsidian): [[Modelo ER]].
+
 ## Las tablas que usamos
 
 | Tabla | Qué tiene | Uso |
@@ -31,7 +33,9 @@ flowchart LR
     RAW -.->|"hoy: seed_demo.py"| PG
 ```
 
-Hoy Postgres se llena con `seed_demo.py` (20 clientes). El ETL completo es tarea de [[Persona 2 - Datos]]:
+Desde el 29 sep, Postgres se llena con `etl/load_postgres.py` (`make seed`): **todo el dataset silver**
+(150.000 clientes, 4,4 M transacciones), con los valores operativos en español y los mismos 20 usuarios de
+demo. La flecha punteada de `seed_demo.py` ya no aplica; queda como biblioteca de utilidades. Detalle:
 [[ETL y calidad de datos]].
 
 ## Hallazgos que hay que explicar
@@ -73,9 +77,36 @@ condiciones que imponen los datos.
 | ¿Hay texto real de disputas? | ❌ Las 171.321 transcripciones salen de **2 plantillas** de consulta de saldo (42 textos de cliente distintos), todo en español; 0 mencionan un cargo, fraude, cajero o robo. No hay nada en portugués | P3 entrena y P4 evalúa con frases `team_generated` (ES y PT); las transcripciones solo sirven como ejemplos fuera de alcance |
 | ¿Contactos por tipo de disputa? | ❌ `contact_reason` solo tiene 6 valores genéricos; "Queja" y "Transaccional" mezclan todo | Los reclamos son la única fuente que nombra disputas |
 
-Borrador de taxonomía (C6) en `analysis/mappings/contact_reason_to_flow.csv`: `Transactions` →
-`unrecognized_charge`, `Fees` → `other_in_scope` (o `wrong_amount`: **falta acordarlo con P3 y P4**), el resto →
-`out_of_scope`.
+Taxonomía (C6) decidida el 28 sep, en `analysis/mappings/contact_reason_to_flow.csv`: `Transactions` ("Cargo no
+reconocido") → `unrecognized_charge`, `Fees` ("Cobro indebido") → **`wrong_amount`**, el resto → `out_of_scope`. Se
+eligió `wrong_amount` porque ya tiene reglas en la política; `other_in_scope` no tiene ninguna, así que el backend
+solo preguntaría "¿qué pasó?" y terminaría pasando el caso a un humano.
+
+### Validación de duplicados (29 sep)
+
+Pregunta: ¿hay registros repetidos que no se ven porque un campo está mal escrito (acentos, mayúsculas,
+espacios)? Respuesta: **no**, pero hay valores que se repiten entre personas distintas.
+
+| Prueba | Resultado |
+|---|---|
+| Contenido completo normalizado (sin acentos, mayúsculas ni espacios de más), excluyendo el ID y `process_date`, en las 12 tablas con ID propio | 0 duplicados |
+| Llaves de negocio: documento, nombre + fecha de nacimiento, número de producto, transacción (tarjeta + momento + monto), reclamo (cliente + fecha), llamada, encuesta, envío, evento | 0 duplicados reales |
+| Nombres casi iguales (≤ 2 letras de diferencia) con la misma fecha de nacimiento y ciudad | 0 parejas |
+| 19 parejas de clientes con mismo apellido, fecha de nacimiento y ciudad | Personas distintas: nombres de pila sin parecido (similitud ≤ 0,65), documentos que difieren en 5–9 caracteres, a veces otro tipo de documento y otro sexo. **Pendiente la decisión final de P2** |
+
+Valores que **se repiten entre registros distintos** (no se fusionan; el ETL los marca):
+
+| Qué | Cuántos | Por qué pasa |
+|---|---|---|
+| Correo de cliente compartido | 24.203 correos, 79.930 clientes (hasta 31 por correo) | El generador arma el correo con inicial + apellido (`aacosta@gmail.com`). **Importa para las notificaciones** |
+| Celular de cliente compartido | 8 parejas | Coincidencia |
+| Número de producto repetido | 6 parejas (cuentas y préstamos, no tarjetas) | Distinto cliente, moneda y fecha |
+| Código de empleado / correo de agente repetido | 13 / 12 parejas | Personas distintas |
+| Agentes homónimos (César González Sánchez) | 1 pareja | Todo lo demás distinto; queda **para revisión** |
+| Nombre de sucursal repetido | 52 nombres, 227 sucursales | Distinta dirección, código y fecha de apertura |
+
+El detalle registro por registro está en `analysis/out/duplicate_review/` (fuera de Git). El ETL repite estas
+pruebas en cada carga como **guardia**: si una entrega futura trae un duplicado real, va a cuarentena.
 
 > [!warning] Fuga de información
 > `is_fraud`, `was_resolved`, `was_escalated`, y `resolution`/`status`/`compensation_granted` de los reclamos

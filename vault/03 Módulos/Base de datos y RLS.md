@@ -46,3 +46,5 @@ flowchart LR
 
 Archivos: `infra/postgres/init/00_app_role.sh`, `01_schema.sql`, `02_rls.sh`, `backend/internal/store/`.
 Relacionado: [[Seguridad]] · [[ETL y calidad de datos]]
+
+Diagrama de tablas y relaciones: [[Modelo ER]].

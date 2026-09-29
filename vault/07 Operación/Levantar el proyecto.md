@@ -25,9 +25,15 @@ make env                              # crea .env desde .env.example y genera tu
 aws configure --profile factored     # claves por el canal privado del equipo
 make data                             # ~5 GB, 15–40 min
 docker compose up -d --build          # 9 servicios
-make seed                             # 20 clientes de demo (cifra sus nombres con tu PII_KEY)
+make etl                              # limpia raw → silver (contratos, cuarentena, linaje; ~1 h la 1ª vez)
+make seed                             # carga TODO el silver a Postgres y cifra identidades con tu PII_KEY
 make smoke                            # debe decir "All scenarios passed."
 ```
+
+> [!note] `make seed` cambió el 29 sep
+> Antes cargaba 20 clientes de demo desde los CSV crudos; ahora `etl/load_postgres.py` carga el
+> dataset completo (150.000 clientes, 4,4 M transacciones) desde la capa silver, así que necesita
+> `make etl` primero. Los 20 usuarios de demo (`cliente01–20`) siguen siendo los mismos.
 
 > [!tip] ¿Ya tienes el dataset descargado (zip del equipo)? No necesitas AWS
 > Descomprímelo en cualquier carpeta y enlázala como `data/raw` en vez de `aws configure` + `make data`. En

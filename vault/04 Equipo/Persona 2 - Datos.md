@@ -29,10 +29,10 @@ cargados por un script provisional. Tú lo reemplazas por una tubería de datos 
 | -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- | ----- |
 | dom 27 – lun 28 sep  | Perfilado de calidad de las 13 tablas                                   | `analysis/01_profile.py` → `docs/data_quality_report.md` | ✅     |
 | **lun 28 sep 18:00** | EDA de negocio + experimento reclamo ↔ transacción (**Gate 1**)         | `analysis/02_business.py` → `docs/eda_findings.md`       | ✅     |
-| lun 28 sep           | Taxonomía de tipos de disputa (C6) con P3 y P4                          | `analysis/mappings/contact_reason_to_flow.csv`           | 🟡 borrador, falta acordar con P3 y P4 |
-| mar 29 – mié 30 sep  | ETL raw → silver con contratos, deduplicación, cuarentena, linaje y USD | `etl/pipeline/`, `docs/freshness_policy.md`              | ☐     |
-| mié 30 sep           | Fixture de llegada tardía + tests                                       | `etl/tests/`, `make test-etl`                            | ☐     |
-| mié 30 sep           | Loader a Postgres que reemplaza `seed_demo.py`                          | `etl/load_postgres.py`                                   | ☐     |
+| lun 28 sep           | Taxonomía de tipos de disputa (C6) con P3 y P4                          | `analysis/mappings/contact_reason_to_flow.csv`           | ✅ (`Fees` → `wrong_amount`) |
+| mar 29 – mié 30 sep  | ETL raw → silver con contratos, deduplicación, cuarentena, linaje y USD | `etl/pipeline/`, `docs/freshness_policy.md`, `docs/etl_rules.md` | ✅ (29 sep) |
+| mié 30 sep           | Fixture de llegada tardía + tests                                       | `etl/tests/`, `make test-etl`                            | ✅ 8 pruebas (29 sep) |
+| mié 30 sep           | Loader a Postgres que reemplaza `seed_demo.py`                          | `etl/load_postgres.py` (`make seed`)                     | ✅ carga completa; falta verificar `make smoke` |
 | jue 1 – sáb 3 oct    | Números y gráficos para el pitch (supuestos y proyecciones marcados)    | `analysis/03_business_case.py`                           | ☐     |
 
 ### Detalle de lo más importante
@@ -58,7 +58,7 @@ y fecha hasta 60 días antes. Reporta % con 0, 1 o más candidatas. Eso define c
 > tarjetas del propio cliente (`products.customer_id = complaints.customer_id`).
 
 > [!success] EDA del Gate 1 hecho (lun 28 sep): se confirma el flujo de disputas
-> `make eda` (~30 s, después de `make profile`) regenera `docs/eda_findings.md` y el borrador de taxonomía
+> `make eda` (~30 s, después de `make profile`) regenera `docs/eda_findings.md` y el mapeo de taxonomía
 > `analysis/mappings/contact_reason_to_flow.csv`.
 > - **Volumen:** el 40% de los reclamos son disputas por cargos (27.133 en 3 años, ~700–800 al mes).
 > - **Dolor:** ~15 días para resolver, 20% incumple el SLA, 75% sigue abierto; las llamadas de "Queja" solo se
@@ -67,6 +67,24 @@ y fecha hasta 60 días antes. Reporta % con 0, 1 o más candidatas. Eso define c
 >   encuentra candidata en el mismo 0,1% (los montos reclamados son ruido). Y **no hay texto real de disputas**:
 >   las 171.321 transcripciones salen de 2 plantillas de consulta de saldo. Resumen en
 >   [[Datos del proyecto#Lo que dice el EDA del Gate 1]].
+
+**ETL** — raw → staging (validado por archivo) → silver (Parquet limpio), con cuarentena y linaje:
+
+1. **Incremental por archivo** con marca de agua (nombre, tamaño, huella): solo se procesa lo nuevo o corregido.
+2. **Transformaciones** con las 9 reglas del perfilado (fecha real del evento, `amount_usd` recalculado,
+   "Mexico" → "México" con `is_international`, coordenadas (0, 0) → vacías, tarjeta solo últimos 4 + marca…).
+3. **Contratos Pandera** por tabla (tipos, obligatorios según lo observado, valores permitidos, rangos): la fila
+   que falla va a cuarentena con columna y regla.
+4. **Deduplicación en tres niveles:** por ID (gana el `process_date` más reciente), por contenido normalizado con
+   otro ID (cuarentena `content_duplicate`) y por llaves de negocio (solo se marca, nunca se fusiona).
+5. **Pruebas:** llegada tardía que actualiza sin duplicar, idempotencia, cuarentena y variante mal escrita.
+
+> [!info] Validación de duplicados hecha (mar 29 sep)
+> No hay registros repetidos por mala escritura (contenido normalizado, llaves de negocio y nombres parecidos: 0).
+> Sí hay valores compartidos entre personas distintas (24.203 correos, números de producto, códigos de empleado):
+> se marcan, no se fusionan. **Pendiente:** decidir qué hacer con las 19 parejas de clientes con mismo apellido,
+> fecha de nacimiento y ciudad, y con los agentes homónimos. Detalle en
+> [[Datos del proyecto#Validación de duplicados (29 sep)]].
 
 ## Terminado cuando
 
