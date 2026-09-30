@@ -48,6 +48,7 @@ import {
   guarantees,
   modelLabel,
   originLabel,
+  statusRuleText,
 } from "./policyText";
 
 const OUTCOMES: Record<string, string> = {
@@ -239,6 +240,34 @@ export default function SupervisorPage() {
               </Table>
             </TableContainer>
           </Section>
+
+          {!!c.policy.globals.explain_status?.length && (
+            <Section
+              title="Antes de abrir una disputa"
+              subtitle="Si el cobro no es definitivo, el asistente lo explica con el movimiento real del cliente en vez de abrir un caso o pasarlo a una persona."
+            >
+              <List dense disablePadding>
+                {c.policy.globals.explain_status.map((r) => (
+                  <ListItem key={r.rule_id} disableGutters>
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      <FileText size={18} color={brand.burgundy} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={statusRuleText(r)}
+                      secondary={technical ? `${r.rule_id} · status=${r.status}${r.types?.length ? ` · ${r.types.join(", ")}` : ""}` : undefined}
+                    />
+                    {!technical && (
+                      <Tooltip title={`Regla ${r.rule_id}`}>
+                        <Box component="span" sx={{ color: "text.disabled", fontSize: 12, ml: 1, whiteSpace: "nowrap" }}>
+                          {r.rule_id}
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </ListItem>
+                ))}
+              </List>
+            </Section>
+          )}
 
           <Section title="Reglas en toda conversación" subtitle="Lo que el asistente hace siempre, sin importar el tipo de caso.">
             <List dense disablePadding>

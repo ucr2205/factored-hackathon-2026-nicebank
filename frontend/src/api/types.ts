@@ -90,6 +90,16 @@ export type Summary = {
 
 export type PolicyRule = { rule_id: string; when: string; outcome: string; description: string };
 
+export type PolicyStatusRule = {
+  rule_id: string;
+  status: string;
+  types?: string[] | null;
+  suggest_action?: string;
+  reason?: string;
+  queue?: string;
+  description: string;
+};
+
 export type PolicyEscalation = { rule_id: string; condition?: string; reason: string; suggest_action?: string; queue: string };
 
 export type PolicyDisputeType = {
@@ -109,6 +119,7 @@ export type AdminConfig = {
   policy: {
     globals: {
       rules: PolicyRule[];
+      explain_status?: PolicyStatusRule[] | null;
       never: string[];
       step_up_actions: string[];
       confirm_actions: string[];

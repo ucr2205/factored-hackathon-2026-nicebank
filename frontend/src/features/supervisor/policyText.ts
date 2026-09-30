@@ -1,7 +1,7 @@
 // Plain-Spanish reading of the active policy (policies/disputes.yaml) for supervisors. The YAML stays the
 // source of truth; this only explains what each setting means for the conversation.
-import type { AdminConfig, PolicyDisputeType, PolicyRule } from "../../api/types";
-import { queueLabel, REASONS } from "../console/labels";
+import type { AdminConfig, PolicyDisputeType, PolicyRule, PolicyStatusRule } from "../../api/types";
+import { DISPUTE_TYPES, queueLabel, REASONS } from "../console/labels";
 
 const ACTIONS: Record<string, string> = {
   open_dispute_case: "Abre la disputa",
@@ -74,6 +74,23 @@ export function globalRuleText(r: PolicyRule, c: AdminConfig): string {
     "ESC-TECH-01": "Si falla algo técnico, pasa el caso a un especialista en vez de dejar al cliente sin respuesta.",
   };
   return known[r.rule_id] ?? r.description;
+}
+
+const STATUS_TEXT: Record<string, string> = {
+  Reversed: "Si el cargo ya fue revertido, le explica al cliente que el dinero volvió y no abre una disputa.",
+  Declined: "Si la compra fue rechazada, le explica que no se le cobró nada y no abre una disputa.",
+  Pending: "Si el cargo sigue pendiente, le explica que todavía puede cambiar y que vuelva cuando se confirme.",
+};
+
+/** "Before opening a dispute" rules (policy explain_status) as sentences. */
+export function statusRuleText(r: PolicyStatusRule): string {
+  const scope = r.types?.length ? ` (solo en: ${r.types.map((t) => (DISPUTE_TYPES[t] ?? t).toLowerCase()).join(", ")})` : "";
+  if (r.suggest_action === "block_card") {
+    const who = r.queue ? queueLabel(r.queue) : "un especialista";
+    return `Si alguien intentó una compra que el cliente no reconoce y fue rechazada${scope}: le explica que no se le cobró nada, pero propone bloquear la tarjeta y pasa el caso al equipo de ${who}.`;
+  }
+  const base = STATUS_TEXT[r.status] ?? r.description;
+  return scope ? base.replace(/\.$/, `${scope}.`) : base;
 }
 
 /** Guarantees that hold in every conversation, from the policy's global settings. */

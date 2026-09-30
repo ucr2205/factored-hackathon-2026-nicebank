@@ -9,6 +9,7 @@ export const REASONS: Record<string, string> = {
   high_amount_duplicate: "Duplicado de monto alto",
   high_amount_dispute: "Disputa de monto alto",
   baseline_human_review: "Revisión humana (baseline)",
+  declined_unrecognized_attempt: "Intento rechazado no reconocido",
 };
 
 export const DISPUTE_TYPES: Record<string, string> = {
