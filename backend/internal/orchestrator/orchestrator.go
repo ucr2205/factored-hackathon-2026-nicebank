@@ -330,7 +330,7 @@ func (t *turn) system(msg string, selected *string) error {
 	if st.DisputeType == "card_lost_stolen" {
 		dec, _ := t.o.Policy.Evaluate(policy.Facts{DisputeType: st.DisputeType})
 		t.audit("policy", "policy", "type=card_lost_stolen", string(dec.Kind), dec.RuleID, 0)
-		return t.proposeBlock(nil, dec)
+		return t.proposeBlock(nil, dec, "confirm_block_card")
 	}
 
 	// Understand: extract facts (the model proposes; nothing is trusted until matched against records).
@@ -428,13 +428,20 @@ func (t *turn) evaluate(txnID string) error {
 		st.DisputeType, txn.ID, age, txn.Status, usd, fx), string(dec.Kind), dec.RuleID, 0)
 
 	switch dec.Kind {
+	case policy.Explain:
+		// Not a final debit: answer with the customer's own record instead of opening a case or a handoff.
+		if dec.SuggestAction == "block_card" {
+			return t.proposeBlock(&txn, dec, "confirm_block_declined")
+		}
+		st.Stage = stageClosed
+		return t.reply("resolve", "explain_"+strings.ToLower(txn.Status), t.txnFacts(txn), dec.RuleID)
 	case policy.Auto:
 		pl := actionPayload{TransactionID: txn.ID, DisputeType: st.DisputeType, RuleID: dec.RuleID, AmountUSD: usd}
 		facts := t.txnFacts(txn)
 		return t.propose("open_dispute_case", pl, "confirm_open_case", facts, dec.RuleID)
 	case policy.Escalate:
 		if dec.SuggestAction == "block_card" {
-			return t.proposeBlock(&txn, dec)
+			return t.proposeBlock(&txn, dec, "confirm_block_card")
 		}
 		return t.escalate(dec.Reason, dec.RuleID, "handoff_created", &txn, dec.Queue, nil)
 	default:
@@ -442,7 +449,8 @@ func (t *turn) evaluate(txnID string) error {
 	}
 }
 
-func (t *turn) proposeBlock(txn *tools.Transaction, dec policy.Decision) error {
+// proposeBlock offers to block the card; intent words the proposal (the facts include the transaction, if any).
+func (t *turn) proposeBlock(txn *tools.Transaction, dec policy.Decision, intent string) error {
 	cards, err := tools.ActiveCards(t.ctx, t.tx)
 	if err != nil {
 		return err
@@ -462,7 +470,12 @@ func (t *turn) proposeBlock(txn *tools.Transaction, dec policy.Decision) error {
 	if txn != nil {
 		pl.TransactionID = txn.ID
 	}
-	return t.propose("block_card", pl, "confirm_block_card", map[string]string{"last4": card.Last4}, dec.RuleID)
+	facts := map[string]string{}
+	if txn != nil {
+		facts = t.txnFacts(*txn)
+	}
+	facts["last4"] = card.Last4
+	return t.propose("block_card", pl, intent, facts, dec.RuleID)
 }
 
 // propose stores a pending action; nothing is executed until the customer confirms.

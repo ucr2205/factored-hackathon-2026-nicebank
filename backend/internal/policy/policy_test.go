@@ -22,7 +22,12 @@ func TestEvaluate(t *testing.T) {
 		{"small unrecognized charge is automatic", Facts{"unrecognized_charge", 5, "Approved", 120}, Auto, "DISP-AUTO-01"},
 		{"large unrecognized charge escalates with card block", Facts{"unrecognized_charge", 2, "Approved", 1450}, Escalate, "DISP-ESC-01"},
 		{"old charge is not automatic", Facts{"unrecognized_charge", 200, "Approved", 50}, Ineligible, "DISP-ELIG-01"},
-		{"reversed charge is not automatic", Facts{"duplicate_charge", 3, "Reversed", 50}, Ineligible, "DISP-ELIG-01"},
+		{"reversed charge is explained, not disputed", Facts{"duplicate_charge", 3, "Reversed", 50}, Explain, "EXPLAIN-REVERSED"},
+		{"old reversed charge is still explained", Facts{"unrecognized_charge", 300, "Reversed", 2000}, Explain, "EXPLAIN-REVERSED"},
+		{"declined unrecognized attempt proposes a block", Facts{"unrecognized_charge", 1, "Declined", 980}, Explain, "EXPLAIN-DECLINED-FRAUD"},
+		{"declined wrong amount is explained", Facts{"wrong_amount", 1, "Declined", 80}, Explain, "EXPLAIN-DECLINED"},
+		{"pending wrong amount is explained", Facts{"wrong_amount", 1, "Pending", 80}, Explain, "EXPLAIN-PENDING"},
+		{"pending unrecognized charge can still be disputed", Facts{"unrecognized_charge", 1, "Pending", 80}, Auto, "DISP-AUTO-01"},
 		{"duplicate under limit is automatic", Facts{"duplicate_charge", 2, "Approved", 89.9}, Auto, "DISP-AUTO-02"},
 		{"stolen card always escalates", Facts{"card_lost_stolen", 0, "", 0}, Escalate, "DISP-ESC-02"},
 	}
@@ -39,6 +44,21 @@ func TestEvaluate(t *testing.T) {
 	}
 	if d, _ := p.Evaluate(Facts{"unrecognized_charge", 2, "Approved", 1450}); d.SuggestAction != "block_card" {
 		t.Fatalf("high-amount unrecognized charge should suggest block_card, got %q", d.SuggestAction)
+	}
+	if d, _ := p.Evaluate(Facts{"unrecognized_charge", 1, "Declined", 980}); d.SuggestAction != "block_card" || d.Queue != "fraud" {
+		t.Fatalf("declined unrecognized attempt should suggest block_card to fraud, got %q/%q", d.SuggestAction, d.Queue)
+	}
+}
+
+func TestExplainStatusValidation(t *testing.T) {
+	p := loadRepoPolicy(t)
+	p.Globals.ExplainStatus = append(p.Globals.ExplainStatus, StatusRule{RuleID: "X", Status: "Declined", Types: []string{"nope"}})
+	if p.validate() == nil {
+		t.Fatal("an explain_status rule naming an unknown dispute type must be rejected")
+	}
+	p.Globals.ExplainStatus[len(p.Globals.ExplainStatus)-1] = StatusRule{RuleID: "X", Status: "Approved"}
+	if p.validate() == nil {
+		t.Fatal("an explain_status rule for a final (Approved) charge must be rejected")
 	}
 }
 

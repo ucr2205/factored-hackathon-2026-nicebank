@@ -199,6 +199,22 @@ var templates = map[string]map[string]string{
 		"es": "Ese cargo de {amount} en {merchant} ya tiene la disputa {case_id} abierta, así que no abrí otra. Te avisaremos por la app cuando haya novedades.",
 		"pt": "Essa cobrança de {amount} em {merchant} já tem a contestação {case_id} aberta, então não abri outra. Avisaremos pelo app quando houver novidades.",
 	},
+	"explain_reversed": {
+		"es": "Revisé ese movimiento: el cargo de {amount} en {merchant} del {date} con tu tarjeta terminada en {last4} ya fue revertido, así que el dinero volvió a tu cuenta y no hace falta abrir una disputa. Si ves algo distinto en tu estado de cuenta, escríbeme.",
+		"pt": "Verifiquei essa movimentação: a cobrança de {amount} em {merchant} de {date} no seu cartão final {last4} já foi estornada, então o dinheiro voltou para a sua conta e não é preciso abrir uma contestação. Se você vir algo diferente na sua fatura, me escreva.",
+	},
+	"explain_declined": {
+		"es": "Revisé ese movimiento: la compra de {amount} en {merchant} del {date} con tu tarjeta terminada en {last4} fue rechazada, así que no se te cobró nada y no hay nada que disputar.",
+		"pt": "Verifiquei essa movimentação: a compra de {amount} em {merchant} de {date} no seu cartão final {last4} foi recusada, então nada foi cobrado e não há o que contestar.",
+	},
+	"explain_pending": {
+		"es": "Revisé ese movimiento: el cargo de {amount} en {merchant} del {date} todavía está pendiente, es decir, el comercio aún no lo confirma y puede cambiar o desaparecer. Si cuando se confirme sigue estando mal, escríbeme y abrimos la disputa.",
+		"pt": "Verifiquei essa movimentação: a cobrança de {amount} em {merchant} de {date} ainda está pendente, ou seja, o estabelecimento ainda não a confirmou e ela pode mudar ou sumir. Se, quando for confirmada, continuar errada, me escreva e abrimos a contestação.",
+	},
+	"confirm_block_declined": {
+		"es": "Revisé ese movimiento: la compra de {amount} en {merchant} del {date} fue rechazada, así que no se te cobró nada. Pero si no fuiste tú, alguien pudo intentar usar tu tarjeta terminada en {last4}. Te recomiendo bloquearla y pasar el caso al equipo de fraude; para bloquearla te pediré un código de verificación. ¿Confirmas el bloqueo?",
+		"pt": "Verifiquei essa movimentação: a compra de {amount} em {merchant} de {date} foi recusada, então nada foi cobrado. Mas, se não foi você, alguém pode ter tentado usar seu cartão final {last4}. Recomendo bloqueá-lo e encaminhar o caso à equipe de fraude; para bloquear, vou pedir um código de verificação. Confirma o bloqueio?",
+	},
 	"card_blocked_handoff": {
 		"es": "Bloqueé tu tarjeta terminada en {last4} (referencia {block_id}) y verifiqué el bloqueo. Un especialista de NiceBank ya tiene tu caso con todos los datos y te contactará.",
 		"pt": "Bloqueei seu cartão final {last4} (referência {block_id}) e verifiquei o bloqueio. Um especialista da NiceBank já está com seu caso e todos os dados, e entrará em contato.",

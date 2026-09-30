@@ -26,6 +26,17 @@ type Escalation struct {
 	Queue         string `yaml:"queue" json:"queue"`
 }
 
+// StatusRule explains a charge that is not a final debit (reversed, declined, pending) before any dispute.
+type StatusRule struct {
+	RuleID        string   `yaml:"rule_id" json:"rule_id"`
+	Status        string   `yaml:"status" json:"status"`
+	Types         []string `yaml:"types" json:"types,omitempty"` // empty: every dispute type
+	SuggestAction string   `yaml:"suggest_action" json:"suggest_action,omitempty"`
+	Reason        string   `yaml:"reason" json:"reason,omitempty"`
+	Queue         string   `yaml:"queue" json:"queue,omitempty"`
+	Description   string   `yaml:"description" json:"description"`
+}
+
 type DisputeType struct {
 	ID          string            `yaml:"id" json:"id"`
 	DisplayName map[string]string `yaml:"display_name" json:"display_name"`
@@ -48,13 +59,14 @@ type Policy struct {
 	Origin   string `yaml:"origin" json:"origin"`
 	Currency string `yaml:"currency" json:"currency"`
 	Globals  struct {
-		Never              []string `yaml:"never" json:"never"`
-		StepUpActions      []string `yaml:"step_up_actions" json:"step_up_actions"`
-		ConfirmActions     []string `yaml:"confirm_actions" json:"confirm_actions"`
-		SessionIdleMinutes int      `yaml:"session_idle_minutes" json:"session_idle_minutes"`
-		MaxCandidatesShown int      `yaml:"max_candidates_shown" json:"max_candidates_shown"`
-		MaxClarifications  int      `yaml:"max_clarifications" json:"max_clarifications"`
-		Rules              []Rule   `yaml:"rules" json:"rules"`
+		Never              []string     `yaml:"never" json:"never"`
+		StepUpActions      []string     `yaml:"step_up_actions" json:"step_up_actions"`
+		ConfirmActions     []string     `yaml:"confirm_actions" json:"confirm_actions"`
+		SessionIdleMinutes int          `yaml:"session_idle_minutes" json:"session_idle_minutes"`
+		MaxCandidatesShown int          `yaml:"max_candidates_shown" json:"max_candidates_shown"`
+		MaxClarifications  int          `yaml:"max_clarifications" json:"max_clarifications"`
+		Rules              []Rule       `yaml:"rules" json:"rules"`
+		ExplainStatus      []StatusRule `yaml:"explain_status" json:"explain_status"`
 	} `yaml:"globals" json:"globals"`
 	DisputeTypes []DisputeType `yaml:"dispute_types" json:"dispute_types"`
 }
@@ -95,6 +107,19 @@ func (p *Policy) validate() error {
 			return fmt.Errorf("policy: %s needs max_age_days and max_auto_amount_usd", d.ID)
 		}
 	}
+	for _, r := range p.Globals.ExplainStatus {
+		if r.RuleID == "" || !slices.Contains([]string{"Reversed", "Declined", "Pending"}, r.Status) {
+			return fmt.Errorf("policy: explain_status rule %q needs a rule_id and a Reversed, Declined or Pending status", r.RuleID)
+		}
+		for _, id := range r.Types {
+			if !seen[id] {
+				return fmt.Errorf("policy: explain_status rule %s names unknown dispute type %q", r.RuleID, id)
+			}
+		}
+		if r.SuggestAction != "" && (r.SuggestAction != "block_card" || r.Queue == "" || r.Reason == "") {
+			return fmt.Errorf("policy: explain_status rule %s: suggest_action must be block_card, with queue and reason", r.RuleID)
+		}
+	}
 	return nil
 }
 
@@ -107,7 +132,9 @@ func (p *Policy) Type(id string) (DisputeType, bool) {
 	return DisputeType{}, false
 }
 
-func (p *Policy) RequiresStepUp(action string) bool { return slices.Contains(p.Globals.StepUpActions, action) }
+func (p *Policy) RequiresStepUp(action string) bool {
+	return slices.Contains(p.Globals.StepUpActions, action)
+}
 
 // Outcome of evaluating one identified transaction against the policy.
 type Kind string
@@ -116,6 +143,7 @@ const (
 	Auto       Kind = "auto"       // open the case automatically after customer confirmation
 	Escalate   Kind = "escalate"   // hand off to a human (optionally after a protective action)
 	Ineligible Kind = "ineligible" // outside the automatic window; a human reviews it
+	Explain    Kind = "explain"    // not a final debit: explain it with the record (optionally proposing a card block)
 )
 
 type Decision struct {
@@ -140,6 +168,12 @@ func (p *Policy) Evaluate(f Facts) (Decision, error) {
 	}
 	if e := d.AlwaysEscalate; e != nil {
 		return Decision{Kind: Escalate, RuleID: e.RuleID, Reason: e.Reason, SuggestAction: d.AutoAction, Queue: e.Queue}, nil
+	}
+	// A reversed, declined or pending charge is explained first, whatever its age or amount.
+	for _, r := range p.Globals.ExplainStatus {
+		if r.Status == f.Status && (len(r.Types) == 0 || slices.Contains(r.Types, f.DisputeType)) {
+			return Decision{Kind: Explain, RuleID: r.RuleID, Reason: r.Reason, SuggestAction: r.SuggestAction, Queue: r.Queue}, nil
+		}
 	}
 	if f.AgeDays > d.EligibleIf.MaxAgeDays || !slices.Contains(d.EligibleIf.TransactionStatus, f.Status) {
 		return Decision{Kind: Ineligible, RuleID: d.Rules.Ineligible, Reason: "outside_automatic_window", Queue: "disputes"}, nil

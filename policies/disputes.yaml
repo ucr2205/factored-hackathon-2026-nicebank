@@ -1,6 +1,6 @@
 # Dispute intake policy — contract C3.
 # v0 is a starting draft written by the team lead so the backend can run end to end; P4 owns the final version.
-version: "0.1.0"
+version: "0.2.0"   # 0.2.0 (2026-09-30): explain_status rules
 origin: "team_generated synthetic policy for the hackathon; not a real bank policy"
 currency: USD            # every amount threshold below is in USD (converted at the transaction-date rate)
 
@@ -31,6 +31,19 @@ globals:
         description: "The transaction already has an open case: report it instead of opening a duplicate." }
     - { rule_id: ESC-TECH-01, when: dependency_failure, outcome: escalate,
         description: "A dependency failed after bounded retries: safe fallback to a human." }
+  # Before any dispute: a charge that is not a final debit is explained with the customer's own record.
+  # Evaluated in order, first match wins, before the age and amount rules. `types` empty = every dispute type.
+  # suggest_action block_card: the explanation comes with a card-block proposal and a handoff to `queue`.
+  explain_status:
+    - { rule_id: EXPLAIN-REVERSED, status: Reversed,
+        description: "The charge was already reversed: explain that the money is back instead of opening a case." }
+    - { rule_id: EXPLAIN-DECLINED-FRAUD, status: Declined, types: [unrecognized_charge],
+        suggest_action: block_card, reason: declined_unrecognized_attempt, queue: fraud,
+        description: "An unrecognized purchase was declined: nothing was charged, but someone may be using the card, so offer to block it and hand off to fraud." }
+    - { rule_id: EXPLAIN-DECLINED, status: Declined,
+        description: "The purchase was declined: nothing was charged, so there is nothing to dispute." }
+    - { rule_id: EXPLAIN-PENDING, status: Pending, types: [wrong_amount, not_received, atm_cash_not_dispensed],
+        description: "The charge is still pending and may change or drop: explain it and ask the customer to come back once it posts." }
 
 dispute_types:
   - id: unrecognized_charge

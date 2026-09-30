@@ -14,17 +14,18 @@ import (
 
 // Staff-facing text in handoffs is Spanish: the service agents' working language.
 var openQuestions = map[string][]string{
-	"possible_fraud_high_amount": {"¿El cliente conserva la tarjeta física?", "¿Hay otros movimientos que no reconoce?", "¿Se debe emitir una tarjeta de reposición?"},
-	"card_lost_or_stolen":        {"¿Cuándo y dónde perdió la tarjeta?", "¿Hubo movimientos después de la pérdida?", "Confirmar dirección de entrega de la tarjeta nueva."},
-	"outside_automatic_window":   {"¿Por qué se reporta fuera del plazo automático?", "¿El cliente tiene comprobantes o comunicación con el comercio?"},
+	"possible_fraud_high_amount":     {"¿El cliente conserva la tarjeta física?", "¿Hay otros movimientos que no reconoce?", "¿Se debe emitir una tarjeta de reposición?"},
+	"card_lost_or_stolen":            {"¿Cuándo y dónde perdió la tarjeta?", "¿Hubo movimientos después de la pérdida?", "Confirmar dirección de entrega de la tarjeta nueva."},
+	"outside_automatic_window":       {"¿Por qué se reporta fuera del plazo automático?", "¿El cliente tiene comprobantes o comunicación con el comercio?"},
 	"could_not_identify_transaction": {"¿Qué movimiento quiere disputar el cliente (fecha, monto, comercio)?"},
-	"technical_failure":          {"Repetir el paso que falló y confirmar el resultado con el cliente."},
-	"action_not_verified":        {"Verificar manualmente si la acción quedó aplicada antes de informar al cliente."},
-	"high_amount_duplicate":      {"¿El comercio ya emitió un reverso?", "¿El cliente tiene el comprobante de ambos cobros?"},
-	"high_amount_dispute":        {"¿El cliente tiene comprobante o comunicación con el comercio?"},
+	"technical_failure":              {"Repetir el paso que falló y confirmar el resultado con el cliente."},
+	"action_not_verified":            {"Verificar manualmente si la acción quedó aplicada antes de informar al cliente."},
+	"high_amount_duplicate":          {"¿El comercio ya emitió un reverso?", "¿El cliente tiene el comprobante de ambos cobros?"},
+	"high_amount_dispute":            {"¿El cliente tiene comprobante o comunicación con el comercio?"},
+	"declined_unrecognized_attempt":  {"¿Hubo otros intentos rechazados o aprobados que el cliente no reconoce?", "¿Dónde pudo haberse expuesto la tarjeta (compras en línea, pérdida)?", "¿Se debe emitir una tarjeta de reposición?"},
 }
 
-var priorities = map[string]string{"possible_fraud_high_amount": "high", "card_lost_or_stolen": "high"}
+var priorities = map[string]string{"possible_fraud_high_amount": "high", "card_lost_or_stolen": "high", "declined_unrecognized_attempt": "high"}
 
 func (t *turn) escalate(reason, ruleID, intent string, txn *tools.Transaction, queue string, taken []contract.ActionTaken) error {
 	return t.escalateWithFacts(reason, ruleID, intent, txn, queue, taken, nil)

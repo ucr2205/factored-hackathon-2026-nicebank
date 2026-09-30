@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 )
@@ -62,5 +63,27 @@ func TestComposeUsesLanguage(t *testing.T) {
 	out, _, _ := Fake{}.Compose(context.Background(), ComposeInput{Intent: "clarify_multi", Lang: "pt", Facts: map[string]string{"count": "2"}})
 	if out != "Encontrei 2 movimentações que podem ser. Qual delas você quer contestar?" {
 		t.Fatalf("unexpected: %s", out)
+	}
+}
+
+func TestEveryTemplateHasSpanishAndPortuguese(t *testing.T) {
+	for intent, byLang := range templates {
+		for _, lang := range []string{"es", "pt"} {
+			if byLang[lang] == "" {
+				t.Errorf("template %s has no %s text", intent, lang)
+			}
+		}
+	}
+}
+
+func TestExplainTemplatesShowTheRecord(t *testing.T) {
+	facts := map[string]string{"amount": "42,37 USD", "merchant": "Streaming Music", "date": "12 de junio", "last4": "2457"}
+	for _, intent := range []string{"explain_reversed", "explain_declined", "explain_pending", "confirm_block_declined"} {
+		for _, lang := range []string{"es", "pt"} {
+			out, _, _ := Fake{}.Compose(context.Background(), ComposeInput{Intent: intent, Lang: lang, Facts: facts})
+			if !strings.Contains(out, "42,37 USD") || !strings.Contains(out, "Streaming Music") || strings.Contains(out, "{") {
+				t.Errorf("%s/%s does not show the verified record: %s", intent, lang, out)
+			}
+		}
 	}
 }
