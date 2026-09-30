@@ -1,6 +1,6 @@
 ---
 tags: [estado, resumen, seguimiento]
-actualizado: 2026-09-29
+actualizado: 2026-09-30
 ---
 
 # Estado del proyecto
@@ -10,8 +10,8 @@ actualizado: 2026-09-29
 > líder. Se actualiza **cada vez que cambia algo** en el código, la infraestructura o el plan. Si algo aquí no
 > coincide con lo que ves en el repo, el repo manda y esta página se corrige.
 
-**Hoy:** martes 29 sep 2026 (día 4 de 10) · **Gate 1:** lun 28 sep, el EDA recomendó confirmar el flujo ·
-**Siguiente:** Gate 2, miércoles 30 sep ·
+**Hoy:** miércoles 30 sep 2026 (día 5 de 10) · **Gate 2 hoy:** caso normal de punta a punta ·
+**Foco del producto:** [[Visión de producto]] (qué construimos y qué quedó fuera) ·
 **Congelamiento:** domingo 4 oct 20:00 · **Entrega:** lunes 5 oct. Ver [[Calendario y gates]].
 
 ## Semáforo por área
@@ -19,13 +19,14 @@ actualizado: 2026-09-29
 | Área | Estado | En una línea | Más detalle |
 |---|---|---|---|
 | Chat del cliente y orquestador | ✅ Listo | Entiende, decide con reglas, actúa con confirmación, verifica y escala | [[Orquestador]] |
+| **Explicar el cobro antes de disputar** | ✅ Nuevo (30 sep) | Revertido, rechazado o pendiente: lo explica con el movimiento real; un intento rechazado no reconocido propone bloquear la tarjeta | [[Motor de políticas]] |
 | Inteligencia artificial (LLM) | ✅ Listo | DeepSeek Flash real, Pro de respaldo y reglas como último recurso | [[LLM]] |
 | Identidad y seguridad | ✅ Listo | Referencia opaca, nombres cifrados, TOTP, RLS, endurecimiento | [[Seguridad]] |
 | Correos al cliente | ✅ Listo | 3 correos con diseño NiceBank + recuperación de contraseña, mismo servidor | [[Notificaciones por correo]] |
 | Consola del agente y supervisión | ✅ Listo | En español claro; prioridad y tiempo de espera en la cola | [[Frontend]] |
 | Logs, trazas y métricas | ✅ Listo | Un log por petición con `request_id` y `trace_id`; Jaeger y Prometheus | [[Observabilidad]] |
 | Documentación del API | ✅ Listo | Swagger UI en http://localhost:8081/api/docs | [[Backend (Go)]] |
-| Pruebas | 🟡 Parcial | 32 pruebas en Go, smoke 22/22, JMeter sin errores; faltan pruebas de integración | [[Estrategia de pruebas]] |
+| Pruebas | 🟡 Parcial | 35 pruebas en Go, smoke 25/25, JMeter sin errores; faltan pruebas de integración | [[Estrategia de pruebas]] |
 | Clasificador de casos | 🔴 Provisional | Sigue siendo por palabras clave | [[ml-service (clasificador)]] |
 | Datos y ETL | ✅ Listo | **Pipeline raw → silver + loader**: el sistema ya carga el dataset completo saneado (150k clientes, 4,4M transacciones); falta solo el caso de negocio del pitch | [[ETL y calidad de datos]] |
 | **Evaluación (sistema vs baseline)** | 🔴 **Falta** | Sin arnés ni casos held-out: es entregable obligatorio | [[Evaluación]] |
@@ -33,6 +34,14 @@ actualizado: 2026-09-29
 | Despliegue | 🟡 Pendiente | Lo hace la empresa; falta URL pública y quitar lo de prueba | [[Infraestructura]] |
 
 ## Lo que ya funciona
+
+- **Foco de producto (30 sep).** Los organizadores pidieron pensar como constructores de producto. La frase:
+  *un cliente describe a medias un cobro que no reconoce y en menos de un minuto tiene su disputa abierta y
+  verificada, una explicación con su propio movimiento o un especialista con el caso completo; hoy toma ~15 días*.
+  Qué entra y qué no, en [[Visión de producto]].
+- **Explica el cobro antes de abrir una disputa** (reglas `EXPLAIN-*`): el 8% de las compras con tarjeta del
+  dataset no es un cobro definitivo (2% pendientes, 5% rechazadas, 1% revertidas). Antes esas iban a un
+  especialista; ahora el asistente responde con el movimiento real. Demo con `cliente05`.
 
 - **Demo completo de punta a punta** en español y portugués: disputa normal, pedido ambiguo o fuera de alcance,
   y escalamiento con código TOTP, bloqueo de tarjeta y caso estructurado para un especialista.
@@ -70,25 +79,27 @@ actualizado: 2026-09-29
 
 1. 🔴 **Arnés de evaluación** con ~200 casos held-out (ES/PT, normal, ambiguo, humano, adversarial), métricas
    del sistema contra el baseline con intervalos de confianza, p50/p95 y costo. → [[Persona 4 - Evaluación y pitch]]
-2. 🔴 **Clasificador real** que reemplace las palabras clave (baselines, TF-IDF, embeddings; Laya como
-   candidato). ⚠️ **Su guía se reconfiguró el 29 sep**: sin texto de disputas en el dataset, el corpus es
+2. 🔴 **Clasificador real** que reemplace las palabras clave (baselines, TF-IDF, embeddings; Laya se descartó el 30 sep).
+   ⚠️ **Su guía se reconfiguró el 29 sep**: sin texto de disputas en el dataset, el corpus es
    `team_generated` (ES/PT) con lotes separados de la evaluación; las transcripciones solo dan ejemplos
    fuera de alcance. → [[Persona 3 - IA y ML]]
 3. 🟢 **Datos:** ~~reporte de calidad~~, ~~EDA del Gate 1~~, ~~ETL raw → silver~~ y ~~loader a Postgres~~
    (hechos); queda el caso de negocio del pitch (`analysis/03_business_case.py`). → [[Persona 2 - Datos]]
 4. 🔴 **Entregables:** README, `docs/architecture.md`, `docs/production_gap.md`, 4–6 slides y video.
-5. 🟡 **Producto:** "Mis disputas" para el cliente, cerrar y resolver casos en la consola, correo al resolver.
+5. ⚪ ~~**Producto:** "Mis disputas", cerrar casos en la consola, correo al resolver~~ → **fuera del alcance**
+   (30 sep), no cambian la historia del pitch. Ver [[Visión de producto#Qué NO hacemos (congelado el 30 sep)]].
 6. 🟡 **Pruebas de integración en Go:** aislamiento RLS, expiración de sesión y fallas de herramientas.
 7. 🟡 **Despliegue:** URL pública (enlaces y logo de los correos), quitar el cliente `eval-harness` y los
    usuarios de prueba, gestor de secretos, apagar Swagger (`DOCS_ENABLED=false`).
 
 ## Decisiones que esperan al líder
 
+- [ ] Enviar a los organizadores los dos mensajes preparados el 30 sep: a **Diego**, confirmar que la evaluación
+  anclada en filas reales con frases `team_generated` es aceptable; a **André**, la visión del producto.
 - [ ] Enviar la **prueba real del correo de recuperación** con `cliente20`.
 - [ ] **Logos de tarjeta:** theSVG para las tres marcas (recomendado) o Flaticon con atribución + acuerdo de
   Mastercard.
 - [ ] Qué hacer con la línea `Co-Authored-By` en los 11 commits antiguos (dejarlos o reescribir historia).
-- [ ] Aprobar la **descarga de Laya** (~300–400 MB) para probarlo como clasificador.
 - [ ] Limpiar la cola de casos de prueba (`make seed`): hay casos "Revisión humana (baseline)" creados por
   pruebas.
 - [ ] **Gate 1:** confirmar el flujo de disputas (el EDA lo recomienda, ver [[Datos del proyecto#Lo que dice el EDA del Gate 1]]).
@@ -108,14 +119,16 @@ actualizado: 2026-09-29
 | No hay frases reales de disputa en los datos (las transcripciones son 2 plantillas de saldo, sin portugués) | P3 entrena y P4 evalúa con frases `team_generated` en ES y PT |
 | 79.930 clientes comparten su correo con otro cliente (el generador lo arma con inicial + apellido) | Un aviso "a un cliente" llegaría a otras personas: hoy no pasa porque con servidor real todo va a `MAIL_REDIRECT_TO`; hay que anotarlo en la brecha a producción (P4) |
 | El ETL completo necesita mucho disco (DuckDB deja temporales de varios GB si se corta) | Antes de `make etl`, dejar ≥ 15 GB libres; si se cortó, borrar los `*.tmp` de DuckDB. Ver [[Problemas comunes]] |
+| Un organizador dijo que los datos inventados se pueden usar *"if it's not used for testing"*, y nuestras frases de evaluación son `team_generated` | Cada caso se ancla en una transacción real y solo la frase es inventada; pedir confirmación a Diego |
+| Construir de más y contar de menos (muchas funcionalidades, poca historia) | Alcance congelado en [[Visión de producto]]; lo que no responde a las tres preguntas no entra |
 | Correos a direcciones reales del dataset | Con servidor real, todo va a `MAIL_REDIRECT_TO`; sin eso el backend no arranca |
 
 ## Números de hoy
 
 | Indicador | Valor |
 |---|---|
-| Pruebas unitarias en Go | 32 funciones, todas en verde |
-| `make smoke` | 22/22 verificaciones en 9 escenarios |
+| Pruebas unitarias en Go | 35 funciones, todas en verde |
+| `make smoke` | 25/25 verificaciones en 10 escenarios (el 10 es "explicar antes de disputar") |
 | JMeter (5 usuarios, 60 s, DeepSeek) | 0 errores · chat p50 970 ms / p95 1,3 s · fuera de alcance p50 12 ms |
 | Comparación de modelos (`llmcheck`) | Flash: 100% monto, 93% fecha, 100% comercio, 1,0 s, USD 0,0017 por 16 mensajes |
 | Costo de DeepSeek por mensaje | ~USD 0,0001 |

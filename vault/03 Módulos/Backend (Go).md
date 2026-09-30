@@ -82,9 +82,9 @@ en Pro y luego en el simulado. Sesión expira tras 15 min sin actividad.
 ## Cómo probarlo
 
 ```bash
-cd backend && go test ./...     # 32 funciones de test (políticas, guardas, LLM, extracción en paralelo, cifrado, correos, logs, OpenAPI)
+cd backend && go test ./...     # 35 funciones de test (políticas y reglas EXPLAIN, guardas, LLM, extracción en paralelo, cifrado, correos, logs, OpenAPI)
 go run ./cmd/llmcheck           # comparación de LLM (16 mensajes; DeepSeek solo si hay DEEPSEEK_API_KEY)
-make smoke                      # 9 escenarios (22 comprobaciones) de punta a punta contra la API
+make smoke                      # 10 escenarios (25 comprobaciones) de punta a punta contra la API
 ```
 
 ## Pendientes

@@ -23,7 +23,7 @@ verificada, tema propio), Docker Compose con 9 servicios, Poetry, `AGENTS.md` y 
 - **Chat**: fechas sin año bien interpretadas y respuestas "no encontré" que dicen qué se buscó.
 - **Consola** en español claro; **supervisión** y **barra de navegación** rediseñadas (estas dos, pendientes de
   commit) ([[Frontend]]).
-- **Pruebas**: 24 funciones de test en Go, `make smoke` con 9 escenarios (22 comprobaciones) en verde, JMeter de
+- **Pruebas**: 35 funciones de test en Go, `make smoke` con 10 escenarios (25 comprobaciones) en verde, JMeter de
   humo con DeepSeek sin errores ([[Pruebas de carga con JMeter]]).
 - Repo privado en GitHub: `ucr2205/repo-hackhaton` (rama `main`).
 

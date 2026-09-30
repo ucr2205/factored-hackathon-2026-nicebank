@@ -32,7 +32,7 @@ La estrategia completa está en [[Estrategia de pruebas]]; aquí el listado acci
 
 ## De punta a punta (API)
 
-- [x] `make smoke` — 9 escenarios (22 comprobaciones): normal, ambiguo, duplicado PT, no soportado PT, prompt injection, bloqueo sin TOTP, RLS entre clientes, baseline, identidad seudonimizada, correos
+- [x] `make smoke` — 10 escenarios (25 comprobaciones): normal, ambiguo, duplicado PT, no soportado PT, prompt injection, bloqueo sin TOTP, RLS entre clientes, baseline, identidad seudonimizada, correos, explicar antes de disputar
 - [x] Correos por la bandeja de salida llegan a Mailpit desde `NiceBank <nicebank@evon.solutions>` (smoke 9)
 - [x] Consola: tomar caso, revelar identidad solo el agente que lo tomó, auditoría del reveal (smoke 8)
 - [ ] Recuperación de contraseña automatizada (Mailpit API + TOTP) — Líder

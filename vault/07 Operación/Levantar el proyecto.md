@@ -72,7 +72,7 @@ Después de cambiar el `.env`: `docker compose up -d backend` y, si tocaste el c
 | `make help` | Lista todos los comandos |
 | `make env` | Crea `.env` (si no existe) y genera la `PII_KEY` (si falta) |
 | `make seed` | Reinicia los datos de demo (casos, bloqueos, handoffs) |
-| `make smoke` | Reinicia datos y corre los 9 escenarios de punta a punta (incluye identidad y correos) |
+| `make smoke` | Reinicia datos y corre los 10 escenarios de punta a punta (incluye identidad, correos y explicar antes de disputar) |
 | `make test` | Tests de Go + build del frontend |
 | `make load` | Prueba de carga de humo con JMeter (5 usuarios, 60 s) |
 | `cd backend && go run ./cmd/llmcheck` | Compara el LLM simulado con DeepSeek en 16 mensajes (necesita `DEEPSEEK_API_KEY` en el entorno) |

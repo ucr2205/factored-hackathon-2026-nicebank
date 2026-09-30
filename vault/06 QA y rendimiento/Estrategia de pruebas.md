@@ -32,7 +32,7 @@ flowchart BT
 |---|---|
 | Unitarias | ✅ 24 funciones de test en Go: políticas, guardas, LLM simulado y DeepSeek (con servidor falso), extracción en paralelo, cifrado de identidad, correos |
 | Integración | 🔴 Pendiente: RLS en Go, sesión expirada, caída de ml-service, verificación fallida |
-| Punta a punta | ✅ `make smoke`: 9 escenarios, 22 comprobaciones, incluidos identidad seudonimizada (8) y correos (9) |
+| Punta a punta | ✅ `make smoke`: 10 escenarios, 25 comprobaciones, incluidos identidad seudonimizada (8), correos (9) y explicar antes de disputar (10) |
 | Seguridad | 🟡 Cubierta por smoke + endurecimiento del 27 sep; falta el set adversarial y la revisión antes del freeze |
 | Calidad | 🔴 **Crítico**: faltan el arnés y los ~200 casos held-out ([[Evaluación]]) |
 | Rendimiento | ✅ Humo con DeepSeek sin errores (chat p50 970 ms / p95 1.299 ms); faltan carga, estrés y resistencia |

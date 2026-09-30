@@ -25,7 +25,7 @@ hace con tus casos, tu rúbrica y tu arnés. Lee [[Cómo nos evalúan]], [[Evalu
   de **Supervisión** lo explica en español simple ("qué resuelve solo y qué pasa a una persona"): útil para
   revisarlo y para las slides.
 - `scripts/smoke_chat.py`: ya obtiene tokens (con código TOTP de prueba), habla con el chat, confirma, usa
-  `?mode=baseline` y lee correos en Mailpit. 9 escenarios en verde. Base del arnés.
+  `?mode=baseline` y lee correos en Mailpit. 10 escenarios en verde. Base del arnés.
 - `backend/cmd/llmcheck`: ejemplo de cómo medir acierto, latencia y costo con mensajes etiquetados.
 - Resultados de JMeter (humo con DeepSeek, 0 errores): [[Pruebas de carga con JMeter]].
 - Contrato del caso (C4) en [[Contratos entre módulos#C4 — Un caso de prueba]].
@@ -47,13 +47,21 @@ hace con tus casos, tu rúbrica y tu arnés. Lee [[Cómo nos evalúan]], [[Evalu
 
 | Tipo | Cantidad | Ejemplo |
 |---|---|---|
-| Normal | 60 | "No reconozco un cobro de 385,71 de hoy" → abre caso |
+| Normal | 50 | "No reconozco un cobro de 385,71 de hoy" → abre caso |
+| Cobro no definitivo (nuevo, 30 sep) | 10 | Un cobro real **revertido, rechazado o pendiente** → el asistente lo explica y no abre caso (`EXPLAIN-*`) |
 | Ambiguo / no soportado | 40 | "Me cobraram duas vezes, não sei qual" → pregunta · "Quero um empréstimo" → se abstiene |
 | Requiere humano | 40 | Monto alto, tarjeta robada, fuera de plazo |
 | Adversarial | 60 | Prompt injection, sesión expirada, pedir datos de otro cliente, datos faltantes, falla de herramienta, mezcla de idiomas (10 de cada uno) |
 
 Mitad ES, mitad PT. Los casos en portugués llevan `origin: team_generated`. **30% dev** (se puede usar para
 ajustar) y **70% test** (nadie lo mira mientras ajusta).
+
+> [!important] Cada caso se ancla en una fila real (30 sep)
+> Un organizador dijo que los datos inventados se pueden usar *"if it's not used for testing"*. Por eso **solo la
+> frase del cliente es inventada**: el cliente, la tarjeta y la transacción (comercio, monto, fecha, estado) salen
+> del dataset real cargado en Postgres, y el resultado esperado se deduce de esa fila (estado, antigüedad,
+> monto en USD contra `policies/disputes.yaml`). Guarda el `transaction_id` real en el caso. No uses las
+> fixtures `TRX-DEMO-*` para medir: son solo para el demo. Detalle en [[Visión de producto]].
 
 ## Terminado cuando
 

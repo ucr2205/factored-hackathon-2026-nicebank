@@ -13,8 +13,10 @@ actualizado: 2026-09-27
 Este vault es la memoria del equipo: qué construimos, cómo funciona cada pieza, qué le toca a cada quien y
 cómo probarlo. Está escrito para entenderse sin ser experto; lo técnico está explicado paso a paso.
 
-> [!important] ¿Cómo vamos?
+> [!important] ¿Cómo vamos? ¿Qué construimos y qué no?
 > La foto de hoy (qué funciona, qué falta, riesgos y decisiones pendientes) está en [[Estado del proyecto]].
+> El foco del producto (el problema, para quién, qué lo hace distinto y qué quedó fuera) está en
+> [[Visión de producto]]: léelo antes de proponer una funcionalidad nueva.
 
 ## ¿Por dónde empiezo?
 
@@ -29,7 +31,7 @@ cómo probarlo. Está escrito para entenderse sin ser experto; lo técnico está
 
 ## Mapa del vault
 
-- **El reto** — [[El reto en simple]] · [[Cómo nos evalúan]] · [[Calendario y gates]]
+- **El reto** — [[El reto en simple]] · [[Visión de producto]] · [[Cómo nos evalúan]] · [[Calendario y gates]]
 - **Arquitectura** — [[Visión general]] · [[El viaje de un mensaje]] · [[Seguridad]] · [[Datos del proyecto]] ·
   [[Contratos entre módulos]] · [[Decisiones (ADR)]]
 - **Módulos** — [[Backend (Go)]] · [[Orquestador]] · [[Motor de políticas]] · [[Herramientas del banco]] ·

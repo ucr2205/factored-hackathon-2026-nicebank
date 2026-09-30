@@ -1,7 +1,7 @@
 # AGENTS.md — shared context for AI coding agents (opencode, Claude Code, others)
 
 Read this before changing anything. It is the team's working memory: what exists, the rules, and who owns what.
-Last updated: 2026-09-28 (sprint day 3 of 10). Submission deadline: **2026-10-05**; code freeze **2026-10-04 20:00**.
+Last updated: 2026-09-30 (sprint day 5 of 10). Submission deadline: **2026-10-05**; code freeze **2026-10-04 20:00**.
 
 ## What we are building
 
@@ -13,6 +13,23 @@ The system never moves money or issues refunds.
 
 Required demo cases: normal resolution (ES), ambiguous/unsupported request (PT), human escalation with TOTP
 step-up and structured handoff. Metrics must compare a baseline and the system on held-out cases.
+
+## Product focus (frozen 2026-09-30)
+
+The organizers asked teams to build a focused product, not a feature list. Ours, in one sentence: *a cardholder
+describes a charge they don't recognize, even vaguely, and within a minute has a verified dispute, an explanation
+from their own record, or a specialist holding the complete case; today that takes ~15 days* (card-charge disputes
+are 40% of complaints, ~15 days, 20% SLA breaches, `docs/eda_findings.md`). The product does four things only:
+find the exact charge in the customer's own history; **explain a charge that is not a final debit** (reversed,
+declined or pending, 8% of card purchases; policy `explain_status`, rules `EXPLAIN-*`) instead of opening a case;
+open a verified dispute; escalate with a complete handoff.
+**Out of scope** (do not build): "my disputes" page, closing cases in the console, resolution emails, subscription
+detection or spend-pattern personalization (the synthetic amounts carry no such signal), Laya, Redis, the
+`digital_events` ETL (unused; justified in the vault). No more work on supervisor view, JMeter, Swagger or logs.
+**Evaluation data**: an organizer allowed mock data "if it's not used for testing", so every eval case is anchored
+on a real dataset customer and transaction (store its `transaction_id`); only the utterance is `team_generated`
+and the expected outcome is derived from the real row. The `TRX-DEMO-*` fixtures are for the demo only.
+Full reasoning: `vault/01 El reto/Visión de producto.md`.
 
 ## Hard rules
 
@@ -67,7 +84,7 @@ make etl             # raw -> silver pipeline: contracts, quarantine, lineage (d
 make test-etl        # pipeline tests over the labeled fixture (late arrival, idempotency...)
 docker compose up -d --build
 make seed            # full silver dataset into Postgres via etl/load_postgres.py (needs make etl)
-make smoke           # reseed + 22 end-to-end API checks in 9 scenarios (must stay green)
+make smoke           # reseed + 25 end-to-end API checks in 10 scenarios (must stay green)
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
 ```
@@ -100,7 +117,7 @@ account panel, agent console, supervisor view; NiceBank-branded Keycloak login, 
 recovery; pseudonymized identity (opaque `customer_ref`, encrypted names, reveal-on-claim); DeepSeek provider
 (`LLM_PROVIDER=deepseek`, Flash with Pro fallback, Fake as last resort; default is still `fake`); Go unit
 tests; customer email notifications (outbox + worker, HTML template, `NiceBank <nicebank@evon.solutions>`,
-Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 22/22 green. The classifier is still a **keyword stub** behind contract C2.
+Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 25/25 green. The classifier is still a **keyword stub** behind contract C2.
 
 Data quality (P2, `make profile` → `docs/data_quality_report.md`, 2026-09-28): 23.5 M rows, no duplicates (not
 even content repeated under a new key), no late arrivals, no unreadable lines. Fact tables hold 84–88% of the
