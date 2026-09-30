@@ -91,7 +91,8 @@ def main() -> int:
     r = chat(t1, None, "No reconozco un cargo", "es")
     expect(r["outcome"] == "clarify" and len(r.get("candidates") or []) >= 2, "asks to pick among candidates", failures)
     r = chat(t1, r["session_id"], "fue la segunda", "es")
-    expect(r["outcome"] in ("confirm", "escalate"), "picks the candidate and moves on", failures)
+    # resolve: the picked movement may be a real reversed or declined one, which is explained instead
+    expect(r["outcome"] in ("confirm", "escalate", "resolve"), "picks the candidate and moves on", failures)
 
     print("3) Duplicate charge (PT)")
     t2 = token("cliente02")
@@ -153,6 +154,17 @@ def main() -> int:
                "sent from the NiceBank alias", failures)
     handoff_mail = wait_for_mail("especialista revisará")
     expect(bool(handoff_mail), "'handoff' email delivered for the stolen-card case", failures)
+
+    print("10) Explain before disputing: reversed and declined charges (ES)")
+    t5 = token("cliente05")
+    r = chat(t5, None, "No reconozco un cobro de 42,37 en Streaming Music", "es")
+    expect(r["outcome"] == "resolve" and "EXPLAIN-REVERSED" in r["rule_ids"], "explains that the charge was reversed", failures)
+    expect(not r.get("case_id") and not r.get("pending_action") and not r.get("handoff_id"),
+           "opens no case and no handoff for a reversed charge", failures)
+    r = chat(t5, None, "No reconozco una compra de 987,65 dólares de ayer", "es")
+    expect(r["outcome"] == "confirm" and "EXPLAIN-DECLINED-FRAUD" in r["rule_ids"]
+           and (r.get("pending_action") or {}).get("type") == "block_card",
+           "a declined unrecognized attempt: nothing charged, proposes a card block", failures)
 
     print("\nFAILED: " + "; ".join(failures) if failures else "\nAll scenarios passed.")
     return 1 if failures else 0

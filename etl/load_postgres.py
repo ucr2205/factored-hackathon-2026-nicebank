@@ -52,6 +52,8 @@ def demo_fixtures(con: duckdb.DuckDBPyConnection, ordered_ids: list[str]) -> lis
 
     cliente02 gets a duplicate charge (Portuguese demo), cliente03 a high-value foreign purchase
     (escalation). Same cases seed_demo.py created, expressed in the canonical vocabulary.
+    cliente05 gets a reversed charge and a declined foreign attempt: the assistant explains them
+    with the customer's record instead of opening a dispute (policy explain_status).
     """
     rows = con.execute(
         "SELECT p.customer_id, p.product_id, c.country FROM products p JOIN customers c USING (customer_id) "
@@ -62,7 +64,7 @@ def demo_fixtures(con: duckdb.DuckDBPyConnection, ordered_ids: list[str]) -> lis
     for cid, pid, ctry in rows:
         cards.setdefault(cid, pid)
         country[cid] = ctry
-    c2, c3 = ordered_ids[1], ordered_ids[2]
+    c2, c3, c5 = ordered_ids[1], ordered_ids[2], ordered_ids[4]
     day = DEMO_TODAY - timedelta(days=2)
     return [
         ("TRX-DEMO-DUP-0001", c2, cards[c2], day.replace(hour=13, minute=5), "Purchase", 89.90, "USD",
@@ -71,6 +73,10 @@ def demo_fixtures(con: duckdb.DuckDBPyConnection, ordered_ids: list[str]) -> lis
          89.90, "Mercado Central", "Food", country[c2], None, "Approved", "POS"),
         ("TRX-DEMO-FRD-0001", c3, cards[c3], day.replace(hour=3, minute=41), "Purchase", 1450.00, "USD",
          1450.00, "Electro Mundo Online", "Electronics", "USA", "Miami", "Approved", "Web"),
+        ("TRX-DEMO-REV-0001", c5, cards[c5], (DEMO_TODAY - timedelta(days=5)).replace(hour=20, minute=12),
+         "Purchase", 42.37, "USD", 42.37, "Streaming Music", "Entertainment", country[c5], None, "Reversed", "Web"),
+        ("TRX-DEMO-DCL-0001", c5, cards[c5], (DEMO_TODAY - timedelta(days=1)).replace(hour=2, minute=14),
+         "Purchase", 987.65, "USD", 987.65, "Electro Mundo Online", "Electronics", "USA", "Miami", "Declined", "Web"),
     ]
 
 
