@@ -256,3 +256,33 @@ func TestUnsureClassifierActsOnlyWhenTheModelAgrees(t *testing.T) {
 		}
 	}
 }
+
+func TestAuditRecordsTheClientIP(t *testing.T) {
+	o := newOrchestrator(t, mlStub(t, `{"label":"out_of_scope","confidence":0.95,"abstain":false,"model_version":"stub"}`), 15*time.Minute)
+	ref1, _ := demoRefs(t)
+	ctx := store.WithClientIP(context.Background(), "203.0.113.7")
+	out, err := o.HandleMessage(ctx, customer(ref1), contract.ChatRequest{Message: "quiero un préstamo", Lang: "es"}, "system")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ips []string
+	err = o.Store.WithCustomer(ctx, ref1, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, "SELECT coalesce(host(client_ip), '') FROM audit_events WHERE session_id = $1", out.SessionID)
+		if err != nil {
+			return err
+		}
+		ips, err = pgx.CollectRows(rows, pgx.RowTo[string])
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ips) == 0 {
+		t.Fatal("no audit rows for the session")
+	}
+	for _, ip := range ips {
+		if ip != "203.0.113.7" {
+			t.Errorf("audit row has client_ip %q, want 203.0.113.7", ip)
+		}
+	}
+}

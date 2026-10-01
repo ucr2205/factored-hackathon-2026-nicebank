@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"errors"
+	"net/netip"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -25,6 +26,24 @@ func (s *Store) Close() { s.Pool.Close() }
 
 var ErrNoCustomer = errors.New("token has no known customer_ref")
 
+type clientIPKey struct{}
+
+// WithClientIP returns ctx carrying the caller's IP as the HTTP layer validated it (TRUSTED_PROXIES rules).
+// WithCustomer and WithStaff pin it as app.client_ip, which audit_events.client_ip takes by default, so every
+// audit row written in the request (by Go or by a SECURITY DEFINER function) records where it came from.
+func WithClientIP(ctx context.Context, ip string) context.Context {
+	return context.WithValue(ctx, clientIPKey{}, ip)
+}
+
+// clientIP returns the context's IP in canonical form, or "" when absent or not an IP (never a raw header).
+func clientIP(ctx context.Context) string {
+	ip, _ := ctx.Value(clientIPKey{}).(string)
+	if addr, err := netip.ParseAddr(ip); err == nil {
+		return addr.Unmap().String()
+	}
+	return ""
+}
+
 // WithCustomer runs fn in a transaction scoped to the customer behind customerRef (from the verified token).
 // An unknown ref pins nothing and fails, so it can never fall through to another customer's rows.
 func (s *Store) WithCustomer(ctx context.Context, customerRef string, fn func(pgx.Tx) error) error {
@@ -32,9 +51,9 @@ func (s *Store) WithCustomer(ctx context.Context, customerRef string, fn func(pg
 		return ErrNoCustomer
 	}
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		var pinned string
-		if err := tx.QueryRow(ctx, "SELECT set_config('app.customer_id', coalesce(resolve_customer($1), ''), true)",
-			customerRef).Scan(&pinned); err != nil {
+		var pinned, ip string
+		if err := tx.QueryRow(ctx, "SELECT set_config('app.customer_id', coalesce(resolve_customer($1), ''), true), "+
+			"set_config('app.client_ip', $2, true)", customerRef, clientIP(ctx)).Scan(&pinned, &ip); err != nil {
 			return err
 		}
 		if pinned == "" {
@@ -50,8 +69,8 @@ func (s *Store) WithStaff(ctx context.Context, role, username string, fn func(pg
 		return errors.New("invalid staff role")
 	}
 	return pgx.BeginFunc(ctx, s.Pool, func(tx pgx.Tx) error {
-		if _, err := tx.Exec(ctx, "SELECT set_config('app.staff_role', $1, true), set_config('app.staff_user', $2, true)",
-			role, username); err != nil {
+		if _, err := tx.Exec(ctx, "SELECT set_config('app.staff_role', $1, true), set_config('app.staff_user', $2, true), "+
+			"set_config('app.client_ip', $3, true)", role, username, clientIP(ctx)); err != nil {
 			return err
 		}
 		return fn(tx)

@@ -15,9 +15,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/factored-hackathon-2026/disputes/backend/internal/auth"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/logging"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/store"
 )
 
 const requestIDHeader = "X-Request-ID"
@@ -41,7 +44,12 @@ func (s *Server) requestLog(next http.Handler) http.Handler {
 		}
 		w.Header().Set(requestIDHeader, id)
 		info := &requestInfo{role: "anonymous"}
+		ip := s.clientIP(r)
 		ctx := context.WithValue(logging.WithRequestID(r.Context(), id), infoKey{}, info)
+		// The validated client IP goes to the audit trail (through the store) and to the trace; otelhttp's own
+		// client.address trusts any X-Forwarded-For, so it is replaced with this one.
+		ctx = store.WithClientIP(ctx, ip)
+		trace.SpanFromContext(ctx).SetAttributes(attribute.String("client.address", ip))
 		r = r.WithContext(ctx)
 
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
@@ -67,7 +75,7 @@ func (s *Server) requestLog(next http.Handler) http.Handler {
 		slog.Log(ctx, level, "http request",
 			"method", r.Method, "route", route, "status", status,
 			"duration_ms", time.Since(start).Milliseconds(), "bytes", ww.BytesWritten(),
-			"client_ip", s.clientIP(r), "user_agent", truncate(r.UserAgent(), 120), "role", info.role)
+			"client_ip", ip, "user_agent", truncate(r.UserAgent(), 120), "role", info.role)
 	})
 }
 

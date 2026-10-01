@@ -13,7 +13,8 @@ processors:
     actions:
       - { pattern: '^(customer|user|enduser)\..*', action: delete }
       - { pattern: '(?i).*(email|first_name|last_name|full_name|document_number|phone|card_number|customer_ref|prompt|completion|message\.text|authorization|cookie).*', action: delete }
-      - { key: client.address, action: delete }
+      # client.address is kept on purpose (validation and investigations): the backend sets it to the validated
+      # client IP (TRUSTED_PROXIES rules). The raw TCP peer is dropped, since behind a proxy it is the proxy.
       - { key: network.peer.address, action: delete }
 
 exporters:

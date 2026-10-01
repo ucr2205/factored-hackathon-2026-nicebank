@@ -162,7 +162,10 @@ CREATE TABLE audit_events (
     trace_id        text,
     latency_ms      integer,
     lang            text,
-    mode            text
+    mode            text,
+    -- Where the request came from, for validation and investigations: the HTTP layer's validated IP
+    -- (TRUSTED_PROXIES rules), pinned per transaction like app.customer_id. NULL for background work (emails).
+    client_ip       inet DEFAULT nullif(current_setting('app.client_ip', true), '')::inet
 );
 CREATE INDEX audit_session_idx ON audit_events (session_id, id);
 
