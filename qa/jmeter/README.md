@@ -52,6 +52,35 @@ The plan logs in again when the access token is older than 240 s (the realm issu
 login per virtual user every request after minute 5 failed with 401 (fixed 2026-09-30).
 `poetry run python qa/jmeter/summarize.py <file.jtl>` prints the per-sampler tables below.
 
+## Recorded runs (2026-10-01, current system: refusal screen, second opinion, country wording, client IP)
+
+Same laptop, with other applications running, so absolute numbers are noisier than on 2026-09-30.
+
+**Stress — 100 users, 300 s, `LLM_PROVIDER=fake`, ml-service with 1 worker vs 2 workers (now the default):**
+
+| Sampler | 1 worker: p50 / p95 / p99 | 2 workers: p50 / p95 / p99 | Errors |
+|---|---|---|---|
+| GET account overview | 1,828 / 3,283 / 17,507 ms | **124 / 3,203 / 4,564 ms** | 0 |
+| POST chat, unrecognized charge (ES) | 2,177 / 3,663 / 20,280 ms | **335 / 3,773 / 5,051 ms** | 0 |
+| POST chat, out of scope (PT) | 2,197 / 3,780 / 20,146 ms | **335 / 3,604 / 5,180 ms** | 0 |
+| Throughput | 19.7 req/s | **30.9 req/s** | |
+
+The single classifier worker was the bottleneck (half of its calls took 0.25–0.5 s under load). A second worker
+costs ~0.5 GB of memory; its metrics are merged across workers (`PROMETHEUS_MULTIPROC_DIR`).
+
+**Load — 25 users, 300 s, `LLM_PROVIDER=fake`, 1 worker:** 3,039 samples, 10.3/s, 0 errors; chat p50 67 ms, p95
+448 ms; overview p50 5 ms, p95 24 ms.
+
+**Cold start:** after a few idle minutes the first classification took ~1.4 s (weights paged out) and, in three eval
+runs, timed out the first turns (handed to a human). ml-service now keeps the model warm (one tiny inference every
+30 s); first request after 7 idle minutes: 0.029 s.
+
+**With DeepSeek (25 users) — not re-measured:** during the 2026-10-01 run DeepSeek itself was saturated (a 5-token
+"hello" took over 20 s on Flash and 11 s on Pro), so the numbers measured the provider, not the system. That run
+did show a real weakness: a chat turn holds its database connection while it waits for the model, so when the
+provider is slow the pool runs out and even endpoints without AI slow down (overview p50 8.8 s). See
+`docs/production_gap.md`. The 2026-09-30 DeepSeek run below stays the reference until it can be repeated.
+
 ## Recorded runs (2026-09-30, trained classifier, one laptop: Docker Desktop + JMeter on the same machine)
 
 **Load — 25 users, 600 s, `LLM_PROVIDER=fake`** (measures our services, not the LLM API): 7,007 samples, 11.7/s.

@@ -16,4 +16,8 @@ ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1
 COPY app.py .
 EXPOSE 8000
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Two workers by default: under 100 concurrent users the single worker was the bottleneck (load test 2026-10-01:
+# chat p50 2.2 s -> 0.34 s, throughput +57%) for ~0.5 GB more memory. Metrics are merged across workers.
+ENV ML_WORKERS=2 \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+CMD ["sh", "-c", "rm -rf \"$PROMETHEUS_MULTIPROC_DIR\" && mkdir -p \"$PROMETHEUS_MULTIPROC_DIR\" && exec uvicorn app:app --host 0.0.0.0 --port 8000 --workers \"$ML_WORKERS\""]

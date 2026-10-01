@@ -24,7 +24,7 @@ from typing import Literal
 import numpy as np
 import scipy.sparse as sp
 from fastapi import FastAPI
-from prometheus_client import Counter, Histogram, make_asgi_app
+from prometheus_client import CollectorRegistry, Counter, Histogram, make_asgi_app, multiprocess
 from pydantic import BaseModel, Field
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -100,7 +100,14 @@ KEEP_WARM_SECONDS = float(os.getenv("KEEP_WARM_SECONDS", "30"))
 threading.Thread(target=_keep_warm, args=(KEEP_WARM_SECONDS,), daemon=True, name="keep-warm").start()
 
 app = FastAPI(title="ml-service", version=MODEL.version)
-app.mount("/metrics", make_asgi_app())
+# With several uvicorn workers (ML_WORKERS) each process keeps its own counters; PROMETHEUS_MULTIPROC_DIR makes them
+# write to shared files and /metrics merges every worker, so a scrape never shows only one process.
+if os.getenv("PROMETHEUS_MULTIPROC_DIR"):
+    _registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(_registry)
+    app.mount("/metrics", make_asgi_app(registry=_registry))
+else:
+    app.mount("/metrics", make_asgi_app())
 
 CLASSIFY_TOTAL = Counter("ml_classify_total", "Classification requests", ["label", "abstain"])
 CLASSIFY_SECONDS = Histogram("ml_classify_seconds", "Classification latency",

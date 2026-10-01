@@ -38,11 +38,18 @@ What separates this hackathon build from a system a bank could run. Ordered by r
 
 ## 4. Capacity
 
-Measured on one laptop (`qa/jmeter/README.md`): 25 concurrent users with DeepSeek Flash, 0 errors, dispute turn
-p50 1.0 s / p95 1.3 s (the model call is most of it). With the fake LLM, 25 users: chat p95 70 ms; 100 users: still
-0 errors but p95 1.1 s, with the classifier's p95 rising from 47 ms to 248 ms (one worker, CPU only) and host CPU
-contention. Production needs several ml-service replicas, autoscaling on latency, and load tests from separate
-machines. These are not production estimates.
+Measured on one laptop (`qa/jmeter/README.md`). With DeepSeek Flash (2026-09-30), 25 users: 0 errors, dispute turn
+p50 1.0 s / p95 1.3 s (the model call is most of it). With the fake LLM (2026-10-01), 100 users: 0 errors, 30.9
+requests/s and chat p50 335 ms with two classifier workers (19.7 requests/s and p50 2.2 s with one); the model is kept
+warm so the first request after idle time no longer times out.
+
+**Known weakness: a slow LLM provider.** A chat turn keeps its database transaction (and pooled connection) open while
+it waits for the model. During a DeepSeek slowdown on 2026-10-01 (Flash over 20 s per call) the pool ran out and even
+endpoints without AI slowed down (overview p50 8.8 s). Production needs: release the connection while waiting for the
+model, a shorter per-call timeout with a circuit breaker that skips a failing model for a while, and a larger pool.
+
+Production also needs several ml-service replicas, autoscaling on latency, and load tests from separate machines.
+These are not production estimates.
 
 ## 5. Product
 

@@ -342,7 +342,7 @@ Each test case is an invented sentence anchored on a **real transaction** of a d
 | ml-service (pytest) | contract, embeddings, parity with training, p95 latency < 100 ms | 15 |
 | End to end | 10 scenarios against the real API, including isolation and emails | 24 checks |
 | AI quality | exam v2, extraction (llmcheck), refusal screen, dispute type | 120 + 26 + 120 + 140 |
-| Load (JMeter) | 25 users with DeepSeek: 0 errors, p95 1.3 s; 100 users: 0 errors | 4 profiles |
+| Load (JMeter) | 25 users with DeepSeek: 0 errors, p95 1.3 s; 100 users with 2 classifier workers: 0 errors, 30.9 requests/s, chat p50 335 ms | 4 profiles |
 
 Pre-commit with gitleaks and a large-file check. Not yet: continuous integration (CI) and automated frontend tests.
 
@@ -358,7 +358,7 @@ make eval                     # evaluation against the rules-only system
 
 - Configuration through environment variables (`.env.example` documents each one); the backend refuses to start when something critical is missing: encryption key, LLM key or email redirect.
 - The backend keeps no in-memory state between requests (everything is in Postgres), so it scales horizontally with several replicas behind a load balancer.
-- The classifier scales with more workers or replicas; in the stress test its single worker was the bottleneck.
+- The classifier runs **2 workers** and is kept warm: with 100 users it went from 19.7 to 30.9 requests per second and the median chat turn dropped from 2.2 s to 0.34 s; the first request after idle minutes dropped from 1.4 s to 0.03 s. It scales with more workers or replicas.
 - If DeepSeek fails, it retries on the fallback model and then on a local extractor; if the classifier fails, the case goes to a human (ESC-TECH-01).
 
 ## 10. Path to production
@@ -373,6 +373,7 @@ make eval                     # evaluation against the rules-only system
 | Team-written corpus | Real, consented messages and a blind exam written by outsiders |
 | External DeepSeek | Data-processing agreement, another provider, or a local model on the bank's servers (7.2); local fallback for the refusal screen |
 | Single host, no CI | Replicas, managed Postgres with backups, CI with tests and evaluation |
+| A turn holds its database connection while waiting for the model: if DeepSeek slows down, connections run out and everything slows | Release the connection while waiting, a shorter timeout and a circuit breaker that jumps to the fallback model |
 | No traces in the classifier | Propagate traces and structured logs into ml-service too |
 
 Full detail in `docs/production_gap.md`.
