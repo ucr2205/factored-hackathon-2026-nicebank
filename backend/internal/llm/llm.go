@@ -13,7 +13,14 @@ type Extraction struct {
 	DateFrom     *time.Time `json:"date_from,omitempty"`
 	DateTo       *time.Time `json:"date_to,omitempty"`
 	MerchantHint string     `json:"merchant_hint,omitempty"`
+	// Refuse is the model's opinion that the message must be refused whatever its dispute type: "third_party_data",
+	// "instruction_override" or "bypass_process"; empty for normal messages. It is never merged into the
+	// conversation state: it only concerns the message it came with.
+	Refuse string `json:"-"`
 }
+
+// RefuseReasons are the values Extraction.Refuse may take.
+var RefuseReasons = map[string]bool{"third_party_data": true, "instruction_override": true, "bypass_process": true}
 
 // Merge keeps previously extracted facts unless the new message provides them.
 func (e Extraction) Merge(next Extraction) Extraction {

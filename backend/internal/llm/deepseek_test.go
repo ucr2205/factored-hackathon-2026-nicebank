@@ -49,6 +49,24 @@ func TestDeepSeekExtract(t *testing.T) {
 	}
 }
 
+func TestDeepSeekRefuseKeepsOnlyKnownReasons(t *testing.T) {
+	for content, want := range map[string]string{
+		`{"amount": null, "refuse": "third_party_data"}`:     "third_party_data",
+		`{"amount": null, "refuse": "instruction_override"}`: "instruction_override",
+		`{"amount": 50, "refuse": null}`:                     "",
+		`{"amount": 50, "refuse": "rude_customer"}`:          "", // not a reason the backend knows
+	} {
+		var seen []string
+		srv := fakeAPI(t, map[string]string{"deepseek-flash": content}, &seen)
+		d := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false)
+		ex, _, _ := d.Extract(context.Background(), "mensaje", "es", today)
+		srv.Close()
+		if ex.Refuse != want {
+			t.Errorf("%s: refuse=%q, want %q", content, ex.Refuse, want)
+		}
+	}
+}
+
 func TestDeepSeekFallsBackToSecondModelThenToFake(t *testing.T) {
 	var seen []string
 	srv := fakeAPI(t, map[string]string{"deepseek-v4-pro": `{"amount": 89.9, "date_from": "2026-06-16", "date_to": "2026-06-16"}`}, &seen)

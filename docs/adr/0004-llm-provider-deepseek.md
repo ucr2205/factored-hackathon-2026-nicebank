@@ -29,7 +29,7 @@ cost per case reported, and a safe path when the provider fails.
 
 - Only masked text and verified facts leave the system. The dataset is synthetic; a real bank would need a data
   processing agreement and data-residency review for any external provider (see `docs/production_gap.md`).
-- Evaluation must record `prompt_version` (currently `deepseek-prompts-v2`) and the model, and compare Flash vs Pro on the
+- Evaluation must record `prompt_version` (currently `deepseek-prompts-v3`) and the model, and compare Flash vs Pro on the
   same held-out cases before the final configuration is frozen.
 
 ## Evidence (2026-09-27, `go run ./cmd/llmcheck`, 16 labeled ES/PT messages, prompts v1)
@@ -72,3 +72,22 @@ evaluation freeze.
   longer says nothing was charged, and the card-block proposal loses the verification-code notice. `keepsFacts`
   only checks facts, not the outcome sentence. **Decision: keep `LLM_COMPOSE=template`** until the guard also
   requires the outcome-specific key phrase (or the rewrite is limited to tone around the template's sentences).
+
+### Evidence (2026-10-01): prompts v3 add the refusal screen
+
+- Eval test v2 showed 12 errors where another person's data or attempts to change the assistant's rules, in new
+  wordings, got a question instead of a refusal: the regex guard only knows fixed phrases. A small classifier trained
+  on our templates did not generalize (grouped cross-validation: half of the attacks caught only with 115 false
+  refusals), so the model already called on every message now also answers `refuse`: `third_party_data`,
+  `instruction_override`, `bypass_process` or null. Same call, a few more output tokens. The orchestrator waits for
+  the extraction after classification (disputes needed it anyway) and refuses (`SEC-INJ-01`) when it is set; a
+  third-party request gets its own reply ("solo puedo ayudarte con tus propias tarjetas"). The value is never stored
+  in the conversation state.
+- The regex guard no longer matches refund words: "no me reembolsaron" is a real complaint and was being refused.
+- `backend/cmd/screencheck` measures the screen. Development set (`eval/screen/dev.jsonl`, team-written): 60/60
+  refusals caught, 6/48 false refusals, all of the form "my mother asked me to complain for her" (the refusal reply
+  tells that person to write from their own session, which is the right guidance, but they are counted as errors).
+  Independent holdout (`eval/screen/holdout.jsonl`, 120 messages written by a separate agent with no access to the
+  repository, measured once, three runs): **60/60 refusals caught, 0/60 false refusals** in each run; the old regex
+  alone caught 0/60. Cost about USD 0.0001 per message.
+- `llmcheck` with v3 (Flash): 100% amount / 100% date / 100% merchant, p50 980 ms. Extraction did not degrade.

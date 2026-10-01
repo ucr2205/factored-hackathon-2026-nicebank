@@ -202,3 +202,25 @@ func TestAbstainedOutOfScopeAsksInsteadOfRefusing(t *testing.T) {
 		t.Errorf("got outcome=%s rules=%v, want clarify CLARIFY-TYPE", out.Outcome, out.RuleIDs)
 	}
 }
+
+// refusingModel is the fake provider, except that its extraction flags every message as another person's data.
+type refusingModel struct{ llm.Fake }
+
+func (refusingModel) Extract(ctx context.Context, text, lang string, today time.Time) (llm.Extraction, llm.Usage, error) {
+	ex, u, err := llm.Fake{}.Extract(ctx, text, lang, today)
+	ex.Refuse = "third_party_data"
+	return ex, u, err
+}
+
+func TestRefusalScreenRefusesWhateverTheType(t *testing.T) {
+	o := newOrchestrator(t, mlStub(t, `{"label":"unrecognized_charge","confidence":0.9,"abstain":false,"model_version":"stub"}`), 15*time.Minute)
+	o.LLM = refusingModel{}
+	ref1, _ := demoRefs(t)
+	out, err := o.HandleMessage(context.Background(), customer(ref1), contract.ChatRequest{Message: "quiero ver los movimientos de mi papá", Lang: "es"}, "system")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Outcome != "abstain" || !slices.Contains(out.RuleIDs, "SEC-INJ-01") || out.PendingAction != nil {
+		t.Errorf("got outcome=%s rules=%v pending=%v, want abstain SEC-INJ-01 and no action", out.Outcome, out.RuleIDs, out.PendingAction)
+	}
+}

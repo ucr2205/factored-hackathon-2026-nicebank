@@ -319,6 +319,22 @@ func (t *turn) system(msg string, selected *string) error {
 	if cls.Label == "out_of_scope" && !cls.Abstain && st.DisputeType == "" {
 		return t.reply("abstain", "abstain_scope", nil, "SCOPE-01")
 	}
+
+	// Screen: the same extraction call says whether the message must be refused whatever its type (another
+	// person's data, rewriting the assistant's rules, money without a process). The regex guard above only knows
+	// fixed phrases; this waits for the extraction, which disputes need anyway.
+	extracted = true
+	r := waitExtraction()
+	t.addUsage(r.u)
+	if r.ex.Refuse != "" {
+		t.audit("understand", t.o.LLM.Name(), "refusal screen: "+r.ex.Refuse, "blocked", "SEC-INJ-01", 0)
+		intent := "abstain_injection"
+		if r.ex.Refuse == "third_party_data" {
+			intent = "abstain_third_party"
+		}
+		return t.reply("abstain", intent, nil, "SEC-INJ-01")
+	}
+
 	if _, known := t.o.Policy.Type(cls.Label); known && !cls.Abstain {
 		st.DisputeType = cls.Label
 	}
@@ -335,10 +351,7 @@ func (t *turn) system(msg string, selected *string) error {
 	}
 
 	// Understand: extract facts (the model proposes; nothing is trusted until matched against records).
-	extracted = true
-	r := waitExtraction()
-	ex, u := r.ex, r.u
-	t.addUsage(u)
+	ex := r.ex
 	st.Extraction = st.Extraction.Merge(ex)
 	t.audit("extract", t.o.LLM.Name(), describeExtraction(st.Extraction), "", "", 0)
 

@@ -60,6 +60,19 @@ The assistant **never** refunds, transfers money or shows another customer's dat
 
 | | System | Rules-only baseline |
 |---|---|---|
+| Correct outcome | **79.2%** (CI 71–85%) | 5.8% |
+| Safe automated resolution | **73%** | 0% |
+| Unsafe outcomes | **0 / 120** | 0 / 120 |
+| Attacks and other people's data refused | **26 / 26** | 0 / 26 |
+| Sent to a human | 19% | 39% |
+| p50 latency per turn · cost per case | 1.0 s · USD 0.0001 | — |
+
+No error is a wrong action: the assistant **asks instead of acting**. Our first case set (wordings close to training)
+gave 88%; on fresh wordings we started at 65% with 2 unsafe outcomes, and retraining plus a refusal screen in the
+existing model call took it to 79% with none. The screen refused 60/60 attacks and 0/60 real customers on messages
+written by an independent author.
+
+---|---|---|
 | Correct outcome | **70.8%** (CI 62–78%) | 5.8% |
 | Safe automated resolution | **75%** | 0% |
 | Unsafe outcomes | **0 / 120** | 0 / 120 |

@@ -61,7 +61,7 @@ flowchart TB
    instruction-override or forbidden-action patterns are refused (`SEC-INJ-01`).
 2. **Understand.** The classifier (ml-service, model M3 = TF-IDF + multilingual-e5 logistic regressions) labels the
    dispute type (taxonomy C6) and abstains below a frozen confidence threshold. In parallel, DeepSeek Flash
-   extracts amount, date and merchant (prompt `deepseek-prompts-v2`, masked input only). If the classifier
+   extracts amount, date and merchant (prompt `deepseek-prompts-v3`, masked input only; the same call says whether the message must be refused: another person's data, rewriting the assistant's rules, money without a process -> `SEC-INJ-01`). If the classifier
    abstains, the assistant asks what happened (`CLARIFY-TYPE`).
 3. **Decide.** The customer's own card transactions are searched (row-level security pins the customer). Zero
    matches → ask for facts; several → let the customer pick; one → the policy engine evaluates it: not a final
@@ -100,7 +100,7 @@ The OpenAPI spec is served at `/api/docs` and a test fails if any route is undoc
   (resolved inside Postgres from `customer_ref`), and every customer table has `FORCE ROW LEVEL SECURITY`. Staff
   queries run with a staff role; handoffs and audit are visible to the owner or to staff.
 - **Personal data.** Names and emails are stored encrypted (AES-GCM, `PII_KEY`); text sent to models is masked.
-- **Prompt injection.** Pattern guard before any model; and models cannot trigger tools: only the orchestrator acts,
+- **Prompt injection.** Pattern guard before any model, plus the model's refusal screen for other wordings; and models cannot trigger tools: only the orchestrator acts,
   after policy checks and customer confirmation.
 - **Audit.** Every step (understand, extract, find, policy, propose, confirm, act, verify, handoff, identity
   reveal, close) is written to `audit_events` with the policy rule and trace id.

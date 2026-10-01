@@ -167,6 +167,10 @@ var templates = map[string]map[string]string{
 		"es": "No puedo cambiar mis instrucciones ni ejecutar acciones fuera del proceso de disputas. Si tienes un cargo que no reconoces, cuéntame la fecha, el monto o el comercio.",
 		"pt": "Não posso mudar minhas instruções nem executar ações fora do processo de contestação. Se você tem uma cobrança não reconhecida, me diga a data, o valor ou o estabelecimento.",
 	},
+	"abstain_third_party": {
+		"es": "Solo puedo ayudarte con tus propias tarjetas y cuentas, no con las de otra persona. Si esa persona tiene un problema, puede escribirnos desde su propia sesión. ¿Tienes algún cargo tuyo que revisar?",
+		"pt": "Só posso ajudar com os seus próprios cartões e contas, não com os de outra pessoa. Se essa pessoa tiver um problema, ela pode falar com a gente pela própria sessão. Você tem alguma cobrança sua para revisar?",
+	},
 	"clarify_type": {
 		"es": "Quiero asegurarme de entenderte. ¿Qué pasó con el cargo: no lo reconoces, se cobró dos veces, el monto es incorrecto, no recibiste la compra, o te robaron la tarjeta?",
 		"pt": "Quero ter certeza de que entendi. O que aconteceu com a cobrança: você não reconhece, foi cobrada duas vezes, o valor está errado, não recebeu a compra, ou o cartão foi roubado?",

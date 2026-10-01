@@ -19,10 +19,12 @@ var (
 		`((?:\W{1,3}(?:es|é|e|de|do|da|mi|meu|minha|nro\.?|no\.?|n[°º]|n[uú]mero))*\W{1,3})\d[\d .-]{3,}\d`)
 	cpfRe   = regexp.MustCompile(`\b\d{3}\.\d{3}\.\d{3}-\d{2}\b`)
 	longNum = regexp.MustCompile(`\b\d[\d -]{6,}\d\b`) // card, account, document and phone numbers
-	// Matched against accent-free lowercase text (see textnorm.Normalize).
+	// Matched against accent-free lowercase text (see textnorm.Normalize). Refund words are not here: "no me
+	// reembolsaron" is a real complaint. Demands for money without a process, and requests in other wordings, are
+	// caught by the model's refusal screen (llm.Extraction.Refuse).
 	injectRe = regexp.MustCompile(`(ignor[ae]\w*\s+(todas?\s+)?(las|as|the|tus|suas|previous|anteriores|instrucciones|instrucoes|instructions)` +
 		`|system prompt|prompt del sistema|prompt do sistema|eres ahora|voce agora e|you are now|actua como|modo desarrollador|modo desenvolvedor|developer mode` +
-		`|reembols\w*|devuelve (el|mi) dinero|transfiere\w*|transfira|estorn\w*|revela\w*|mostr\w* (os )?dados de outro|datos de otro cliente)`)
+		`|transfiere\w*|transfira|revela\w*|mostr\w* (os )?dados de outro|datos de otro cliente)`)
 )
 
 // Mask replaces emails, long digit sequences and the given names with placeholders.
