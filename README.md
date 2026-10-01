@@ -23,6 +23,31 @@ actions are enforced by deterministic code. The system never moves money or issu
 | `eval/` | Python | Held-out evaluation harness: baseline vs system |
 
 Full design: [`docs/architecture.md`](docs/architecture.md). Key decisions are recorded in [`docs/adr/`](docs/adr/).
+**Technical overview** (stack and why, security, logs, data, AI, testing, operations, FAQ, with the process
+flowchart): [`docs/technical_overview.md`](docs/technical_overview.md).
+
+## Security and privacy (summary)
+
+| Layer | How |
+|---|---|
+| Identity | **Keycloak** (OIDC, Authorization Code + PKCE S256; no implicit or password grant for the web app). Roles `customer`, `agent`, `supervisor`. Blocking a card needs **step-up to TOTP** (acr 2, valid 5 min), checked by the backend inside the transaction. Brute-force protection, password policy, 5-min tokens, password reset that verifies the existing TOTP instead of resetting it. Tokens kept in memory only in the browser. |
+| Data isolation | **Postgres row-level security**: 10 customer tables with `FORCE ROW LEVEL SECURITY`; every request pins the customer with a transaction-local `set_config('app.customer_id', …, true)`. The app role has no superuser, no `BYPASSRLS`, no `DELETE`; `messages` and `audit_events` are insert-only. Staff see escalated cases, never customer rows. |
+| Personal data | Tokens carry an opaque `customer_ref`, not the bank id. Names and email are **AES-256-GCM** encrypted with per-field associated data (`PII_KEY` from the environment only). Text is **masked** (`[NAME]`, `[EMAIL]`, `[NUMBER]`) before any model sees it. Identity is revealed only to the agent who claimed the case, and audited. |
+| Actions | Only two actions exist (open a dispute, block a card), both after explicit customer confirmation, idempotent, and verified by reading back. There is no refund or transfer tool. |
+| AI | Models propose, the versioned policy decides. Pattern guard + LLM refusal screen (independent test: 60/60 attacks refused, 0/60 real customers refused). Replies come from reviewed templates. |
+| Web | Strict CSP and security headers (nginx), exact CORS allow-list, body-size limits, server timeouts, generic errors, all ports bound to 127.0.0.1, distroless non-root backend image. Secrets only in `.env`; `gitleaks` in pre-commit. |
+
+## Logs and observability (summary)
+
+- **Structured JSON logs** (`log/slog`): one line per HTTP request (method, route, status, duration, role,
+  `request_id`, `trace_id`) and one per chat turn (outcome, policy rules, latency, LLM cost). Customer text, names,
+  emails, tokens and card data are never logged, and sensitive keys are redacted automatically as a safety net.
+- **Correlation:** `X-Request-ID` and the OpenTelemetry `trace_id` appear in logs, error bodies and every audit event;
+  the agent console links each case to its Jaeger trace.
+- **Audit trail:** `audit_events` records every step (understand, extract, find, policy, propose, confirm, act,
+  verify, hand off, respond, identity reveal, close) with its policy rule; insert-only, no personal data.
+- **Traces and metrics:** OpenTelemetry → Collector (strips personal data) → Jaeger; Prometheus metrics for turns,
+  latency, tool calls, LLM calls/tokens/cost, emails and the classifier. `/api/health` and `/api/ready`.
 
 ## Quick start
 
