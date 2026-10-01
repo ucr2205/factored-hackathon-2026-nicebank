@@ -103,7 +103,7 @@ func main() {
 				mu.Unlock()
 				return
 			}
-			ex, _, _ := d.Extract(context.Background(), masked, r.Lang, today)
+			ex, _, _ := d.Extract(context.Background(), masked, r.Lang, "", today)
 			r.cls, r.llmType, r.refuse = cls, ex.DisputeType, ex.Refuse
 		}(r)
 	}

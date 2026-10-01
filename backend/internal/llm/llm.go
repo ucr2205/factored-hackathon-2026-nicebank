@@ -52,15 +52,18 @@ type Usage struct {
 
 // ComposeInput is everything the model may use to word a reply. Facts are already verified by the backend.
 type ComposeInput struct {
-	Intent string            // e.g. "confirm_open_case", "case_opened", "clarify_multi"
-	Lang   string            // "es" | "pt"
-	Facts  map[string]string // verified values only (amounts, dates, references)
+	Intent  string            // e.g. "confirm_open_case", "case_opened", "clarify_multi"
+	Lang    string            // "es" | "pt"
+	Country string            // the customer's country from the bank record; only changes wording (vos/usted, local words)
+	Facts   map[string]string // verified values only (amounts, dates, references)
 }
 
 type Provider interface {
 	Name() string
 	Version() string
-	Extract(ctx context.Context, maskedText, lang string, today time.Time) (Extraction, Usage, error)
+	// Extract reads facts from the masked text. country is the customer's country from the bank record: it helps
+	// read local expressions ("2 lucas", "un palo") and never changes a policy decision.
+	Extract(ctx context.Context, maskedText, lang, country string, today time.Time) (Extraction, Usage, error)
 	// PickCandidate returns the index chosen by the customer's reply ("la segunda", "2"), or -1.
 	PickCandidate(ctx context.Context, maskedText string, merchants []string) (int, Usage, error)
 	Compose(ctx context.Context, in ComposeInput) (string, Usage, error)

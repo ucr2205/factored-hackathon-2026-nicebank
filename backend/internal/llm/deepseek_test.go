@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -40,7 +41,7 @@ func TestDeepSeekExtract(t *testing.T) {
 	defer srv.Close()
 	d := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false)
 
-	ex, u, err := d.Extract(context.Background(), "No reconozco una compra de 1.450 dólares del lunes", "es", today)
+	ex, u, err := d.Extract(context.Background(), "No reconozco una compra de 1.450 dólares del lunes", "es", "", today)
 	if err != nil || ex.Amount == nil || *ex.Amount != 1450 || ex.DateFrom.Day() != 15 || ex.DateTo.Day() != 15 || ex.MerchantHint != "electro mundo" {
 		t.Fatalf("got %+v err=%v", ex, err)
 	}
@@ -59,7 +60,7 @@ func TestDeepSeekRefuseKeepsOnlyKnownReasons(t *testing.T) {
 		var seen []string
 		srv := fakeAPI(t, map[string]string{"deepseek-flash": content}, &seen)
 		d := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false)
-		ex, _, _ := d.Extract(context.Background(), "mensaje", "es", today)
+		ex, _, _ := d.Extract(context.Background(), "mensaje", "es", "", today)
 		srv.Close()
 		if ex.Refuse != want {
 			t.Errorf("%s: refuse=%q, want %q", content, ex.Refuse, want)
@@ -73,14 +74,14 @@ func TestDeepSeekFallsBackToSecondModelThenToFake(t *testing.T) {
 	defer srv.Close()
 
 	d := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "deepseek-v4-pro", false)
-	ex, _, _ := d.Extract(context.Background(), "me cobraram duas vezes 89,90 ontem", "pt", today)
+	ex, _, _ := d.Extract(context.Background(), "me cobraram duas vezes 89,90 ontem", "pt", "", today)
 	if ex.Amount == nil || *ex.Amount != 89.9 || strings.Join(seen, ",") != "deepseek-flash,deepseek-v4-pro" {
 		t.Fatalf("fallback model not used: %+v seen=%v", ex, seen)
 	}
 
 	// Both models down: the deterministic extractor still answers, so the turn is never blocked.
 	down := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false)
-	ex, _, err := down.Extract(context.Background(), "me cobraram duas vezes 89,90 ontem", "pt", today)
+	ex, _, err := down.Extract(context.Background(), "me cobraram duas vezes 89,90 ontem", "pt", "", today)
 	if err != nil || ex.Amount == nil || *ex.Amount != 89.9 {
 		t.Fatalf("fake fallback failed: %+v err=%v", ex, err)
 	}
@@ -90,7 +91,7 @@ func TestDeepSeekDiscardsImplausibleDates(t *testing.T) {
 	var seen []string
 	srv := fakeAPI(t, map[string]string{"deepseek-flash": `{"amount": null, "date_from": "2028-03-01", "date_to": null}`}, &seen)
 	defer srv.Close()
-	ex, _, _ := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "un cargo raro", "es", today)
+	ex, _, _ := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "un cargo raro", "es", "", today)
 	if ex.DateFrom != nil || ex.Amount != nil {
 		t.Fatalf("future date must be dropped: %+v", ex)
 	}
@@ -98,7 +99,7 @@ func TestDeepSeekDiscardsImplausibleDates(t *testing.T) {
 	// The model put a year-less "23/12" in the current year: it is moved back to the last 23 December.
 	srv2 := fakeAPI(t, map[string]string{"deepseek-flash": `{"amount": 324.48, "date_from": "2026-12-23", "date_to": "2026-12-23"}`}, &seen)
 	defer srv2.Close()
-	ex, _, _ = NewDeepSeek(srv2.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "cargo de 324,48 del 23/12", "es", today)
+	ex, _, _ = NewDeepSeek(srv2.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "cargo de 324,48 del 23/12", "es", "", today)
 	if ex.DateFrom == nil || ex.DateFrom.Format("2006-01-02") != "2025-12-23" {
 		t.Fatalf("year-less date must be the last past occurrence: %+v", ex)
 	}
@@ -146,5 +147,22 @@ func TestDeepSeekComposeKeepsVerifiedFacts(t *testing.T) {
 	defer srv.Close()
 	if got, _, _ := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false).Compose(context.Background(), in); got != template || len(seen) != 0 {
 		t.Fatalf("template mode called the model: %v", seen)
+	}
+}
+
+func TestDeepSeekSendsTheCountry(t *testing.T) {
+	var body string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		body = string(b)
+		json.NewEncoder(w).Encode(map[string]any{"choices": []any{map[string]any{"message": map[string]string{"content": `{"amount": 2000}`}}}})
+	}))
+	defer srv.Close()
+	ex, _, _ := NewDeepSeek(srv.URL, "test-key", "deepseek-flash", "", false).Extract(context.Background(), "me cobraron 2 lucas", "es", "Argentina", today)
+	if !strings.Contains(body, `country: Argentina`) {
+		t.Errorf("the request does not carry the country: %s", body)
+	}
+	if ex.Amount == nil || *ex.Amount != 2000 {
+		t.Errorf("amount = %v", ex.Amount)
 	}
 }

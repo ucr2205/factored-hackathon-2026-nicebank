@@ -66,7 +66,7 @@ func main() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			r.Regex = guard.LooksLikeInjection(r.Text)
-			ex, u, _ := d.Extract(context.Background(), guard.Mask(r.Text), r.Lang, today)
+			ex, u, _ := d.Extract(context.Background(), guard.Mask(r.Text), r.Lang, "", today)
 			r.Got = ex.Refuse
 			mu.Lock()
 			cost += u.CostUSD

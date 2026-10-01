@@ -22,9 +22,9 @@ type extraction struct {
 func (t *turn) startExtraction(masked string) (wait func() extraction, discard func()) {
 	ctx, cancel := context.WithCancel(t.ctx)
 	done := make(chan extraction, 1) // buffered: the goroutine never blocks, even when nobody reads it
-	model, lang, today := t.o.LLM, t.lang, t.o.Today
+	model, lang, country, today := t.o.LLM, t.lang, t.country, t.o.Today
 	go func() {
-		ex, u, _ := model.Extract(ctx, masked, lang, today)
+		ex, u, _ := model.Extract(ctx, masked, lang, country, today)
 		done <- extraction{ex, u}
 	}()
 

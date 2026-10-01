@@ -206,8 +206,8 @@ func TestAbstainedOutOfScopeAsksInsteadOfRefusing(t *testing.T) {
 // refusingModel is the fake provider, except that its extraction flags every message as another person's data.
 type refusingModel struct{ llm.Fake }
 
-func (refusingModel) Extract(ctx context.Context, text, lang string, today time.Time) (llm.Extraction, llm.Usage, error) {
-	ex, u, err := llm.Fake{}.Extract(ctx, text, lang, today)
+func (refusingModel) Extract(ctx context.Context, text, lang, country string, today time.Time) (llm.Extraction, llm.Usage, error) {
+	ex, u, err := llm.Fake{}.Extract(ctx, text, lang, country, today)
 	ex.Refuse = "third_party_data"
 	return ex, u, err
 }
@@ -231,8 +231,8 @@ type typedModel struct {
 	dtype string
 }
 
-func (m typedModel) Extract(ctx context.Context, text, lang string, today time.Time) (llm.Extraction, llm.Usage, error) {
-	ex, u, err := llm.Fake{}.Extract(ctx, text, lang, today)
+func (m typedModel) Extract(ctx context.Context, text, lang, country string, today time.Time) (llm.Extraction, llm.Usage, error) {
+	ex, u, err := llm.Fake{}.Extract(ctx, text, lang, country, today)
 	ex.DisputeType = m.dtype
 	return ex, u, err
 }

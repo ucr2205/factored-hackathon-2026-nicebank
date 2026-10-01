@@ -16,7 +16,7 @@ type slowModel struct {
 	cancelled atomic.Bool
 }
 
-func (m *slowModel) Extract(ctx context.Context, text, lang string, today time.Time) (llm.Extraction, llm.Usage, error) {
+func (m *slowModel) Extract(ctx context.Context, text, lang, _ string, today time.Time) (llm.Extraction, llm.Usage, error) {
 	select {
 	case <-time.After(m.delay):
 		amount := 12.5

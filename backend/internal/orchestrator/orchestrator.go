@@ -112,6 +112,7 @@ type turn struct {
 	out      contract.ChatTurn
 	usage    llm.Usage
 	names    []string
+	country  string   // the customer's country (bank record): wording and reading local expressions only
 	notified []string // notification kinds queued in this turn
 }
 
@@ -210,6 +211,9 @@ func (o *Orchestrator) newTurn(ctx context.Context, tx pgx.Tx, p auth.Principal,
 		telemetry.PIIMaskDegraded.Inc()
 		t.audit("understand", "pii", "customer names unavailable; masking falls back to patterns only", "degraded", "", 0)
 	}
+	// The country adapts wording (vos in Argentina, usted in Colombia) and helps read local expressions; it is
+	// never an input to the policy, so every customer gets the same decisions.
+	_ = tx.QueryRow(ctx, "SELECT country FROM customers").Scan(&t.country)
 	return t
 }
 
@@ -647,7 +651,7 @@ func (t *turn) clarifyWith(intent, ruleID string, facts map[string]string) error
 
 // reply composes the customer-facing text from verified facts only.
 func (t *turn) reply(outcome, intent string, facts map[string]string, ruleID string) error {
-	text, u, err := t.o.LLM.Compose(t.ctx, llm.ComposeInput{Intent: intent, Lang: t.lang, Facts: facts})
+	text, u, err := t.o.LLM.Compose(t.ctx, llm.ComposeInput{Intent: intent, Lang: t.lang, Country: t.country, Facts: facts})
 	if err != nil {
 		return err
 	}

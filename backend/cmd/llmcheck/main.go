@@ -90,7 +90,7 @@ func main() {
 		s := score{name: p.Version()}
 		for _, c := range cases {
 			started := time.Now()
-			ex, u, _ := p.Extract(context.Background(), guard.Mask(c.text), c.lang, today)
+			ex, u, _ := p.Extract(context.Background(), guard.Mask(c.text), c.lang, "", today)
 			s.latencies = append(s.latencies, time.Since(started))
 			s.cost += u.CostUSD
 			if p.Name() == "deepseek" && u.InputTokens == 0 {
