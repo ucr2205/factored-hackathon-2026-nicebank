@@ -126,6 +126,9 @@ def coverage_at(y_true: list[str], y_pred: list[str], conf: np.ndarray, t: float
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--serve", default="auto", help="model to export for ml-service: M2, M3 or auto (best val macro-F1)")
+    ap.add_argument("--refit", action="store_true",
+                    help="after choosing C and the threshold on validation, refit the exported model on train+val+test "
+                         "(more phrasing families; the corpus metrics above stay those of the train-only model)")
     args = ap.parse_args()
 
     corpus = load_jsonl(BUILD / "corpus.jsonl")
@@ -236,15 +239,26 @@ def main() -> None:
         raise SystemExit("ml-service can serve M2 or M3 (it needs e5 for /embed); re-run with --serve M2 or M3.")
     run_name = {"M2": "M2-e5-logreg", "M3": "M3-avg-tfidf-e5"}[serve]
     th = results[run_name]["threshold"]
+    rows_fit = len(X["train"])
+    if args.refit:
+        fit_x = X["train"] + X["val"] + X["test"]
+        fit_y = Y["train"] + Y["val"] + Y["test"]
+        m1 = tfidf_pipeline(best_c).fit(fit_x, fit_y)
+        m2 = LogisticRegression(C=best_c2, max_iter=3000, class_weight="balanced").fit(
+            np.vstack([E["train"], E["val"], E["test"]]), fit_y)
+        assert list(m1.classes_) == list(m2.classes_)
+        rows_fit = len(fit_x)
     SERVE_DIR.mkdir(parents=True, exist_ok=True)
     version = f"{'e5-logreg' if serve == 'M2' else 'e5-tfidf-avg'}-{manifest['corpus_sha256'][:8]}"
+    if args.refit:
+        version += "-all"
     export = {
         "model_version": version, "combination": "e5" if serve == "M2" else "mean(e5, tfidf)",
         "classes": list(m2.classes_), "abstain_below": th["t"],
         "e5": {"model": EMBED_MODEL, "revision": EMBED_REVISION, "query_prefix": "query: ",
                "coef": m2.coef_.round(6).tolist(), "intercept": m2.intercept_.round(6).tolist()},
         "trained_on": {"corpus_sha256": manifest["corpus_sha256"], "templates_version": manifest["templates_version"],
-                       "rows_train": len(X["train"]), "C_e5": best_c2, "C_tfidf": best_c if serve == "M3" else None},
+                       "rows_train": rows_fit, "refit_on_all_splits": args.refit, "C_e5": best_c2, "C_tfidf": best_c if serve == "M3" else None},
         "validation": {"macro_f1": results[run_name]["val"]["macro_f1"], "precision_at_threshold": th["val"][0],
                        "coverage_at_threshold": th["val"][1], "target_precision": TARGET_PRECISION,
                        "precision_margin": PRECISION_MARGIN},
@@ -263,7 +277,7 @@ def main() -> None:
     # Golden predictions for the service parity test: team-authored texts only (never transcript text).
     golden_texts = X["dev_external"] + [r["text"] for r in sets["test"] if r["source"].startswith("team")][:40:2]
     served = m3_proba if serve == "M3" else m2_proba
-    golden_proba = {**dict(zip(X["dev_external"], served["dev_external"]))}
+    golden_proba = {} if args.refit else {**dict(zip(X["dev_external"], served["dev_external"]))}
     extra = [t for t in golden_texts if t not in golden_proba]
     if extra:
         e_extra = e5.encode(extra)

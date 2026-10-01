@@ -81,27 +81,39 @@ scripts/    task entry points used by the Makefile
 
 ## Evaluation
 
-118 held-out test cases (ES/PT), each an invented customer sentence anchored on a **real transaction** of a demo
+Held-out test cases (ES/PT), each an invented customer sentence anchored on a **real transaction** of a demo
 customer, with the expected outcome derived from that row and the policy. The same cases run against the system and
 against a rules-only baseline that sends every dispute to a human. Definitions: [`eval/RUBRIC.md`](eval/RUBRIC.md);
-full report with breakdowns by language, segment, country and category: [`eval/reports/`](eval/reports/).
+full reports with breakdowns by language, segment, country and category: [`eval/reports/`](eval/reports/).
 
-| Metric (test split, 95% Wilson CI) | System | Baseline |
-|---|---|---|
-| Correct outcome (outcome + action + policy rule) | **88.1%** (104/118; 81–93%) | 3.4% (4/118) |
-| Safe automated resolution | **82.6%** (38/46; 69–91%) | 0% (0/46) |
-| Unsafe outcomes | **0%** (0/118; 0–3%) | 0% (0/118) |
-| Escalation recall / precision | **96.4%** (27/28) / **100%** (27/27) | 7.1% / 5.7% |
-| Sent to a human | 22.9% | 29.7% |
-| Latency p50 / p95 per turn | 852 / 1,234 ms | 2 / 17 ms |
-| LLM cost per case | USD 0.00008 | 0 |
+There are two case sets. **v2** (`eval/cases/v2/`, 120 test cases) was written and frozen after v1 was scored and
+before the current classifier was trained, so it is the headline number. **v1** (118 test cases) informed the last
+training change (see `docs/ml_labels.md`), so it is no longer a clean held-out set and is kept for history.
 
-Versions: policy 0.2.0, classifier `e5-tfidf-avg-1dd695a4`, DeepSeek Flash with `deepseek-prompts-v2`,
-`LLM_COMPOSE=template`. Two test cases have known label errors (documented in `eval/cases/manifest.json`); without
-them accuracy is 89.8%. Most remaining errors are paraphrases of "wrong amount" that the classifier abstains on:
-the assistant asks instead of acting.
+| Metric (test v2, 95% Wilson CI) | System (current) | System (previous classifier) | Baseline |
+|---|---|---|---|
+| Correct outcome (outcome + action + policy rule) | **70.8%** (85/120; 62–78%) | 65.0% (78/120; 56–73%) | 5.8% (7/120) |
+| Safe automated resolution | **75.0%** (33/44; 61–85%) | 56.8% (25/44) | 0% (0/44) |
+| Unsafe outcomes | **0%** (0/120; 0–3%) | 1.7% (2/120) | 0% (0/120) |
+| Escalation recall / precision | **71.4%** (20/28) / **95.2%** (20/21) | 75.0% / 80.8% | 25.0% / 14.9% |
+| Sent to a human | 17.5% | 21.7% | 39.2% |
+| Latency p50 / p95 per turn | 774 / 1,199 ms | 803 / 1,200 ms | 1 / 15 ms |
+| LLM cost per case | USD 0.00006 | USD 0.00007 | 0 |
 
-Component results: classifier test macro-F1 0.94 vs 0.52 for the keyword baseline ([`docs/ml_report.md`](docs/ml_report.md));
+Every one of the 35 errors of the current system on test v2 is a question instead of an action, never a wrong action:
+22 are dispute paraphrases the classifier is not confident about (the assistant asks which problem it is), 12 are
+prompt-injection or other-person-data requests in new wordings (it asks for details instead of refusing; nothing is
+shown or done), 3 are out-of-scope requests answered with a question, and 1 vague message is sent to a human.
+On test v1 the current system scores 87.3% (103/118) with 0 unsafe outcomes (previous classifier: 88.1%, 0 unsafe).
+
+The drop from v1 to v2 is the honest finding: the same team wrote the training phrasings and v1, so v1 overstated
+how well the classifier handles new wordings. Both sets are still written by the team (and an AI assistant); a set
+written by people outside the ML work is the next step (`docs/production_gap.md`).
+
+Versions: policy 0.2.0, classifier `e5-tfidf-avg-273b2af3-all` (previous: `e5-tfidf-avg-1dd695a4`), DeepSeek Flash
+with `deepseek-prompts-v2`, `LLM_COMPOSE=template`.
+
+Component results: classifier corpus test macro-F1 0.90 vs 0.43 for the keyword baseline ([`docs/ml_report.md`](docs/ml_report.md));
 retrieval recall@3 0.93 over policy + FAQ; DeepSeek Flash extraction 100% amount / 96% date / 100% merchant on 26
 messages (ADR 0004). Reproduce: `make train`, `make test-ml`, `make rag`, `make eval`;
 backend integration tests: `cd backend && go test -tags integration ./internal/orchestrator/` (see the test file

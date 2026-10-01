@@ -2,226 +2,226 @@
  {
   "text": "No reconozco un cobro de 385,71 de hoy",
   "label": "unrecognized_charge",
-  "confidence": 0.868
+  "confidence": 0.9549
  },
  {
   "text": "No reconozco un cargo",
   "label": "unrecognized_charge",
-  "confidence": 0.8169
+  "confidence": 0.8961
  },
  {
   "text": "fue la segunda",
   "label": "other_in_scope",
-  "confidence": 0.6306
+  "confidence": 0.8993
  },
  {
   "text": "Me cobraram duas vezes no mercado",
   "label": "duplicate_charge",
-  "confidence": 0.9887
+  "confidence": 0.9973
  },
  {
   "text": "Quero um empréstimo",
   "label": "out_of_scope",
-  "confidence": 0.8857
+  "confidence": 0.9631
  },
  {
   "text": "No reconozco una compra de 1.450 dólares del lunes",
   "label": "unrecognized_charge",
-  "confidence": 0.9228
+  "confidence": 0.973
  },
  {
   "text": "Me robaron la tarjeta",
   "label": "card_lost_stolen",
-  "confidence": 0.9986
+  "confidence": 1.0
  },
  {
   "text": "No reconozco un cobro de 42,37 en Streaming Music",
   "label": "unrecognized_charge",
-  "confidence": 0.8896
+  "confidence": 0.9437
  },
  {
   "text": "No reconozco una compra de 987,65 dólares de ayer",
   "label": "unrecognized_charge",
-  "confidence": 0.9103
+  "confidence": 0.9753
  },
  {
   "text": "No reconozco un cobro de 1.200 pesos del martes",
   "label": "unrecognized_charge",
-  "confidence": 0.9391
+  "confidence": 0.9587
  },
  {
   "text": "me cobraron dos veces 89,90 ayer",
   "label": "duplicate_charge",
-  "confidence": 0.9535
+  "confidence": 0.988
  },
  {
   "text": "No reconozco el cargo de 324,48 en Teatro Nacional del 23/12",
   "label": "unrecognized_charge",
-  "confidence": 0.8597
+  "confidence": 0.984
  },
  {
   "text": "hay un cargo raro de $450.50 el 10/06",
-  "label": "wrong_amount",
-  "confidence": 0.4103
+  "label": "other_in_scope",
+  "confidence": 0.5945
  },
  {
   "text": "no reconozco una compra de mil quinientos dólares de hoy",
   "label": "unrecognized_charge",
-  "confidence": 0.9283
+  "confidence": 0.9358
  },
  {
   "text": "el lunes me cobraron 38 dólares en Streaming Music",
   "label": "wrong_amount",
-  "confidence": 0.4113
+  "confidence": 0.4156
  },
  {
   "text": "me robaron la tarjeta",
   "label": "card_lost_stolen",
-  "confidence": 0.9988
+  "confidence": 1.0
  },
  {
   "text": "el cajero no me dio los 2.000 pesos anteayer",
   "label": "atm_cash_not_dispensed",
-  "confidence": 0.9663
+  "confidence": 0.9873
  },
  {
   "text": "cobro de 99,99 del 3 de enero que no hice",
   "label": "unrecognized_charge",
-  "confidence": 0.42
+  "confidence": 0.5246
  },
  {
   "text": "compré unos zapatos el 5 de mayo por 165,50 y nunca llegaron",
   "label": "not_received",
-  "confidence": 0.8313
+  "confidence": 0.9381
  },
  {
   "text": "Me cobraram duas vezes no Mercado Central ontem, 89,90",
   "label": "duplicate_charge",
-  "confidence": 0.9769
+  "confidence": 0.9922
  },
  {
   "text": "Não reconheço uma compra de R$ 250,00 de segunda-feira",
   "label": "unrecognized_charge",
-  "confidence": 0.9705
+  "confidence": 0.9771
  },
  {
   "text": "tem uma cobrança de 1.450 dólares que eu não fiz, foi na segunda-feira",
   "label": "unrecognized_charge",
-  "confidence": 0.8031
+  "confidence": 0.8026
  },
  {
   "text": "cobrança estranha de 72,35 no dia 12/06",
   "label": "other_in_scope",
-  "confidence": 0.4855
+  "confidence": 0.5621
  },
  {
   "text": "roubaram meu cartão hoje",
   "label": "card_lost_stolen",
-  "confidence": 0.9937
+  "confidence": 0.9995
  },
  {
   "text": "não recebi a compra de trezentos reais da semana passada",
-  "label": "not_received",
-  "confidence": 0.5333
- },
- {
-  "text": "YO NO HICE ESA COMPRA DE 82 EN GASOLINERA NORTE, NECESITO UNA SOLUCIÓN?",
   "label": "unrecognized_charge",
-  "confidence": 0.796
+  "confidence": 0.4905
  },
  {
   "text": "Yo no hice esa compra de mil quinientos pesos en Hotel Plaza. Mi documento es [NUMBER]?",
   "label": "unrecognized_charge",
-  "confidence": 0.6124
+  "confidence": 0.9522
  },
  {
   "text": "Esa compra no la hice yo",
-  "label": "not_received",
-  "confidence": 0.5143
+  "label": "unrecognized_charge",
+  "confidence": 0.9933
  },
  {
   "text": "disculpe, yo no hiec esa compra de 831,25 en farmacia salud, me pueden ayuadr?.",
   "label": "unrecognized_charge",
-  "confidence": 0.7889
+  "confidence": 0.9556
  },
  {
   "text": "esa compra no la hice yo, necesito una solución?",
-  "label": "not_received",
-  "confidence": 0.4828
+  "label": "unrecognized_charge",
+  "confidence": 0.8711
  },
  {
   "text": "YO NO HICE ESA COMPRA DE 68 USD EN MAGAZINE BRASIL. QUIERO RECLAMAR",
   "label": "unrecognized_charge",
-  "confidence": 0.8557
+  "confidence": 0.9341
  },
  {
   "text": "buenas, yo no hice esa compra de 73,23 en uber, qué hago?",
   "label": "unrecognized_charge",
-  "confidence": 0.7972
+  "confidence": 0.9832
  },
  {
   "text": "BUENOS DÍAS, YO NO HICE ESA COMPRA DE 218 EN MERCADO LIBRE. SOY [NAME]",
   "label": "unrecognized_charge",
-  "confidence": 0.657
+  "confidence": 0.944
  },
  {
   "text": "DISCULPE, NO HCIE NINGUNA COMPRA EN HTOEL PLAZA ESTE MES",
   "label": "unrecognized_charge",
-  "confidence": 0.7045
+  "confidence": 0.963
  },
  {
   "text": "Buenas, no hice ninguna compra en Amazon del 23/12. Mi documento es [NUMBER]",
   "label": "unrecognized_charge",
-  "confidence": 0.452
+  "confidence": 0.881
  },
  {
-  "text": "bom dia, não autorizei um pagamento de quinhentos dólares ontem, preciso de uma solução",
+  "text": "NO HICE NINGUNA COMPRA EN NETFLIX EL 12/06",
   "label": "unrecognized_charge",
-  "confidence": 0.6501
+  "confidence": 0.9159
  },
  {
-  "text": "Oi, não autorizei um pagamento de 1.306 USD este mês, podem me ajudar?",
+  "text": "APARECE UN PAGO QUE NUNCA AUTORICÉ, ESCRÍBANME A [EMAIL]",
   "label": "unrecognized_charge",
-  "confidence": 0.7203
+  "confidence": 0.9439
  },
  {
-  "text": "com licenca, nao autorizei essa cobranca do mercado central, me escrevam em [EMAIL]?",
+  "text": "hola buenas tardes, no autoricé un pago de 64 la semana pasada!",
   "label": "unrecognized_charge",
-  "confidence": 0.3854
+  "confidence": 0.9354
  },
  {
-  "text": "Olá, não autorizei essa cobrança do Posto Ipiranga, podem me ajudar?",
+  "text": "Disculpe, no autorice un pago de 711 pesos el martes pasado. Soy [NAME]",
   "label": "unrecognized_charge",
-  "confidence": 0.3501
+  "confidence": 0.9809
  },
  {
-  "text": "NÃO AUTORIZEI ESSA COBRANÇA DO TIENDA ONLINE MAX",
+  "text": "buenas, no autoricé un pago de 1,685.98 dólares anteayer, me pueden ayudar?",
   "label": "unrecognized_charge",
-  "confidence": 0.3859
+  "confidence": 0.9327
  },
  {
-  "text": "oi, nao autorizei esa cobranca do posto ipiarnga?",
-  "label": "other_in_scope",
-  "confidence": 0.3071
- },
- {
-  "text": "Apareceu um pagamento qeu eu nunnca autorizei",
+  "text": "no autoricé un pago de $ 13 el fin de semana?",
   "label": "unrecognized_charge",
-  "confidence": 0.6233
+  "confidence": 0.972
  },
  {
-  "text": "GENTE, NÃO AUTORIZEI UM PAGAMENTO DE 62 DO DIA 23/12, PODEM ME AJUDAR?",
+  "text": "Disculpe, no autoricé un pago de 87 el viernes!",
   "label": "unrecognized_charge",
-  "confidence": 0.5472
+  "confidence": 0.9442
  },
  {
-  "text": "obm dia, não autorizei essa cobranç do uber, podem me ajudar?",
+  "text": "disculpe, no di autorizacion para ese cargo en meracdo central.",
   "label": "unrecognized_charge",
-  "confidence": 0.5229
+  "confidence": 0.9554
  },
  {
-  "text": "oi, não autorizei m pagamento de trezentos reais semana passada. sou [NAME]",
+  "text": "disculpe, aparece un pago que nunca autoricé, escríbanme a [EMAIL]",
   "label": "unrecognized_charge",
-  "confidence": 0.5942
+  "confidence": 0.8722
+ },
+ {
+  "text": "No di autorización para ese cargo en Gasolinera Norte, escríbanme a [EMAIL]!",
+  "label": "unrecognized_charge",
+  "confidence": 0.9689
+ },
+ {
+  "text": "Hola buenas tardes, aparece un pago que nunca autoricé, necesito una solución",
+  "label": "unrecognized_charge",
+  "confidence": 0.9626
  }
 ]

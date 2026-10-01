@@ -50,16 +50,28 @@ The assistant **never** refunds, transfers money or shows another customer's dat
 - Customer web app: cards, recent movements, chat, **"Mis disputas"** with the specialist's resolution.
 - Agent console: prioritized queue, claim, protected identity, close with outcome and note, full audit trail.
 - Supervisor view: active policy and models, live metrics.
-- ml-service: TF-IDF + multilingual-e5 classifier (test macro-F1 **0.94** vs 0.52 keywords), embeddings for a
+- ml-service: TF-IDF + multilingual-e5 classifier (corpus test macro-F1 **0.90** vs 0.43 keywords), embeddings for a
   policy + FAQ retrieval index (recall@3 **0.93**).
 - Keycloak (PKCE + TOTP), Postgres with row-level security, encrypted identity, OpenTelemetry, email outbox.
 
 ---
 
-# Results (118 held-out cases anchored on real transactions)
+# Results (120 held-out cases, new wordings, anchored on real transactions)
 
 | | System | Rules-only baseline |
 |---|---|---|
+| Correct outcome | **70.8%** (CI 62–78%) | 5.8% |
+| Safe automated resolution | **75%** | 0% |
+| Unsafe outcomes | **0 / 120** | 0 / 120 |
+| Escalation recall / precision | **71% / 95%** | 25% / 15% |
+| Sent to a human | 18% | 39% |
+| p50 latency per turn · cost per case | 0.77 s · USD 0.00006 | — |
+
+Every error is the assistant **asking instead of acting**, never a wrong action. On our first case set (wordings
+closer to training) the system scored 88%; the fresh set is the honest number, and retraining raised it from 65%
+and removed 2 unsafe outcomes.
+
+---|---|---|
 | Correct outcome | **88.1%** (CI 81–93%) | 3.4% |
 | Safe automated resolution | **82.6%** | 0% |
 | Unsafe outcomes | **0 / 118** | 0 / 118 |

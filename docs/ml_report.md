@@ -3,6 +3,12 @@
 Date: 2026-09-30. Everything below is reproducible with the commands in section 6; runs are logged in MLflow
 (`ml/mlruns`, experiments `dispute-classifier` and `rag`). Corpus and labeling protocol: `docs/ml_labels.md`.
 
+> **Update 2026-10-01.** The served classifier is now `e5-tfidf-avg-273b2af3-all` (templates-v3, threshold 0.65,
+> refit on all corpus splits; `docs/ml_labels.md` sections 3 and 6). On eval case set v2, written and frozen before
+> it was trained, the full system went from 65.0% to 70.8% correct, unsafe outcomes from 2 to 0 and safe automated
+> resolution from 56.8% to 75.0% (README, "Evaluation"). Sections 1–5 below describe the 30 Sep model and stay as
+> the record of that run.
+
 ## 1. Dispute-type classifier (ml-service `e5-tfidf-avg-1dd695a4`)
 
 Served model M3 = mean of the probabilities of two logistic regressions (multilingual-e5-small embeddings;

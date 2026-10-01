@@ -278,9 +278,75 @@ EXTRA_FAMILIES: dict[str, dict[str, list[list[str]]]] = {
         ],
     },
 }
-for _label, _by_lang in EXTRA_FAMILIES.items():
-    for _lang, _fams in _by_lang.items():
-        FAMILIES[_label][_lang].extend(_fams)
+# templates-v3 (1 oct): eval test v1 showed the model abstaining on paraphrases of wrong_amount and not_received
+# (9 of 14 errors). These families add new ways of saying those two (discounts, tips, exchange rate, unit count;
+# tracking, vanished sellers, services never started, cancellations) plus one family for the other labels to keep the
+# label mix. They were written after eval case set v2 was frozen (commit dc911a3) and deliberately avoid its
+# phrasings, so v2 measures them; test v1 is no longer a clean held-out set for this model.
+EXTRA_FAMILIES_V3: dict[str, dict[str, list[list[str]]]] = {
+    "unrecognized_charge": {
+        "es": [["ese consumo de {amt} no lo hice ni lo autoricé", "alguien más gastó {amt} con mi {card}", "un tercero pagó en {merchant} con mis datos"]],
+        "pt": [["esse gasto de {amt} eu não fiz nem autorizei", "outra pessoa gastou {amt} com meu {card}", "um terceiro pagou no {merchant} com meus dados"]],
+    },
+    "duplicate_charge": {
+        "es": [["en {merchant} pasaron mi tarjeta dos veces por error", "el datáfono cobró doble {amt}", "salieron dos cargos por una sola compra en {merchant}"]],
+        "pt": [["no {merchant} passaram meu cartão duas vezes por engano", "a maquininha cobrou em dobro {amt}", "saíram duas cobranças por uma única compra no {merchant}"]],
+    },
+    "wrong_amount": {
+        "es": [
+            ["no me aplicaron el descuento en {merchant} y me cobraron {amt}", "la promoción decía otro precio y el cargo fue de {amt}", "me cobraron el precio completo sin la rebaja {date}"],
+            ["me facturaron {amt} cuando el total era más bajo", "{merchant} me facturó mal, el monto real era menor", "el cargo de {merchant} está mal calculado"],
+            ["en {merchant} me cobraron {amt} y la propina ya estaba incluida", "me pasaron un monto más alto del que firmé", "firmé el voucher por menos y aparece {amt}"],
+            ["el tipo de cambio que me aplicaron en {merchant} está mal, me cobraron {amt}", "convirtieron mal la compra en dólares y pagué de más", "me cobraron una conversión de moneda exagerada {date}"],
+            ["me cobraron dos unidades y compré una sola en {merchant}", "me cargaron {amt} por un artículo que costaba la mitad", "cobraron el plan más caro y yo contraté el básico"],
+            ["me cobraron un excedente de {amt}", "hay una diferencia de precio en el cobro de {merchant}", "pagué de más por un error en el monto"],
+        ],
+        "pt": [
+            ["não aplicaram o desconto no {merchant} e cobraram {amt}", "a promoção dizia outro preço e a cobrança foi de {amt}", "cobraram o preço cheio sem o desconto {date}"],
+            ["faturaram {amt} quando o total era mais baixo", "o {merchant} faturou errado, o valor real era menor", "a cobrança do {merchant} está calculada errada"],
+            ["no {merchant} cobraram {amt} e a gorjeta já estava incluída", "passaram um valor mais alto do que eu assinei", "assinei o comprovante por menos e aparece {amt}"],
+            ["a cotação que aplicaram no {merchant} está errada, cobraram {amt}", "converteram errado a compra em dólar e paguei a mais", "cobraram uma conversão de moeda exagerada {date}"],
+            ["cobraram duas unidades e comprei só uma no {merchant}", "lançaram {amt} por um item que custava a metade", "cobraram o plano mais caro e eu contratei o básico"],
+            ["cobraram um excedente de {amt}", "tem uma diferença de preço na cobrança do {merchant}", "paguei a mais por um erro no valor"],
+        ],
+    },
+    "not_received": {
+        "es": [
+            ["el pedido de {merchant} figura como entregado pero nunca lo recibí", "el seguimiento dice entregado y a mi casa no llegó nada", "la empresa de envíos perdió mi compra de {amt}"],
+            ["el vendedor de {merchant} desapareció después de cobrarme {amt}", "pagué por adelantado y la tienda dejó de responder", "una tienda en línea me cobró y no envió nada"],
+            ["pagué un curso de {amt} que nunca empezó", "contraté una suscripción en {merchant} que nunca se activó", "compré una licencia que jamás me enviaron"],
+            ["cancelaron mi vuelo con {merchant} y no me devolvieron los {amt}", "el evento se suspendió y no me reintegraron la entrada", "el hotel canceló mi reserva y me cobró igual"],
+            ["estoy esperando una compra de {amt} desde hace un mes", "mi pedido en {merchant} está demorado y no hay noticias", "nunca me hicieron la entrega de lo que compré {date}"],
+        ],
+        "pt": [
+            ["o pedido do {merchant} aparece como entregue mas nunca recebi", "o rastreio diz entregue e na minha casa não chegou nada", "a transportadora perdeu minha compra de {amt}"],
+            ["o vendedor do {merchant} sumiu depois de me cobrar {amt}", "paguei adiantado e a loja parou de responder", "uma loja online me cobrou e não enviou nada"],
+            ["paguei um curso de {amt} que nunca começou", "assinei um serviço no {merchant} que nunca foi ativado", "comprei uma licença que nunca me enviaram"],
+            ["cancelaram meu voo com {merchant} e não devolveram os {amt}", "o evento foi suspenso e não reembolsaram o ingresso", "o hotel cancelou minha reserva e cobrou mesmo assim"],
+            ["estou esperando uma compra de {amt} há um mês", "meu pedido no {merchant} está atrasado e não tenho notícias", "nunca fizeram a entrega do que comprei {date}"],
+        ],
+    },
+    "atm_cash_not_dispensed": {
+        "es": [["el cajero quedó fuera de servicio a mitad del retiro y me cobró {amt}", "retiro fallido de {amt} pero descontado de mi cuenta"]],
+        "pt": [["o caixa ficou fora de serviço no meio do saque e cobrou {amt}", "saque que falhou de {amt} mas descontado da minha conta"]],
+    },
+    "card_lost_stolen": {
+        "es": [["mi tarjeta se quedó en el cajero y ya no está", "me arrancaron el teléfono con la tarjeta en la funda", "la tarjeta no aparece desde el sábado"]],
+        "pt": [["meu cartão ficou no caixa eletrônico e não está mais lá", "arrancaram meu celular com o cartão na capinha", "o cartão sumiu desde sábado"]],
+    },
+    "other_in_scope": {
+        "es": [["necesito aclarar un cargo de {merchant}", "me pueden revisar un pago de {amt}?", "tengo un reclamo pendiente por un consumo"]],
+        "pt": [["preciso esclarecer uma cobrança do {merchant}", "podem verificar um pagamento de {amt}?", "tenho uma reclamação pendente por um gasto"]],
+    },
+    "out_of_scope": {
+        "es": [["cuánto cobran por una transferencia internacional", "quiero refinanciar mi deuda", "dónde descargo mi estado de cuenta"]],
+        "pt": [["quanto custa uma transferência internacional", "quero renegociar minha dívida", "onde baixo meu extrato"]],
+    },
+}
+for _extra in (EXTRA_FAMILIES, EXTRA_FAMILIES_V3):
+    for _label, _by_lang in _extra.items():
+        for _lang, _fams in _by_lang.items():
+            FAMILIES[_label][_lang].extend(_fams)
 # Families whose members are short follow-up replies (no opener/closer is added to them).
 SHORT_FAMILIES = {("other_in_scope", "es", i) for i in (3, 4, 5, 6, 8)} | {("other_in_scope", "pt", i) for i in (3, 4, 5, 6, 8)}
 
@@ -430,7 +496,7 @@ def main() -> None:
                         continue
                     seen.add(key)
                     rows.append({"text": text, "label": label, "lang": lang, "split": split,
-                                 "family": family, "source": "team_generated/templates-v2"})
+                                 "family": family, "source": "team_generated/templates-v3"})
                     made += 1
 
     # Real balance-inquiry turns as out_of_scope (Spanish only; the dataset has no Portuguese text).
@@ -451,7 +517,7 @@ def main() -> None:
 
     counts = Counter((r["split"], r["label"], r["lang"]) for r in rows)
     manifest = {
-        "generator": "ml/data/generate_utterances.py", "templates_version": "templates-v2", "seed": args.seed,
+        "generator": "ml/data/generate_utterances.py", "templates_version": "templates-v3", "seed": args.seed,
         "per_family": args.per_family, "rows": len(rows),
         "rows_by_split": dict(Counter(r["split"] for r in rows)),
         "rows_by_split_label_lang": {f"{s}/{l}/{g}": n for (s, l, g), n in sorted(counts.items())},
