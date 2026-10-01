@@ -439,7 +439,40 @@ No. The token carries an opaque reference and the database filters every row wit
 
 #### What does DeepSeek see?
 
-Only the message text with personal data masked. Never names, emails, documents or database data.
+Only the message text, with personal data replaced by placeholders, plus the demo date and the customer's country. Never names, emails, documents, card numbers, balances or database movements. This is a real example, produced with the system's code:
+
+**1. What the customer writes:**
+
+```
+Hola, soy María López, mi DNI es 12.345.678 y mi correo
+maria.lopez@gmail.com. No reconozco un cobro de 385,71 de ayer
+en Streaming Music con mi tarjeta 4111 1111 1111 1111, ¿me ayudan?
+```
+
+**2. What DeepSeek receives** (plus fixed instructions, the same for everyone, with no customer data):
+
+```
+today: 2026-06-17 (Wednesday)
+country: Mexico
+<message>Hola, soy [NAME] [NAME], mi DNI es [NUMBER] y mi correo
+[EMAIL] No reconozco un cobro de 385,71 de ayer en Streaming Music
+con mi tarjeta [NUMBER], ¿me ayudan?</message>
+```
+
+**3. What DeepSeek answers:**
+
+```
+{
+  "amount": 385.71,
+  "date_from": "2026-06-16",
+  "date_to": "2026-06-16",
+  "merchant_hint": "streaming music",
+  "dispute_type": "unrecognized_charge",
+  "refuse": null
+}
+```
+
+With those facts the backend searches the bank's database, protected by RLS, and the policy decides what to do. DeepSeek never sees the movement found, the card, the balance or who the customer is.
 
 #### What if DeepSeek or the classifier goes down?
 
