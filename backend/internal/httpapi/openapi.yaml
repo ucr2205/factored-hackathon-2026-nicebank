@@ -108,6 +108,14 @@ paths:
         "200": { description: Overview, content: { application/json: { schema: { $ref: "#/components/schemas/Overview" } } } }
         "401": { $ref: "#/components/responses/Unauthorized" }
 
+  /api/me/disputes:
+    get:
+      tags: [customer]
+      summary: The customer's own dispute cases and specialist handoffs, newest first ("Mis disputas")
+      responses:
+        "200": { description: Disputes, content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/MyDispute" } } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
   /api/handoffs:
     get:
       tags: [agent]
@@ -145,6 +153,22 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { description: Not found or no longer open, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+
+  /api/handoffs/{id}/close:
+    post:
+      tags: [agent]
+      summary: Close a handoff you claimed (role agent), with outcome and note
+      description: Only the agent who claimed the handoff can close it; anyone else gets 404. Writes a `handoff / close_handoff` audit event (without the note).
+      parameters: [{ $ref: "#/components/parameters/HandoffID" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/CloseRequest" } } }
+      responses:
+        "200": { description: The closed handoff, content: { application/json: { schema: { $ref: "#/components/schemas/Handoff" } } } }
+        "400": { description: Invalid outcome or empty note, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { description: Not found, not claimed, or claimed by another agent, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
 
   /api/handoffs/{id}/identity:
     post:
@@ -378,6 +402,35 @@ components:
                   specialty: { type: string }
             session_id: { type: string, format: uuid }
             trace_id: { type: string }
+            resolution: { $ref: "#/components/schemas/Resolution" }
+    Resolution:
+      type: object
+      description: How the agent who claimed the handoff closed it.
+      properties:
+        outcome: { type: string, enum: [accepted, rejected] }
+        note: { type: string }
+        closed_by: { type: string }
+        closed_at: { type: string, format: date-time }
+    CloseRequest:
+      type: object
+      required: [outcome, note]
+      properties:
+        outcome: { type: string, enum: [accepted, rejected] }
+        note: { type: string, maxLength: 1000 }
+    MyDispute:
+      type: object
+      properties:
+        kind: { type: string, enum: [case, handoff] }
+        id: { type: string, examples: [DSP-001040] }
+        dispute_type: { type: string }
+        status: { type: string, examples: [open, claimed, closed] }
+        created_at: { type: string, format: date-time }
+        merchant: { type: string }
+        amount: { type: number }
+        currency: { type: string }
+        transaction_date: { type: string, format: date-time }
+        card_last4: { type: string }
+        resolution: { $ref: "#/components/schemas/Resolution" }
     CustomerIdentity:
       type: object
       properties:

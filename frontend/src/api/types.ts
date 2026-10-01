@@ -67,6 +67,30 @@ export type Handoff = HandoffSummary & {
   suggested_agents: { agent_id: string; name: string; languages: string; specialty: string }[] | null;
   session_id: string;
   trace_id: string;
+  resolution?: Resolution;
+};
+
+/** How the agent who claimed a handoff closed it. */
+export type Resolution = {
+  outcome: "accepted" | "rejected";
+  note: string;
+  closed_by: string;
+  closed_at: string;
+};
+
+/** One of the customer's own cases or specialist handoffs ("Mis disputas"). */
+export type MyDispute = {
+  kind: "case" | "handoff";
+  id: string;
+  dispute_type: string;
+  status: string;
+  created_at: string;
+  merchant?: string;
+  amount?: number;
+  currency?: string;
+  transaction_date?: string;
+  card_last4?: string;
+  resolution?: Resolution;
 };
 
 export type AuditEvent = {

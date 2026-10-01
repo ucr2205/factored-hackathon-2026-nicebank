@@ -23,7 +23,9 @@ import { formatDateTime } from "../../app/i18n";
 import { DISPUTE_TYPES, LANGS, queueLabel, REASONS } from "./labels";
 import { elapsed, PriorityBadge, priorityBar, WaitTime } from "./priority";
 
-function QueueSummary({ items, status }: { items: HandoffSummary[]; status: "open" | "claimed" }) {
+type QueueStatus = "open" | "claimed" | "closed";
+
+function QueueSummary({ items, status }: { items: HandoffSummary[]; status: QueueStatus }) {
   if (items.length === 0) return null;
   const high = items.filter((h) => h.priority === "high").length;
   const oldest = items.reduce((a, b) => (a.created_at < b.created_at ? a : b));
@@ -38,7 +40,7 @@ function QueueSummary({ items, status }: { items: HandoffSummary[]; status: "ope
 }
 
 export default function HandoffQueuePage() {
-  const [status, setStatus] = useState<"open" | "claimed">("open");
+  const [status, setStatus] = useState<QueueStatus>("open");
   const { data, error, loading } = useResource<HandoffSummary[]>(`/api/handoffs?status=${status}`, 10_000);
   const navigate = useNavigate();
   const open = status === "open";
@@ -49,7 +51,7 @@ export default function HandoffQueuePage() {
         <Box>
           <Typography variant="h5">Casos escalados</Typography>
           <Typography variant="body2" color="text.secondary">
-            {open ? "Ordenados por prioridad y por quién lleva más tiempo esperando." : "Casos que ya tiene un agente, del más reciente al más antiguo."}
+            {open ? "Ordenados por prioridad y por quién lleva más tiempo esperando." : status === "claimed" ? "Casos que ya tiene un agente, del más reciente al más antiguo." : "Casos cerrados por un agente, con su resolución."}
           </Typography>
         </Box>
         <Typography variant="caption" color="text.secondary">
@@ -59,6 +61,7 @@ export default function HandoffQueuePage() {
       <Tabs value={status} onChange={(_, v) => setStatus(v)}>
         <Tab value="open" label="Abiertos" />
         <Tab value="claimed" label="Tomados" />
+        <Tab value="closed" label="Cerrados" />
       </Tabs>
       {data && <QueueSummary items={data} status={status} />}
       {error && <Alert severity="error">No se pudo cargar la cola: {error}</Alert>}

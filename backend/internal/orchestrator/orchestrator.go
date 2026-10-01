@@ -315,7 +315,8 @@ func (t *turn) system(msg string, selected *string) error {
 	t.audit("understand", "ml-service", fmt.Sprintf("label=%s confidence=%.2f abstain=%t model=%s", cls.Label, cls.Confidence, cls.Abstain, cls.ModelVersion),
 		cls.Label, "", time.Since(began))
 
-	if cls.Label == "out_of_scope" && st.DisputeType == "" {
+	// A confident out_of_scope ends the request; a low-confidence one falls through and asks what happened.
+	if cls.Label == "out_of_scope" && !cls.Abstain && st.DisputeType == "" {
 		return t.reply("abstain", "abstain_scope", nil, "SCOPE-01")
 	}
 	if _, known := t.o.Policy.Type(cls.Label); known && !cls.Abstain {

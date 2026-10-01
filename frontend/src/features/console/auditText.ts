@@ -31,6 +31,7 @@ const RULES: Rule[] = [
   [/^handoff (\S+) to queue (\S+) \(reason (\S+)\)$/, (m) => `Caso ${shortRef(m[1])} enviado a la cola ${queueLabel(m[2])} · motivo: ${REASONS[m[3]] ?? m[3]}`],
   [/^turn completed$/, () => "Respuesta enviada al cliente"],
   [/^customer identity revealed to (\S+) for handoff (\S+)$/, (m) => `${m[1]} consultó la identidad del cliente del caso ${shortRef(m[2])}`],
+  [/^handoff closed by (\S+)$/, (m, e) => `${m[1]} cerró el caso: ${e.result === "accepted" ? "resuelto a favor del cliente" : "no procede"}`],
   [/^label=(\w+) confidence=([\d.]+) abstain=(\w+) model=(\S+)$/, (m) =>
     `Clasificó el mensaje como «${DISPUTE_TYPES[m[1]] ?? m[1]}» con ${Math.round(Number(m[2]) * 100)}% de confianza${m[3] === "true" ? " (sin certeza suficiente: pregunta al cliente)" : ""}`],
   [/^classification failed/, () => "El clasificador no respondió tras los reintentos"],

@@ -16,6 +16,7 @@ import {
   Paper,
   Stack,
   Switch,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -50,7 +51,24 @@ export default function HandoffDetailPage() {
   const [technical, setTechnical] = useState(false);
   const [identity, setIdentity] = useState<CustomerIdentity | null>(null);
   const [revealError, setRevealError] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [closing, setClosing] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
   const mine = h?.status === "claimed" && h.claimed_by === user?.profile.preferred_username;
+
+  const close = async (outcome: "accepted" | "rejected") => {
+    if (!user || !id) return;
+    setClosing(true);
+    setCloseError(null);
+    try {
+      await api<Handoff>(`/api/handoffs/${id}/close`, user.access_token, { method: "POST", body: { outcome, note: note.trim() } });
+      await Promise.all([handoff.reload(), audit.reload()]);
+    } catch {
+      setCloseError("No se pudo cerrar el caso. Solo quien lo tomó puede cerrarlo, y la nota es obligatoria.");
+    } finally {
+      setClosing(false);
+    }
+  };
 
   const reveal = async () => {
     if (!user || !id) return;
@@ -91,7 +109,11 @@ export default function HandoffDetailPage() {
             <Chip size="small" label={DISPUTE_TYPES[h.dispute_type] ?? h.dispute_type} />
             <Chip size="small" label={LANGS[h.language]} />
             <Chip size="small" variant="outlined" label={`Cola: ${queueLabel(h.suggested_queue)}`} />
-            <Chip size="small" variant="outlined" label={h.status === "open" ? "Abierto" : `Tomado por ${h.claimed_by}`} />
+            <Chip
+              size="small"
+              variant="outlined"
+              label={h.status === "open" ? "Abierto" : h.status === "closed" ? `Cerrado por ${h.resolution?.closed_by ?? h.claimed_by}` : `Tomado por ${h.claimed_by}`}
+            />
           </Stack>
         </Box>
         {h.status === "open" && roles.includes("agent") && (
@@ -207,6 +229,42 @@ export default function HandoffDetailPage() {
           </Section>
         </Box>
       </Stack>
+
+      {mine && (
+        <Section title="Cerrar el caso">
+          <Stack spacing={1.5}>
+            <TextField
+              label="Nota para el cliente (la verá en «Mis disputas»)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              multiline
+              minRows={2}
+              slotProps={{ htmlInput: { maxLength: 1000 } }}
+              helperText="Explica la decisión sin datos personales. Queda registrado quién cerró el caso y con qué resultado."
+            />
+            <Stack direction="row" spacing={1}>
+              <Button variant="contained" disabled={closing || !note.trim()} onClick={() => close("accepted")}>
+                Resolver a favor del cliente
+              </Button>
+              <Button variant="outlined" color="error" disabled={closing || !note.trim()} onClick={() => close("rejected")}>
+                No procede
+              </Button>
+            </Stack>
+            {closeError && <Alert severity="warning">{closeError}</Alert>}
+          </Stack>
+        </Section>
+      )}
+      {h.resolution && (
+        <Section title="Resolución">
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {h.resolution.outcome === "accepted" ? "Resuelto a favor del cliente" : "No procede"} · {h.resolution.closed_by} ·{" "}
+            {formatDateTime(h.resolution.closed_at, "es")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {h.resolution.note}
+          </Typography>
+        </Section>
+      )}
 
       <Section title="Auditoría de la conversación">
         <Stack direction="row" spacing={2} sx={{ justifyContent: "flex-end", alignItems: "center", mb: 1, flexWrap: "wrap" }}>

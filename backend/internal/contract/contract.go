@@ -113,6 +113,36 @@ type Handoff struct {
 	SuggestedAgents []SuggestedAgent `json:"suggested_agents"`
 	SessionID       string           `json:"session_id"`
 	TraceID         string           `json:"trace_id"`
+	Resolution      *Resolution      `json:"resolution,omitempty"` // set when the claiming agent closes it
+}
+
+// Resolution is how the agent who claimed a handoff closed it. Stored inside the handoff payload.
+type Resolution struct {
+	Outcome  string    `json:"outcome"` // accepted | rejected
+	Note     string    `json:"note"`
+	ClosedBy string    `json:"closed_by"`
+	ClosedAt time.Time `json:"closed_at"`
+}
+
+type CloseRequest struct {
+	Outcome string `json:"outcome"`
+	Note    string `json:"note"`
+}
+
+// MyDispute is one row of the customer's "Mis disputas" list: a case opened by the assistant or a handoff to a
+// specialist. Transaction fields are empty for handoffs without an identified transaction.
+type MyDispute struct {
+	Kind        string      `json:"kind"` // case | handoff
+	ID          string      `json:"id"`
+	DisputeType string      `json:"dispute_type"`
+	Status      string      `json:"status"`
+	CreatedAt   time.Time   `json:"created_at"`
+	Merchant    string      `json:"merchant,omitempty"`
+	Amount      *float64    `json:"amount,omitempty"`
+	Currency    string      `json:"currency,omitempty"`
+	TxnDate     *time.Time  `json:"transaction_date,omitempty"`
+	CardLast4   string      `json:"card_last4,omitempty"`
+	Resolution  *Resolution `json:"resolution,omitempty"`
 }
 
 type HandoffSummary struct {

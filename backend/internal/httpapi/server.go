@@ -62,6 +62,7 @@ func (s *Server) router() chi.Router {
 			r.Post("/api/chat/confirm", s.confirm)
 			r.Get("/api/sessions/{id}", s.session)
 			r.Get("/api/me/overview", s.overview)
+			r.Get("/api/me/disputes", s.myDisputes)
 		})
 		r.With(auth.RequireAnyRole(writeError, "agent", "supervisor")).Group(func(r chi.Router) {
 			r.Get("/api/handoffs", s.listHandoffs)
@@ -70,6 +71,7 @@ func (s *Server) router() chi.Router {
 		})
 		r.With(auth.RequireAnyRole(writeError, "agent")).Post("/api/handoffs/{id}/claim", s.claimHandoff)
 		r.With(auth.RequireAnyRole(writeError, "agent")).Post("/api/handoffs/{id}/identity", s.revealIdentity)
+		r.With(auth.RequireAnyRole(writeError, "agent")).Post("/api/handoffs/{id}/close", s.closeHandoff)
 		r.With(auth.RequireAnyRole(writeError, "supervisor")).Group(func(r chi.Router) {
 			r.Get("/api/admin/config", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, http.StatusOK, s.Config(r)) })
 			r.Get("/api/admin/summary", s.summary)
@@ -113,6 +115,23 @@ func (s *Server) session(w http.ResponseWriter, r *http.Request) {
 func (s *Server) overview(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.Overview(r.Context(), p)
+	respond(w, r, out, err)
+}
+
+func (s *Server) myDisputes(w http.ResponseWriter, r *http.Request) {
+	p, _ := auth.FromContext(r.Context())
+	out, err := s.Orch.MyDisputes(r.Context(), p)
+	respond(w, r, out, err)
+}
+
+func (s *Server) closeHandoff(w http.ResponseWriter, r *http.Request) {
+	var req contract.CloseRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "bad_request", "invalid JSON body")
+		return
+	}
+	p, _ := auth.FromContext(r.Context())
+	out, err := s.Orch.CloseHandoff(r.Context(), p, chi.URLParam(r, "id"), req)
 	respond(w, r, out, err)
 }
 

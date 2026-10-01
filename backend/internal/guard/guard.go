@@ -21,8 +21,8 @@ var (
 	longNum = regexp.MustCompile(`\b\d[\d -]{6,}\d\b`) // card, account, document and phone numbers
 	// Matched against accent-free lowercase text (see textnorm.Normalize).
 	injectRe = regexp.MustCompile(`(ignor[ae]\w*\s+(todas?\s+)?(las|as|the|tus|suas|previous|anteriores|instrucciones|instrucoes|instructions)` +
-		`|system prompt|prompt del sistema|prompt do sistema|eres ahora|voce agora e|you are now|actua como|modo desarrollador|developer mode` +
-		`|reembols\w*|devuelve (el|mi) dinero|transfiere\w*|transfira|estorn\w*|revela\w*|mostra\w* (os )?dados de outro|datos de otro cliente)`)
+		`|system prompt|prompt del sistema|prompt do sistema|eres ahora|voce agora e|you are now|actua como|modo desarrollador|modo desenvolvedor|developer mode` +
+		`|reembols\w*|devuelve (el|mi) dinero|transfiere\w*|transfira|estorn\w*|revela\w*|mostr\w* (os )?dados de outro|datos de otro cliente)`)
 )
 
 // Mask replaces emails, long digit sequences and the given names with placeholders.

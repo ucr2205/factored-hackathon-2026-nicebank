@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 
@@ -123,6 +125,76 @@ func (o *Orchestrator) ClaimHandoff(ctx context.Context, p auth.Principal, id st
 		return loadHandoff(ctx, tx, id, &h)
 	})
 	return h, err
+}
+
+const maxResolutionNote = 1000
+
+// CloseHandoff closes a handoff the calling agent has claimed, recording the outcome in the payload and in the
+// customer's audit trail (the note itself stays out of the audit summary, which must not carry free text).
+func (o *Orchestrator) CloseHandoff(ctx context.Context, p auth.Principal, id string, req contract.CloseRequest) (contract.Handoff, error) {
+	note := strings.TrimSpace(req.Note)
+	if (req.Outcome != "accepted" && req.Outcome != "rejected") || note == "" || utf8.RuneCountInString(note) > maxResolutionNote {
+		return contract.Handoff{}, ErrBadRequest
+	}
+	var h contract.Handoff
+	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, `UPDATE handoffs SET status = 'closed', payload = payload || jsonb_build_object('resolution',
+			jsonb_build_object('outcome', $3::text, 'note', $4::text, 'closed_by', $2::text, 'closed_at', now()))
+			WHERE handoff_id = $1 AND status = 'claimed' AND claimed_by = $2`, id, p.Username, req.Outcome, note)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() == 0 {
+			return ErrNotFound // not found, not claimed, or claimed by someone else
+		}
+		if _, err := tx.Exec(ctx, `INSERT INTO audit_events (session_id, customer_id, step, tool, summary, result)
+			SELECT session_id, customer_id, 'handoff', 'close_handoff', 'handoff closed by ' || $2::text, $3::text
+			FROM handoffs WHERE handoff_id = $1`, id, p.Username, req.Outcome); err != nil {
+			return err
+		}
+		return loadHandoff(ctx, tx, id, &h)
+	})
+	return h, err
+}
+
+// MyDisputes lists the customer's own dispute cases and specialist handoffs, newest first (RLS-scoped).
+func (o *Orchestrator) MyDisputes(ctx context.Context, p auth.Principal) ([]contract.MyDispute, error) {
+	out := []contract.MyDispute{}
+	err := o.Store.WithCustomer(ctx, p.CustomerRef, func(tx pgx.Tx) error {
+		rows, err := tx.Query(ctx, `
+			SELECT 'case', c.case_id, c.dispute_type, c.status, c.created_at, coalesce(t.merchant_name, ''), t.amount::float8,
+			       t.currency, t.transaction_date, coalesce(p.card_last4, ''), NULL::jsonb
+			FROM dispute_cases c JOIN transactions t USING (transaction_id) JOIN products p ON p.product_id = t.product_id
+			UNION ALL
+			SELECT 'handoff', h.handoff_id::text, coalesce(h.payload->>'dispute_type', ''), h.status, h.created_at, '',
+			       NULL::float8, '', NULL::timestamptz, '', h.payload->'resolution'
+			FROM handoffs h WHERE h.reason <> 'baseline_human_review'
+			ORDER BY 5 DESC LIMIT 50`)
+		if err != nil {
+			return err
+		}
+		out, err = pgx.CollectRows(rows, func(r pgx.CollectableRow) (contract.MyDispute, error) {
+			var d contract.MyDispute
+			var currency *string
+			var resolution []byte
+			if err := r.Scan(&d.Kind, &d.ID, &d.DisputeType, &d.Status, &d.CreatedAt, &d.Merchant, &d.Amount, &currency,
+				&d.TxnDate, &d.CardLast4, &resolution); err != nil {
+				return d, err
+			}
+			if currency != nil {
+				d.Currency = *currency
+			}
+			if len(resolution) > 0 {
+				d.Resolution = &contract.Resolution{}
+				if err := json.Unmarshal(resolution, d.Resolution); err != nil {
+					return d, err
+				}
+			}
+			return d, nil
+		})
+		return err
+	})
+	return out, err
 }
 
 func loadHandoff(ctx context.Context, tx pgx.Tx, id string, h *contract.Handoff) error {
