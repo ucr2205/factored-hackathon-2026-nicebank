@@ -49,6 +49,18 @@ var cases = []testCase{
 	{"pt", "cobrança estranha de 72,35 no dia 12/06", expect{72.35, "2026-06-12", "2026-06-12", ""}},
 	{"pt", "roubaram meu cartão hoje", expect{0, "2026-06-17", "2026-06-17", ""}},
 	{"pt", "não recebi a compra de trezentos reais da semana passada", expect{300, "2026-06-03", "2026-06-10", ""}},
+	// Added 30 Sep (P3): amounts in words, dates without a year, merchants with typos. The merchant check is a
+	// substring that holds for both the typo and its correction (e.g. "netfl" matches "Netflx" and "Netflix").
+	{"es", "me cobraron doscientos cincuenta dólares el 2 de junio en Farmacia Salud", expect{250, "2026-06-02", "2026-06-02", "farmacia salud"}},
+	{"es", "no reconozco un cargo de mil doscientos pesos del 28 de mayo", expect{1200, "2026-05-28", "2026-05-28", ""}},
+	{"es", "hay un cobro de 75,40 en Netflx que no hice, fue el sábado", expect{75.40, "2026-06-13", "2026-06-13", "netfl"}},
+	{"es", "el 15/05 me cobraron dos veces 320 en Supermercado La Estrela", expect{320, "2026-05-15", "2026-05-15", "la estrel"}},
+	{"es", "me descontaron ochocientos cincuenta en el cajero ayer y no salió la plata", expect{850, "2026-06-16", "2026-06-16", ""}},
+	{"pt", "não reconheço uma compra de quatrocentos e vinte reais do dia 3 de junho", expect{420, "2026-06-03", "2026-06-03", ""}},
+	{"pt", "cobraram duas vezes 59,90 na Amazom anteontem", expect{59.90, "2026-06-15", "2026-06-15", "amazo"}},
+	{"pt", "comprei um fone por cento e oitenta reais em 25 de maio e não chegou", expect{180, "2026-05-25", "2026-05-25", ""}},
+	{"pt", "tem uma cobrança de R$ 1.299,00 do Magazine Brasl que eu não fiz", expect{1299, "", "", "magazine bras"}},
+	{"pt", "o caixa eletrônico não liberou os 600 reais na sexta passada", expect{600, "2026-06-12", "2026-06-12", ""}},
 }
 
 type score struct {

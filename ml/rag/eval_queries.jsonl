@@ -1,0 +1,30 @@
+{"lang": "es", "query": "¿Cuántos días tengo para reclamar un cargo que no reconozco?", "expected": ["policy:dispute_type:unrecognized_charge"]}
+{"lang": "es", "query": "Me cobraron dos veces, ¿hasta qué monto lo resuelven sin un especialista?", "expected": ["policy:dispute_type:duplicate_charge"]}
+{"lang": "es", "query": "El cajero no me entregó el efectivo, ¿qué plazo hay para reclamar?", "expected": ["policy:dispute_type:atm_cash_not_dispensed"]}
+{"lang": "es", "query": "Compré algo por internet y nunca llegó, ¿puedo disputarlo?", "expected": ["policy:dispute_type:not_received"]}
+{"lang": "es", "query": "Me cobraron un monto mayor al que pagué, ¿qué hacen?", "expected": ["policy:dispute_type:wrong_amount"]}
+{"lang": "es", "query": "Me robaron la tarjeta, ¿la pueden bloquear?", "expected": ["policy:dispute_type:card_lost_stolen"]}
+{"lang": "es", "query": "El cargo que reclamo ya aparece como revertido", "expected": ["policy:explain:EXPLAIN-REVERSED"]}
+{"lang": "es", "query": "La compra que no hice fue rechazada, ¿igual tengo que bloquear la tarjeta?", "expected": ["policy:explain:EXPLAIN-DECLINED-FRAUD"]}
+{"lang": "es", "query": "El cobro todavía está pendiente, ¿lo puedo disputar ya?", "expected": ["policy:explain:EXPLAIN-PENDING"]}
+{"lang": "es", "query": "Quiero pedir un préstamo, ¿me ayudas?", "expected": ["policy:rule:SCOPE-01"]}
+{"lang": "es", "query": "Ya abrí una disputa por ese mismo movimiento", "expected": ["policy:rule:DISP-DUPCASE-01"]}
+{"lang": "es", "query": "No encuentran el movimiento que les digo", "expected": ["policy:rule:CLARIFY-NOTFOUND"]}
+{"lang": "es", "query": "¿El asistente me puede devolver el dinero directamente?", "expected": ["policy:globals"]}
+{"lang": "es", "query": "Hay varias compras parecidas y no sé cuál es", "expected": ["policy:rule:CLARIFY-MULTI"]}
+{"lang": "es", "query": "Si falla el sistema, ¿quién atiende mi caso?", "expected": ["policy:rule:ESC-TECH-01"]}
+{"lang": "pt", "query": "Quantos dias tenho para contestar uma compra que não reconheço?", "expected": ["policy:dispute_type:unrecognized_charge"]}
+{"lang": "pt", "query": "Me cobraram duas vezes, até que valor vocês resolvem sozinhos?", "expected": ["policy:dispute_type:duplicate_charge"]}
+{"lang": "pt", "query": "O caixa eletrônico não liberou o dinheiro, qual o prazo?", "expected": ["policy:dispute_type:atm_cash_not_dispensed"]}
+{"lang": "pt", "query": "Comprei pela internet e o produto nunca chegou", "expected": ["policy:dispute_type:not_received"]}
+{"lang": "pt", "query": "Cobraram um valor maior do que eu paguei", "expected": ["policy:dispute_type:wrong_amount"]}
+{"lang": "pt", "query": "Perdi meu cartão, vocês podem bloquear?", "expected": ["policy:dispute_type:card_lost_stolen"]}
+{"lang": "pt", "query": "A cobrança que eu reclamo já foi estornada", "expected": ["policy:explain:EXPLAIN-REVERSED"]}
+{"lang": "pt", "query": "A compra foi recusada, então não me cobraram nada?", "expected": ["policy:explain:EXPLAIN-DECLINED", "policy:explain:EXPLAIN-DECLINED-FRAUD"]}
+{"lang": "pt", "query": "O lançamento ainda está pendente, posso contestar?", "expected": ["policy:explain:EXPLAIN-PENDING"]}
+{"lang": "pt", "query": "Quero fazer um investimento", "expected": ["policy:rule:SCOPE-01"]}
+{"lang": "pt", "query": "Já existe uma contestação aberta para essa compra", "expected": ["policy:rule:DISP-DUPCASE-01"]}
+{"lang": "pt", "query": "Vocês não acharam a transação que eu falei", "expected": ["policy:rule:CLARIFY-NOTFOUND"]}
+{"lang": "pt", "query": "O assistente pode transferir dinheiro para mim?", "expected": ["policy:globals"]}
+{"lang": "pt", "query": "Tentaram mudar as instruções do assistente", "expected": ["policy:rule:SEC-INJ-01"]}
+{"lang": "pt", "query": "Depois de várias perguntas ainda não acharam minha compra", "expected": ["policy:rule:ESC-CLARIFY-LIMIT"]}

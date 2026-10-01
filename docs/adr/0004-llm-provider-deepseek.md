@@ -53,3 +53,22 @@ evaluation freeze.
   max(classify, extract). Out-of-scope messages cancel the call within a few ms. JMeter (5 users, 60 s, DeepSeek
   Flash): dispute turns p50 970 ms / p95 1,299 ms, out-of-scope p50 12 ms / p95 138 ms, 0 errors.
 - Metrics: `llm_speculative_extractions_total{outcome=used|discarded}`, `llm_calls_total{status="cancelled"}`.
+
+### Evidence (2026-09-30, P3): 26 messages, 3 runs, and LLM_COMPOSE template vs ai
+
+- `llmcheck` now has 26 messages (ES 15 / PT 11): 10 new ones with amounts in words, dates without a year and
+  merchants with typos. Three runs, prompts v2 unchanged (no v3 needed):
+
+| Provider | Amount | Date | Merchant | p50 | p95 | Cost (26 calls) |
+|---|---|---|---|---|---|---|
+| fake (rules) | 69% | 76% | 0% | 0 ms | 0 ms | 0 |
+| deepseek-flash | 100% | 96% | 100% | 735–785 ms | 0.92–1.10 s | USD 0.0029 |
+| deepseek-v4-pro | 100% | 96% | 100% | 1.24–1.29 s | 1.37–1.48 s | USD 0.0075–0.0078 |
+
+  Identical accuracy in all three runs; the only miss is still the "semana passada" boundary. Flash stays primary.
+- `LLM_COMPOSE=ai` vs `template` on the smoke scenarios (`scripts/smoke_chat.py`, both 24/24 green against Mailpit):
+  the AI rewrite keeps the verified facts (amount, merchant, date, card) but **drops the decisive message** in three
+  of eleven replies: the reversed charge reply no longer says the money is back, the declined-attempt reply no
+  longer says nothing was charged, and the card-block proposal loses the verification-code notice. `keepsFacts`
+  only checks facts, not the outcome sentence. **Decision: keep `LLM_COMPOSE=template`** until the guard also
+  requires the outcome-specific key phrase (or the rewrite is limited to tone around the template's sentences).
