@@ -438,7 +438,7 @@ def render(template: str, rng: random.Random, lang: str, short: bool) -> str:
 
 def mask(text: str) -> str:
     """Same placeholders as backend/internal/guard.Mask (emails and long digit runs)."""
-    text = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "[EMAIL]", text)
+    text = re.sub(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", "[EMAIL]", text)
     text = re.sub(r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b", "[NUMBER]", text)
     return re.sub(r"\b\d[\d -]{6,}\d\b", "[NUMBER]", text)
 

@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	emailRe = regexp.MustCompile(`[\w.+-]+@[\w-]+\.[\w.-]+`)
+	// The domain ends on a letter or digit, so a sentence's final period stays out of the match.
+	emailRe = regexp.MustCompile(`[\w.+-]+@[\w-]+(?:\.[\w-]+)+`)
 	// A number right after a document, account or phone keyword is personal data at any length, even with
 	// dots (DNI 12.345.678). Without a keyword, 8+ characters: shorter runs are usually amounts or dates the
 	// extractor needs.

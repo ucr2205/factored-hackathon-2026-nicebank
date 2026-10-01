@@ -455,7 +455,7 @@ en Streaming Music con mi tarjeta 4111 1111 1111 1111, ¿me ayudan?
 today: 2026-06-17 (Wednesday)
 country: Mexico
 <message>Hola, soy [NAME] [NAME], mi DNI es [NUMBER] y mi correo
-[EMAIL] No reconozco un cobro de 385,71 de ayer en Streaming Music
+[EMAIL]. No reconozco un cobro de 385,71 de ayer en Streaming Music
 con mi tarjeta [NUMBER], ¿me ayudan?</message>
 ```
 

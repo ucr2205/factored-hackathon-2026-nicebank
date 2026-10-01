@@ -46,3 +46,15 @@ func TestLooksLikeInjection(t *testing.T) {
 		}
 	}
 }
+
+func TestMaskEmailLeavesTheSentencePeriod(t *testing.T) {
+	for text, want := range map[string]string{
+		"mi correo maria.lopez@gmail.com. No reconozco": "mi correo [EMAIL]. No reconozco",
+		"escriban a ana@banco.com.mx, gracias":          "escriban a [EMAIL], gracias",
+		"rosa@example.test":                             "[EMAIL]",
+	} {
+		if got := Mask(text); got != want {
+			t.Errorf("%q: got %q, want %q", text, got, want)
+		}
+	}
+}
