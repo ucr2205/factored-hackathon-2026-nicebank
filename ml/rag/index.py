@@ -132,14 +132,21 @@ def policy_chunks(policy: dict) -> list[dict]:
     return chunks
 
 
+COVERS = re.compile(r"^<!--\s*covers:\s*(.*?)\s*-->\s*$", re.M)
+
+
 def faq_chunks() -> list[dict]:
+    """One chunk per "## " question. A "<!-- covers: <doc_id> ... -->" line names the policy chunks the answer
+    restates; it is kept out of the embedded text and used by evaluate.py to credit the FAQ answer as a hit."""
     chunks = []
     for lang in ("es", "pt"):
         for path in sorted((FAQ / lang).glob("*.md")):
-            sections = [s.strip() for s in re.split(r"\n(?=## )", path.read_text(encoding="utf-8")) if s.strip()]
+            sections = [s.strip() for s in re.split(r"\n(?=## )", path.read_text(encoding="utf-8")) if s.strip().startswith("## ")]
             for i, section in enumerate(sections):
-                chunks.append({"doc_id": f"faq:{lang}:{path.stem}#{i}", "lang": lang, "section": section.splitlines()[0][:120],
-                               "text": section, "version": "faq"})
+                m = COVERS.search(section)
+                chunks.append({"doc_id": f"faq:{lang}:{path.stem}#{i}", "lang": lang,
+                               "section": section.splitlines()[0][3:120], "text": COVERS.sub("", section).replace("\n\n", "\n").strip(),
+                               "version": "faq", "covers": m.group(1).split() if m else []})
     return chunks
 
 

@@ -1,0 +1,58 @@
+{
+ "seed": 20261001,
+ "today": "2026-06-17",
+ "cases": 168,
+ "dev": 50,
+ "test": 118,
+ "by_category": {
+  "normal": 42,
+  "non_final": 20,
+  "human": 32,
+  "ambiguous": 38,
+  "adversarial": 36
+ },
+ "by_lang": {
+  "es": 84,
+  "pt": 84
+ },
+ "by_expected_outcome": {
+  "confirm": 72,
+  "resolve": 10,
+  "escalate": 22,
+  "clarify": 38,
+  "abstain": 26
+ },
+ "by_tag": {
+  "normal": 42,
+  "non_final": 20,
+  "declined": 16,
+  "pending": 4,
+  "human": 32,
+  "high_amount": 10,
+  "out_of_window": 12,
+  "lost_stolen": 10,
+  "ambiguous": 28,
+  "multi_candidate": 8,
+  "vague_type": 10,
+  "unsupported": 10,
+  "out_of_scope": 10,
+  "not_found": 10,
+  "adversarial": 36,
+  "missing_data": 10,
+  "prompt_injection": 10,
+  "other_customer_data": 6,
+  "language_mix": 10
+ },
+ "test_sha256": "979dfdc7008e97e838ac53689d4ac63e9a2c9294e201401f058d35c19b141553",
+ "policy_version": "0.2.0",
+ "version": "v1",
+ "known_label_errors": [
+  {
+   "ids": [
+    "C136",
+    "C137"
+   ],
+   "why": "missing_data cases: the builder ignored the TRX-DEMO fixtures, which the backend also searches, so these customers do have recent movements (the system correctly asks to pick one). Fixed in build_cases.py after scoring; test v1 stays frozen."
+  }
+ ]
+}

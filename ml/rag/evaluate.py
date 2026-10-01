@@ -24,8 +24,17 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "etl"))
 from seed_demo import PG_DSN  # noqa: E402
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from index import faq_chunks  # noqa: E402
+
 QUERIES = Path(__file__).with_name("eval_queries.jsonl")
 KS = (1, 3, 5)
+# An FAQ answer that restates a policy chunk counts as retrieving it (see the covers comments in knowledge/faq).
+FAQ_COVERS = {c["doc_id"]: c["covers"] for c in faq_chunks()}
+
+
+def credited(doc: str) -> set[str]:
+    return {doc, *FAQ_COVERS.get(doc, [])}
 
 
 def embed_query(ml_url: str, text: str) -> list[float]:
@@ -44,15 +53,18 @@ def ranked_docs(rows: list[tuple[str, float]]) -> list[str]:
     return out
 
 
+def first_hit(ranked: list[str], expected: list[str]) -> int | None:
+    """1-based rank of the first chunk that is, or restates, an expected chunk."""
+    for i, doc in enumerate(ranked, 1):
+        if credited(doc) & set(expected):
+            return i
+    return None
+
+
 def score(ranks: list[list[str]], queries: list[dict]) -> dict[str, float]:
-    out = {}
-    for k in KS:
-        out[f"recall_at_{k}"] = float(np.mean([any(e in r[:k] for e in q["expected"]) for r, q in zip(ranks, queries)]))
-    rr = []
-    for r, q in zip(ranks, queries):
-        pos = [r.index(e) + 1 for e in q["expected"] if e in r]
-        rr.append(1 / min(pos) if pos else 0.0)
-    out["mrr"] = float(np.mean(rr))
+    hits = [first_hit(r, q["expected"]) for r, q in zip(ranks, queries)]
+    out = {f"recall_at_{k}": float(np.mean([h is not None and h <= k for h in hits])) for k in KS}
+    out["mrr"] = float(np.mean([1 / h if h else 0.0 for h in hits]))
     return out
 
 
@@ -89,7 +101,7 @@ def main() -> None:
             idx = [i for i, q in enumerate(queries) if q["lang"] == lang]
             res[lang] = score([ranks[i] for i in idx], [queries[i] for i in idx])
         res["misses_at_3"] = [{"query": q["query"], "expected": q["expected"], "top3": r[:3]}
-                              for r, q in zip(ranks, queries) if not any(e in r[:3] for e in q["expected"])]
+                              for r, q in zip(ranks, queries) if (first_hit(r, q["expected"]) or 99) > 3]
         results[name] = res
 
     mlflow.set_tracking_uri((ROOT / "ml" / "mlruns").as_uri())
