@@ -15,6 +15,9 @@ data/
 *.pdf
 
 # --- ML ---
+# ml/data/ holds the corpus generator (code, committed); its build/ output includes masked transcript text.
+!ml/data/
+ml/data/build/
 ml/mlruns/
 ml/models/
 *.joblib

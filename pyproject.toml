@@ -29,6 +29,7 @@ sentence-transformers = "^3.1"
 mlflow = "^2.16"
 fastapi = ">=0.115"
 uvicorn = { version = ">=0.30", extras = ["standard"] }
+prometheus-client = "^0.21"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3"
