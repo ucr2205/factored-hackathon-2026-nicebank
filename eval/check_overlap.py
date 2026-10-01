@@ -1,6 +1,6 @@
 """Check that no evaluation sentence near-duplicates a classifier training sentence (leakage guard).
 
-Compares every turn in eval/cases/*.jsonl with every row of ml/data/build/corpus.jsonl after normalization
+Compares every turn in eval/cases/**/*.jsonl with every row of ml/data/build/corpus.jsonl after normalization
 (lowercase, no accents, digits -> 0, placeholders removed): exact matches and character 4-gram Jaccard > 0.8 fail.
 
 Usage: poetry run python ml/data/generate_utterances.py && poetry run python eval/check_overlap.py
@@ -40,7 +40,7 @@ def main() -> int:
     train_grams = [grams(t) for t in train]
     train_set = set(train)
     worst, hits = 0.0, []
-    for path in sorted((ROOT / "eval" / "cases").glob("*.jsonl")):
+    for path in sorted((ROOT / "eval" / "cases").glob("**/*.jsonl")):
         for line in path.read_text(encoding="utf-8").splitlines():
             case = json.loads(line)
             for turn in case["turns"]:

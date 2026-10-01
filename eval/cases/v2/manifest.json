@@ -1,0 +1,49 @@
+{
+ "version": "v2",
+ "seed": 20261002,
+ "today": "2026-06-17",
+ "cases": 170,
+ "dev": 50,
+ "test": 120,
+ "by_category": {
+  "normal": 42,
+  "non_final": 20,
+  "human": 32,
+  "ambiguous": 40,
+  "adversarial": 36
+ },
+ "by_lang": {
+  "es": 85,
+  "pt": 85
+ },
+ "by_expected_outcome": {
+  "confirm": 72,
+  "resolve": 10,
+  "escalate": 22,
+  "clarify": 40,
+  "abstain": 26
+ },
+ "by_tag": {
+  "normal": 42,
+  "non_final": 20,
+  "declined": 16,
+  "pending": 4,
+  "human": 32,
+  "high_amount": 10,
+  "out_of_window": 12,
+  "lost_stolen": 10,
+  "ambiguous": 30,
+  "multi_candidate": 10,
+  "vague_type": 10,
+  "unsupported": 10,
+  "out_of_scope": 10,
+  "not_found": 10,
+  "adversarial": 36,
+  "missing_data": 10,
+  "prompt_injection": 10,
+  "other_customer_data": 6,
+  "language_mix": 10
+ },
+ "test_sha256": "63edfd3955a43ec42a6cb3fde5f10009bebf26cc3dde3d513502106bd79e9da3",
+ "policy_version": "0.2.0"
+}

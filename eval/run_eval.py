@@ -6,9 +6,9 @@ is created and runs are repeatable. The test split is refused unless its SHA-256
 
 Run it with the backend on Mailpit (baseline escalations queue handoff emails):
     SMTP_HOST=mailpit SMTP_PORT=1025 SMTP_SECURITY=none EMAIL_USERNAME= EMAIL_PASSWORD= docker compose up -d backend
-    poetry run python eval/run_eval.py --split test [--modes system,baseline]
+    poetry run python eval/run_eval.py --split test [--modes system,baseline] [--set v2]
 
-Writes eval/reports/<split>-<timestamp>.json (git-ignored) and a Markdown summary next to it.
+Writes eval/reports/<split>[-v2]-<timestamp>.json (git-ignored) and a Markdown summary next to it.
 """
 
 from __future__ import annotations
@@ -66,16 +66,17 @@ class Tokens:
         raise RuntimeError(f"could not log in as {user}")
 
 
-def load(split: str) -> list[dict]:
+def load(split: str, case_set: str = "v1") -> list[dict]:
+    base = CASES if case_set == "v1" else CASES / case_set
     parts = ["dev", "test"] if split == "all" else [split]
     if "test" in parts:
-        expected = (CASES / "TEST_HASH").read_text(encoding="utf-8").strip()
-        actual = hashlib.sha256((CASES / "test.jsonl").read_bytes()).hexdigest()
+        expected = (base / "TEST_HASH").read_text(encoding="utf-8").strip()
+        actual = hashlib.sha256((base / "test.jsonl").read_bytes()).hexdigest()
         if expected != actual:
             raise SystemExit(f"test.jsonl changed (sha256 {actual[:12]} != TEST_HASH {expected[:12]}); refusing to score it")
     cases = []
     for p in parts:
-        cases += [json.loads(line) for line in (CASES / f"{p}.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+        cases += [json.loads(line) for line in (base / f"{p}.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
     return cases
 
 
@@ -125,7 +126,7 @@ def pct(r: dict) -> str:
 
 
 def markdown(report: dict) -> str:
-    lines = [f"# Evaluation report — {report['split']} split ({report['run_at']})", "",
+    lines = [f"# Evaluation report — {report['split']} split, case set {report['case_set']} ({report['run_at']})", "",
              "Versions: " + ", ".join(f"{k}={v}" for k, v in report["versions"].items()), "",
              "| Metric | " + " | ".join(report["modes"]) + " |", "|---|" + "---|" * len(report["modes"])]
     for key, label in (("accuracy", "Correct outcome (outcome + action + rule)"), ("outcome_accuracy", "Correct outcome type"),
@@ -158,11 +159,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "test", "all"], default="dev")
     ap.add_argument("--modes", default="system,baseline")
+    ap.add_argument("--set", dest="case_set", choices=["v1", "v2"], default="v1", help="case set (v2 lives in eval/cases/v2/)")
     args = ap.parse_args()
     modes = [m.strip() for m in args.modes.split(",")]
-    cases = load(args.split)
+    cases = load(args.split, args.case_set)
     tokens = Tokens()
-    report = {"split": args.split, "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "modes": modes,
+    report = {"split": args.split, "case_set": args.case_set, "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "modes": modes,
               "versions": versions(), "cases": len(cases), "results": {}, "summary": {}}
     for mode in modes:
         results = []
@@ -176,7 +178,7 @@ def main() -> None:
         print(f"{mode}: accuracy {pct(s['accuracy'])} | unsafe {pct(s['unsafe_outcomes'])} | safe automation "
               f"{pct(s['safe_automated_resolution'])} | p50 {s['latency_ms']['p50']:.0f} ms | cost {s['cost_usd']['total']:.4f} USD")
     REPORTS.mkdir(parents=True, exist_ok=True)
-    stem = f"{args.split}-{report['run_at'].replace(':', '').replace('-', '')}"
+    stem = f"{args.split}{'' if args.case_set == 'v1' else '-' + args.case_set}-{report['run_at'].replace(':', '').replace('-', '')}"
     (REPORTS / f"{stem}.json").write_text(json.dumps(report, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     (REPORTS / f"{stem}.md").write_text(markdown(report), encoding="utf-8")
     print(f"report: eval/reports/{stem}.md")
