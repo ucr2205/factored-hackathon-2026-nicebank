@@ -22,6 +22,8 @@ NiceBank is an AI customer-service assistant for a Latin American bank. It focus
 
 The design principle is **AI proposes, code decides**. Models only read the (masked) text and propose; what happens is decided by a versioned policy, executed by Go code that verifies every step, and every step is audited. The assistant never moves money, never refunds and never shows another customer's data. When unsure, it asks.
 
+**Not tied to an AI vendor:** we use DeepSeek today, but the language model is swappable. Any other cloud model, or a **local** model running on the bank's own servers, can be used by changing configuration (section 7.2).
+
 | Indicator (exam of 120 unseen cases) | Result |
 |---|---|
 | Correct outcomes (outcome + action + rule) | **86.7%** (95% CI 79–92%) · rules-only baseline: 5.8% |
@@ -94,7 +96,7 @@ Static version: [img/process-flow.png](img/process-flow.png)
 | Identity | Keycloak 26 | Open standard (OIDC), MFA, roles, password reset; no per-user cost (see 4.1) | Auth0 / Cognito: per-user cost and vendor lock-in |
 | Database | Postgres 16 + pgvector | Native RLS, transactions, vector search in the same database | Separate vector DB: one more thing to secure and run |
 | Classifier | multilingual-e5-small + TF-IDF, logistic regression (scikit-learn) | Small, runs on CPU (~50 ms), sends no data out, reproducible and versioned | LLM only: costlier, slower, less predictable |
-| Language model | DeepSeek Flash (Pro as fallback) | JSON mode, 100% on amount, date and merchant extraction, very low cost (ADR 0004) | Other providers evaluated in ADR 0004 |
+| Language model | DeepSeek Flash today (Pro as fallback); swappable | JSON mode, 100% on amount, date and merchant extraction, very low cost (ADR 0004). Can be replaced by any cloud or local model (7.2) | Other providers evaluated in ADR 0004 |
 | Policy | Versioned YAML (`policies/disputes.yaml`) | Business-readable, changes without recompiling, validated at startup | Rules in code: hard for the business to audit |
 | Data | DuckDB, Polars, Pandera | Processes 23.5 M rows on a laptop with per-column contracts | Spark: overkill for the volume |
 | Observability | OpenTelemetry 1.46, Jaeger, Prometheus, JSON logs (slog) | Open standards, no vendor lock-in | Commercial APM |
@@ -238,7 +240,19 @@ Specialists and supervisors read it from the console. Minor gap: claiming a case
 - **DeepSeek Flash:** one call per message, in parallel with the classifier, that extracts amount, date and merchant (100% on 26 control messages), gives a second opinion on the type and flags requests that must be refused. It receives masked text only.
 - **Retrieval (RAG):** policy and FAQ indexed in pgvector (recall@3 0.93); the chat does not use it yet.
 
-### 7.2 How it is evaluated
+### 7.2 Any model, even a local one
+
+We use DeepSeek because in our tests it was accurate, fast and very cheap, but the system is **not tied to it**:
+
+- **An interface, not a vendor:** the orchestrator only knows the `llm.Provider` interface (extract facts, pick a candidate, draft wording). Which model answers behind it is a configuration detail; adding another provider means implementing that interface, without touching the rules, security or audit.
+- **Standard API:** the current client speaks the OpenAI chat format, which most providers and model servers offer. The server address (`DEEPSEEK_BASE_URL`), model (`LLM_MODEL`) and fallback model (`LLM_FALLBACK_MODEL`) are environment variables.
+- **Local model:** it can point to an open model (for example Llama, Qwen or Mistral) served on the bank's own servers with Ollama or vLLM. Then **no text ever leaves the bank**, which is often a compliance requirement. The classifier and the embeddings are already local today.
+- **Never without service:** if the primary model fails, the fallback model is used and then a local rule-based extractor; the flow never blocks.
+- **Switch with evidence:** before changing models we run the same tests we used with DeepSeek: extraction (`llmcheck`), refusal screen (`screencheck`), dispute type (`typecheck`) and the full exam (`make eval`). The switch is accepted only if the results hold.
+
+> To be precise: we only measured DeepSeek Flash and Pro. The request includes a DeepSeek-specific field (turn off reasoning) that most compatible servers ignore; if one rejects it, it is a few-line change. The cost table only knows DeepSeek prices, so with another model its prices must be added for the per-conversation cost to be reported correctly.
+
+### 7.3 How it is evaluated
 
 Each test case is an invented sentence anchored on a **real transaction** of a demo customer; the expected outcome is derived from that row and the policy. Exam v2 (120 cases) was written and frozen before the current model was trained, and is compared against a rules-only system. There are also independent tests written by another author with no access to the repository: 120 messages for the refusal screen and 140 for the dispute type.
 
@@ -289,7 +303,7 @@ make eval                     # evaluation against the rules-only system
 | Encryption key in `.env` | Secret manager and KMS with rotation (the schema already has `key_version`) |
 | Test users and client (known TOTP seeds) | Remove them; MFA enforced by policy |
 | Team-written corpus | Real, consented messages and a blind exam written by outsiders |
-| External DeepSeek | Data-processing agreement or a self-hosted model; local fallback for the refusal screen |
+| External DeepSeek | Data-processing agreement, another provider, or a local model on the bank's servers (7.2); local fallback for the refusal screen |
 | Single host, no CI | Replicas, managed Postgres with backups, CI with tests and evaluation |
 | No traces in the classifier | Propagate traces and structured logs into ml-service too |
 
@@ -312,6 +326,10 @@ Only the message text with personal data masked. Never names, emails, documents 
 #### What if DeepSeek or the classifier goes down?
 
 DeepSeek has a fallback model and a local extractor; nothing blocks. If the classifier fails, the case goes to a specialist with a technical code, so the customer is never left without an answer.
+
+#### Are we dependent on DeepSeek?
+
+No. DeepSeek is the model we use today, but it can be replaced by any other, in the cloud or local on the bank's servers, by changing configuration. Before switching, the same quality tests are run (section 7.2).
 
 #### Why not a single language model that does everything?
 
