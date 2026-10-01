@@ -13,6 +13,7 @@ data/
 
 # --- Organizer documents (they contain credentials) ---
 *.pdf
+!docs/pitch/*.pdf
 
 # --- ML ---
 # ml/data/ holds the corpus generator (code, committed); its build/ output includes masked transcript text.

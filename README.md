@@ -25,6 +25,7 @@ actions are enforced by deterministic code. The system never moves money or issu
 Full design: [`docs/architecture.md`](docs/architecture.md). Key decisions are recorded in [`docs/adr/`](docs/adr/).
 **Technical overview** (stack and why, security, logs, data, AI, testing, operations, FAQ, with the process
 flowchart): [`docs/technical_overview.md`](docs/technical_overview.md).
+**Pitch deck** (6 slides, EN/ES, PDF and PowerPoint): [`docs/pitch/`](docs/pitch/).
 
 ## Security and privacy (summary)
 
