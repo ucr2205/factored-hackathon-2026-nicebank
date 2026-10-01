@@ -2,7 +2,7 @@
 # Python dependencies are managed with Poetry only (pyproject.toml + poetry.lock).
 PY ?= poetry run python
 
-.PHONY: help setup env data inventory profile eda etl test-etl seed smoke test load
+.PHONY: help setup env data inventory profile eda etl test-etl seed smoke test load train test-ml rag eval
 
 help:
 	@echo "make setup      - install Python dependencies with Poetry (add ML deps: poetry install --with ml)"
@@ -17,6 +17,10 @@ help:
 	@echo "make smoke      - reseed and run the end-to-end chat scenarios against the API"
 	@echo "make test       - backend unit tests + frontend type check and build"
 	@echo "make load       - JMeter smoke load test (5 users, 60 s); needs jmeter on PATH"
+	@echo "make train      - generate the classifier corpus, train B0-M3 in MLflow, export ml/service/model (ML deps)"
+	@echo "make test-ml    - ml-service tests (contract C2, parity with training, latency)"
+	@echo "make rag        - index policy + FAQ into kb_chunks and evaluate retrieval (stack up)"
+	@echo "make eval       - evaluation harness on the frozen test split, system vs baseline (stack up, SMTP on Mailpit)"
 
 setup:
 	poetry install
@@ -54,3 +58,18 @@ test:
 
 load:
 	jmeter -n -t qa/jmeter/nicebank-load.jmx -Jusers=5 -Jramp=10 -Jduration=60 -f -l qa/jmeter/results/results.jtl -e -o qa/jmeter/results/report
+
+train:
+	$(PY) ml/data/generate_utterances.py
+	$(PY) ml/train.py
+
+test-ml:
+	poetry run pytest ml/service/tests -q
+
+rag:
+	$(PY) ml/rag/index.py
+	$(PY) ml/rag/evaluate.py
+
+eval:
+	$(PY) eval/check_overlap.py
+	$(PY) eval/run_eval.py --split test

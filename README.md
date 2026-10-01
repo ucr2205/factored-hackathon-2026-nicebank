@@ -7,9 +7,9 @@ in Spanish and Portuguese. The system follows **Understand → Decide → Act �
 AI is used where natural language requires it, while authentication, permissions, policy decisions and
 actions are enforced by deterministic code. The system never moves money or issues refunds.
 
-> Status (2026-09-27): end-to-end vertical slice working — customer chat, agent console, supervisor view,
-> orchestrator with policy engine, verified tools, TOTP step-up and audit. The LLM is a deterministic fake and the
-> classifier a keyword stub until the real components land (same interfaces). Sections marked *TBD* come later.
+> Status (2026-10-01): all components real — trained dispute classifier (ml-service), DeepSeek Flash for fact
+> extraction, policy engine, verified tools, TOTP step-up, audit, agent console with claim/reveal/close, customer
+> "Mis disputas", policy + FAQ retrieval index, and a held-out evaluation against a rules-only baseline.
 
 ## Architecture (summary)
 
@@ -22,7 +22,7 @@ actions are enforced by deterministic code. The system never moves money or issu
 | `infra/` | Keycloak, Postgres + pgvector, OTel, Jaeger, Prometheus | Identity (OIDC + PKCE + TOTP step-up), row-level security, tracing, metrics |
 | `eval/` | Python | Held-out evaluation harness: baseline vs system |
 
-Key decisions are recorded in [`docs/adr/`](docs/adr/).
+Full design: [`docs/architecture.md`](docs/architecture.md). Key decisions are recorded in [`docs/adr/`](docs/adr/).
 
 ## Quick start
 
@@ -81,9 +81,33 @@ scripts/    task entry points used by the Makefile
 
 ## Evaluation
 
-*TBD* — safe automated resolution, containment, escalation quality, unsafe outcomes (counts and denominators),
-p50/p95 latency and cost per case, broken down by language and customer segment.
+118 held-out test cases (ES/PT), each an invented customer sentence anchored on a **real transaction** of a demo
+customer, with the expected outcome derived from that row and the policy. The same cases run against the system and
+against a rules-only baseline that sends every dispute to a human. Definitions: [`eval/RUBRIC.md`](eval/RUBRIC.md);
+full report with breakdowns by language, segment, country and category: [`eval/reports/`](eval/reports/).
+
+| Metric (test split, 95% Wilson CI) | System | Baseline |
+|---|---|---|
+| Correct outcome (outcome + action + policy rule) | **88.1%** (104/118; 81–93%) | 3.4% (4/118) |
+| Safe automated resolution | **82.6%** (38/46; 69–91%) | 0% (0/46) |
+| Unsafe outcomes | **0%** (0/118; 0–3%) | 0% (0/118) |
+| Escalation recall / precision | **96.4%** (27/28) / **100%** (27/27) | 7.1% / 5.7% |
+| Sent to a human | 22.9% | 29.7% |
+| Latency p50 / p95 per turn | 852 / 1,234 ms | 2 / 17 ms |
+| LLM cost per case | USD 0.00008 | 0 |
+
+Versions: policy 0.2.0, classifier `e5-tfidf-avg-1dd695a4`, DeepSeek Flash with `deepseek-prompts-v2`,
+`LLM_COMPOSE=template`. Two test cases have known label errors (documented in `eval/cases/manifest.json`); without
+them accuracy is 89.8%. Most remaining errors are paraphrases of "wrong amount" that the classifier abstains on:
+the assistant asks instead of acting.
+
+Component results: classifier test macro-F1 0.94 vs 0.52 for the keyword baseline ([`docs/ml_report.md`](docs/ml_report.md));
+retrieval recall@3 0.93 over policy + FAQ; DeepSeek Flash extraction 100% amount / 96% date / 100% merchant on 26
+messages (ADR 0004). Reproduce: `make train`, `make test-ml`, `make rag`, `make eval`;
+backend integration tests: `cd backend && go test -tags integration ./internal/orchestrator/` (see the test file
+header for `TEST_DATABASE_URL`).
 
 ## Limitations and production gap
 
-*TBD* — see `docs/production_gap.md`.
+Synthetic data with no real dispute text, a team-written evaluation set, an external LLM, simulated card networks,
+test identities and single-host infrastructure. Details and what each would need: [`docs/production_gap.md`](docs/production_gap.md).
