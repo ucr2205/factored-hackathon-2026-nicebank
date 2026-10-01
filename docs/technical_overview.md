@@ -88,20 +88,20 @@ Static version: [img/process-flow.png](img/process-flow.png)
 
 ## 3. Technology stack, and why
 
-| Layer | Technology | Why we chose it | Alternative considered |
-|---|---|---|---|
-| Backend | Go 1.26, chi 5.3, pgx 5.11 | Small static binary, simple concurrency (classifier and LLM in parallel), strong typing, distroless image with no shell | Python/FastAPI: slower, larger attack surface |
-| Frontend | React 19, TypeScript 6, Vite 8, MUI 9, oidc-client-ts | Accessible components, brand theme, static build served by nginx with security headers | Server-rendered framework: unnecessary for an SPA |
-| Identity | Keycloak 26 | Open standard (OIDC), MFA, roles, password reset; no per-user cost (see 4.1) | Auth0 / Cognito: per-user cost and vendor lock-in |
-| Database | Postgres 16 + pgvector | Native RLS, transactions, vector search in the same database | Separate vector DB: one more thing to secure and run |
-| Classifier | multilingual-e5-small + TF-IDF, logistic regression (scikit-learn) | Small, runs on CPU (~50 ms), sends no data out, reproducible and versioned | LLM only: costlier, slower, less predictable |
-| Language model | DeepSeek Flash today (Pro as fallback); swappable | JSON mode, 100% on amount, date and merchant extraction, very low cost (ADR 0004). Can be replaced by any cloud or local model (7.2) | Other providers evaluated in ADR 0004 |
-| Policy | Versioned YAML (`policies/disputes.yaml`) | Business-readable, changes without recompiling, validated at startup | Rules in code: hard for the business to audit |
-| Data | DuckDB, Polars, Pandera | Processes 23.5 M rows on a laptop with per-column contracts | Spark: overkill for the volume |
-| Observability | OpenTelemetry 1.46, Jaeger, Prometheus, JSON logs (slog) | Open standards, no vendor lock-in | Commercial APM |
-| Email | Postgres outbox + SMTP | An email exists only if the action committed; safe retries (ADR 0005) | Sending inside the request: emails for failed actions |
-| ML ops | MLflow | Reproducible experiments and model comparison | Spreadsheets |
-| Testing | go test, pytest, JMeter, own evaluation harness | Unit, integration with a real database, load and AI quality | — |
+| Layer | Technology | Why we chose it |
+|---|---|---|
+| Backend | Go 1.26, chi 5.3, pgx 5.11 | Small static binary, simple concurrency (classifier and LLM in parallel), strong typing, distroless image with no shell |
+| Frontend | React 19, TypeScript 6, Vite 8, MUI 9, oidc-client-ts | Accessible components, brand theme, static build served by nginx with security headers |
+| Identity | Keycloak 26 | Open standard (OIDC), MFA, roles, password reset; no per-user cost (see 4.1) |
+| Database | Postgres 16 + pgvector | Native RLS, transactions, vector search in the same database |
+| Classifier | multilingual-e5-small + TF-IDF, logistic regression (scikit-learn) | Small, runs on CPU (~50 ms), sends no data out, reproducible and versioned |
+| Language model | DeepSeek Flash today (Pro as fallback); swappable | JSON mode, 100% on amount, date and merchant extraction, very low cost (ADR 0004). Can be replaced by any cloud or local model (7.2) |
+| Policy | Versioned YAML (`policies/disputes.yaml`) | Business-readable, changes without recompiling, validated at startup |
+| Data | DuckDB, Polars, Pandera | Processes 23.5 M rows on a laptop with per-column contracts |
+| Observability | OpenTelemetry 1.46, Jaeger, Prometheus, JSON logs (slog) | Open standards, no vendor lock-in |
+| Email | Postgres outbox + SMTP | An email exists only if the action committed; safe retries (ADR 0005) |
+| ML ops | MLflow | Reproducible experiments and model comparison |
+| Testing | go test, pytest, JMeter, own evaluation harness | Unit, integration with a real database, load and AI quality |
 
 > Exact versions: `backend/go.mod`, `frontend/package.json`, `pyproject.toml`, `ml/service/pyproject.toml` and the images in `docker-compose.yml`.
 
