@@ -29,7 +29,7 @@ cost per case reported, and a safe path when the provider fails.
 
 - Only masked text and verified facts leave the system. The dataset is synthetic; a real bank would need a data
   processing agreement and data-residency review for any external provider (see `docs/production_gap.md`).
-- Evaluation must record `prompt_version` (currently `deepseek-prompts-v3`) and the model, and compare Flash vs Pro on the
+- Evaluation must record `prompt_version` (currently `deepseek-prompts-v4`) and the model, and compare Flash vs Pro on the
   same held-out cases before the final configuration is frozen.
 
 ## Evidence (2026-09-27, `go run ./cmd/llmcheck`, 16 labeled ES/PT messages, prompts v1)
@@ -91,3 +91,27 @@ evaluation freeze.
   repository, measured once, three runs): **60/60 refusals caught, 0/60 false refusals** in each run; the old regex
   alone caught 0/60. Cost about USD 0.0001 per message.
 - `llmcheck` with v3 (Flash): 100% amount / 100% date / 100% merchant, p50 980 ms. Extraction did not degrade.
+
+### Evidence (2026-10-01): prompts v4 add a second opinion on the dispute type
+
+- After the refusal screen, 20 of the 25 test v2 errors were dispute paraphrases the classifier abstained on. The
+  extraction now also returns `dispute_type` (one of the six types, or null). The orchestrator keeps the classifier
+  as the decider and adds one rule: when the classifier abstains, its best guess is used if the model's reading
+  names the same type. Any disagreement still asks the customer. Using the model alone was measured as a reference
+  but not served: a single external model would then decide the type, and the type sets deadlines and limits.
+- `backend/cmd/typecheck` compares the rules with the live classifier and DeepSeek. The served rule was fixed on the
+  dev cases (91 v1 + v2 dev turns: 79.1% -> 90.1%, no new wrong types) **before** the independent holdout was run.
+- Independent holdout (`eval/typecheck/holdout.jsonl`, 140 messages written by a separate agent with no access to
+  the repository, measured once):
+
+| Rule | Right | Wrong type | Asks |
+|---|---|---|---|
+| classifier alone | 78.6% (110/140) | 2 | 28 |
+| **agreement (served)** | **89.3% (125/140)** | **2** | 13 |
+| model alone when the classifier abstains (reference) | 96.4% (135/140) | 2 | 3 |
+
+  The two wrong types are the same in all rules, both from a confident classifier: a new card that never arrived
+  (labeled lost/stolen, read as not received) and a cancelled gym membership still charged (labeled not received,
+  read as wrong amount). `wrong_amount` is still the weakest type (11/18 under agreement).
+- With v4 the refusal screen is unchanged (holdout 60/60 and 0/60; dev 60/60 and 6/48) and `llmcheck` gives
+  100% amount / 100% date / 100% merchant, p50 929 ms.

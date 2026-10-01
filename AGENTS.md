@@ -174,7 +174,7 @@ channel) and take ~15 days, with 20% SLA breaches and 75% still open. But the da
   threshold for precision ≥ 0.95; evaluate on Portuguese dev cases.
 - Replace the stub in `ml/service/app.py` keeping contract C2 exactly (the backend already calls it).
 - RAG over `policies/` + `knowledge/faq/{es,pt}` into `kb_chunks` (pgvector); versioned prompts in `prompts/`.
-- LLM provider is DeepSeek (ADR 0004, `backend/internal/llm/deepseek.go`): tune `deepseek-prompts-v3` (rerun
+- LLM provider is DeepSeek (ADR 0004, `backend/internal/llm/deepseek.go`): tune `deepseek-prompts-v4` (rerun
   `go run ./cmd/llmcheck` after any prompt change), compare `deepseek-flash` vs `deepseek-v4-pro` (and `LLM_COMPOSE=template|ai`) on dev cases, keep masked input only.
 
 ### P4 — Policies / evaluation / docs / pitch

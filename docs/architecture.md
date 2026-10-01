@@ -61,7 +61,7 @@ flowchart TB
    instruction-override or forbidden-action patterns are refused (`SEC-INJ-01`).
 2. **Understand.** The classifier (ml-service, model M3 = TF-IDF + multilingual-e5 logistic regressions) labels the
    dispute type (taxonomy C6) and abstains below a frozen confidence threshold. In parallel, DeepSeek Flash
-   extracts amount, date and merchant (prompt `deepseek-prompts-v3`, masked input only; the same call says whether the message must be refused: another person's data, rewriting the assistant's rules, money without a process -> `SEC-INJ-01`). If the classifier
+   extracts amount, date and merchant (prompt `deepseek-prompts-v4`, masked input only; the same call gives a second opinion on the dispute type, used only when it agrees with an unsure classifier, and says whether the message must be refused: another person's data, rewriting the assistant's rules, money without a process -> `SEC-INJ-01`). If the classifier
    abstains, the assistant asks what happened (`CLARIFY-TYPE`).
 3. **Decide.** The customer's own card transactions are searched (row-level security pins the customer). Zero
    matches → ask for facts; several → let the customer pick; one → the policy engine evaluates it: not a final

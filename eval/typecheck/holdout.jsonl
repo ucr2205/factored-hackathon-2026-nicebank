@@ -1,0 +1,140 @@
+{"id": "T001", "lang": "es", "label": "atm_cash_not_dispensed", "text": "Hice un retiro de US$ 200 en un ATM en Miami y la máquina no dispensó nada, pero me debitaron los 200 más la comisión"}
+{"id": "T002", "lang": "es", "label": "duplicate_charge", "text": "Pagué la cena en La Parrilla de Juan el viernes, $1.850, y en la app me sale el mismo monto dos veces a la misma hora"}
+{"id": "T003", "lang": "es", "label": "unrecognized_charge", "text": "oye me aparece un cargo de $2.340 de una tal DLOCAL*STEAM y yo ni juego videojuegos, eso no lo hice yo"}
+{"id": "T004", "lang": "pt", "label": "unrecognized_charge", "text": "gente do céu, chegou SMS de compra aprovada de R$ 1.200,00 numa loja de eletrônicos em SP, eu tô em Recife com o cartão na mão"}
+{"id": "T005", "lang": "pt", "label": "out_of_scope", "text": "Como faço pra investir em CDB pelo app?"}
+{"id": "T006", "lang": "es", "label": "wrong_amount", "text": "tenia un cupon del 20% en Mercado Libre y no me lo aplicaron, me cobraron completo los 2.500"}
+{"id": "T007", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "Saque de R$ 1.000 no terminal da rodoviária, a gaveta abriu vazia"}
+{"id": "T008", "lang": "pt", "label": "not_received", "text": "Paguei um ano de VPN adiantado, US$ 60, e o serviço saiu do ar na semana seguinte sem devolver nada"}
+{"id": "T009", "lang": "es", "label": "other_in_scope", "text": "el de 1.250,90, el de la gasolinera"}
+{"id": "T010", "lang": "es", "label": "out_of_scope", "text": "a que hora abre la sucursal de Insurgentes los sabados?"}
+{"id": "T011", "lang": "pt", "label": "not_received", "text": "Cancelei a reserva no Booking que tinha cancelamento grátis e o estorno de R$ 820 até hoje não caiu"}
+{"id": "T012", "lang": "es", "label": "out_of_scope", "text": "como contrato el seguro de auto con ustedes?"}
+{"id": "T013", "lang": "es", "label": "unrecognized_charge", "text": "me llegó un SMS de compra aprobada en Falabella por 189.990 y yo no estaba ni cerca, estoy en la oficina desde las 8"}
+{"id": "T014", "lang": "es", "label": "out_of_scope", "text": "cuanto me prestan si quiero un credito hipotecario?"}
+{"id": "T015", "lang": "es", "label": "not_received", "text": "el paquete de Shein dice entregado pero a mi casa no llego nada, fueron $78.400"}
+{"id": "T016", "lang": "pt", "label": "wrong_amount", "text": "pedi um Uber que estimava 28 reais e cobrou 96, a corrida foi normal sem desvio nenhum"}
+{"id": "T017", "lang": "es", "label": "wrong_amount", "text": "pague en Starbucks un cafe de 75 pesos y me cobraron 750, creo que le pusieron un cero de mas"}
+{"id": "T018", "lang": "pt", "label": "other_in_scope", "text": "Oi, tenho uma dúvida sobre um lançamento de R$ 230,00 do dia 05/09 na fatura"}
+{"id": "T019", "lang": "es", "label": "card_lost_stolen", "text": "perdí mi tarjeta, creo que se me cayó en el metro"}
+{"id": "T020", "lang": "pt", "label": "wrong_amount", "text": "o restaurante colocou os 10% de serviço que eu tinha recusado, a conta deu 200 e vieram 220 no cartao"}
+{"id": "T021", "lang": "es", "label": "atm_cash_not_dispensed", "text": "el cajero del aeropuerto se trabó, no me dio los billetes y en mi cuenta aparece el retiro de 3.000 pesos"}
+{"id": "T022", "lang": "es", "label": "atm_cash_not_dispensed", "text": "saque 1.000 en el cajero de oxxo y me salieron 500 nomas"}
+{"id": "T023", "lang": "es", "label": "unrecognized_charge", "text": "Creo que me hackearon. Hay un pago de Netflix de 199 pesos del 3 de mayo desde una cuenta que no es mía, yo ni tengo Netflix"}
+{"id": "T024", "lang": "pt", "label": "card_lost_stolen", "text": "nao acho meu cartao em lugar nenhum, acho que deixei cair no Uber"}
+{"id": "T025", "lang": "pt", "label": "wrong_amount", "text": "No hotel o combinado era diária de R$ 300 e me cobraram R$ 450 por diária, foram 3 diárias"}
+{"id": "T026", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "caixa eletronico travou no meio do saque, nao saiu dinheiro nenhum e tirou 400 da minha conta"}
+{"id": "T027", "lang": "pt", "label": "card_lost_stolen", "text": "perdi meu cartão, como bloqueio?"}
+{"id": "T028", "lang": "pt", "label": "other_in_scope", "text": "isso, a da Netshoes"}
+{"id": "T029", "lang": "es", "label": "unrecognized_charge", "text": "Buenas, revisando el estado de cuenta hay un movimiento del 12/05 en Mercado Pago por 8.900 pesos que no se que es, nadie en mi casa compro nada"}
+{"id": "T030", "lang": "es", "label": "other_in_scope", "text": "Tengo una duda sobre un cargo de 540 del lunes"}
+{"id": "T031", "lang": "es", "label": "not_received", "text": "pague un curso online de 3.500 pesos y la plataforma nunca me dio acceso"}
+{"id": "T032", "lang": "pt", "label": "unrecognized_charge", "text": "quem fez essa compra no iFood de 112 reais ontem a noite? nao fui eu, eu tava no plantão"}
+{"id": "T033", "lang": "pt", "label": "wrong_amount", "text": "O valor na etiqueta era R$ 49,90 e passaram R$ 94,90 no cartão"}
+{"id": "T034", "lang": "es", "label": "out_of_scope", "text": "no puedo entrar a la app, me dice contraseña incorrecta"}
+{"id": "T035", "lang": "es", "label": "out_of_scope", "text": "me interesa abrir una cuenta de ahorro para mi hija"}
+{"id": "T036", "lang": "es", "label": "wrong_amount", "text": "en el restaurante me agregaron una propina del 15% que yo no deje, la cuenta era de 1.200 y me cobraron 1.380"}
+{"id": "T037", "lang": "pt", "label": "unrecognized_charge", "text": "acho que clonaram meu cartao, tem umas compras pequenas de R$ 9,99 varias vezes num site gringo que eu nunca entrei"}
+{"id": "T038", "lang": "es", "label": "not_received", "text": "Contraté un técnico para arreglar el aire acondicionado, le pagué $150.000 por adelantado con la tarjeta y nunca vino"}
+{"id": "T039", "lang": "pt", "label": "duplicate_charge", "text": "cobraram em duplicidade minha compra na Drogasil de 64,30"}
+{"id": "T040", "lang": "pt", "label": "not_received", "text": "comprei um sofá com prazo de entrega de 30 dias, já são 90 e nada de sofá, foram 3.200 reais"}
+{"id": "T041", "lang": "pt", "label": "unrecognized_charge", "text": "nao reconheço essa transacao de R$ 2.450 no posto Ipiranga do dia 02/09"}
+{"id": "T042", "lang": "es", "label": "wrong_amount", "text": "la mensualidad del gym con la promo era 450 y este mes me debitaron 650, nadie me aviso de ningun aumento"}
+{"id": "T043", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "boa noite, tentei sacar no caixa do shopping, apareceu erro e mesmo assim os 500 sairam do meu saldo"}
+{"id": "T044", "lang": "pt", "label": "card_lost_stolen", "text": "Meu cartão sumiu da gaveta, não sei se alguém pegou, quero cancelar por segurança"}
+{"id": "T045", "lang": "pt", "label": "not_received", "text": "Meu pedido da Americanas de 14/07 consta como extraviado e não me devolveram os R$ 459,00"}
+{"id": "T046", "lang": "es", "label": "other_in_scope", "text": "el segundo"}
+{"id": "T047", "lang": "pt", "label": "other_in_scope", "text": "sim, essa mesma"}
+{"id": "T048", "lang": "es", "label": "atm_cash_not_dispensed", "text": "Retiré $500.000 en un cajero de Servibanca, solo me entregó $300.000 pero me debitaron los 500"}
+{"id": "T049", "lang": "es", "label": "out_of_scope", "text": "Qué rendimiento tiene el plazo fijo a 90 días?"}
+{"id": "T050", "lang": "es", "label": "unrecognized_charge", "text": "Quiero reportar un fraude, aparecio un consumo de $1.250,90 en una gasolinera a las 3am y yo estaba dormido en mi casa"}
+{"id": "T051", "lang": "es", "label": "wrong_amount", "text": "compre en Amazon US$ 100 y me aplicaron un tipo de cambio de 22 pesos por dolar cuando ese dia estaba a 18"}
+{"id": "T052", "lang": "es", "label": "card_lost_stolen", "text": "Olvidé la tarjeta en el restaurante anoche y cuando volví ya no estaba"}
+{"id": "T053", "lang": "pt", "label": "not_received", "text": "A companhia aérea cancelou meu voo e ficou de reembolsar 1.100 reais em 7 dias, já faz um mês"}
+{"id": "T054", "lang": "es", "label": "duplicate_charge", "text": "me duplicaron la compra en Liverpool de 4.599 pesos, solo compré un par de tenis"}
+{"id": "T055", "lang": "pt", "label": "card_lost_stolen", "text": "Roubaram minha bolsa na praia com o cartão dentro"}
+{"id": "T056", "lang": "es", "label": "card_lost_stolen", "text": "creo que deje la tarjeta en la terminal de la farmacia, ya llame y no la tienen"}
+{"id": "T057", "lang": "es", "label": "other_in_scope", "text": "cuanto tarda en resolverse una aclaracion de un cargo?"}
+{"id": "T058", "lang": "es", "label": "atm_cash_not_dispensed", "text": "ayer 15/09 en el cajero automatico de la plaza pedi 50 lucas y nunca salieron, pero ya me las cobraron"}
+{"id": "T059", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "sacar dinheiro hoje no caixa do Bradesco foi um pesadelo, a máquina contou as notas, fez barulho e não liberou. R$ 600 debitados"}
+{"id": "T060", "lang": "es", "label": "duplicate_charge", "text": "Compré un vuelo en Avianca por US$ 320 y veo 2 cargos identicos del 08/07, hice una sola reserva"}
+{"id": "T061", "lang": "pt", "label": "out_of_scope", "text": "Quero aumentar o limite do meu cartão de crédito"}
+{"id": "T062", "lang": "es", "label": "other_in_scope", "text": "Hola, necesito ayuda con un movimiento de mi tarjeta del 12/08 en Falabella por $89.990"}
+{"id": "T063", "lang": "es", "label": "card_lost_stolen", "text": "Nunca me llegó la tarjeta nueva que me mandaron por correo, el seguimiento dice entregada pero yo no la tengo"}
+{"id": "T064", "lang": "es", "label": "duplicate_charge", "text": "en el oxxo hice una recarga de 200 y me salen dos movimientos iguales, misma hora, misma tienda"}
+{"id": "T065", "lang": "pt", "label": "other_in_scope", "text": "a primeira"}
+{"id": "T066", "lang": "pt", "label": "unrecognized_charge", "text": "Tem um lançamento estranho 'PAG*JoseCarlos' de 75 reais dia 14/06, não conheço ninguém com esse nome e não paguei nada pra ninguém"}
+{"id": "T067", "lang": "pt", "label": "card_lost_stolen", "text": "Tô viajando e perdi a carteira no aeroporto de Lima, preciso de um cartão novo"}
+{"id": "T068", "lang": "pt", "label": "duplicate_charge", "text": "a maquininha deu erro, o moço passou de novo e agora aparecem duas compras de 89 reais no mesmo minuto"}
+{"id": "T069", "lang": "pt", "label": "other_in_scope", "text": "preciso falar sobre uma cobrança no meu cartão"}
+{"id": "T070", "lang": "pt", "label": "out_of_scope", "text": "vocês têm seguro de vida?"}
+{"id": "T071", "lang": "pt", "label": "unrecognized_charge", "text": "Meu cartão virtual foi usado numa assinatura de streaming que eu nunca assinei, 39,90 todo mês desde julho"}
+{"id": "T072", "lang": "pt", "label": "card_lost_stolen", "text": "furtaram meu celular e o cartao tava na capinha"}
+{"id": "T073", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "Fui sacar 300 reais no Banco24Horas e não saiu o dinheiro, mas debitou da conta"}
+{"id": "T074", "lang": "es", "label": "atm_cash_not_dispensed", "text": "el cajero me devolvio la tarjeta pero los billetes nunca salieron, y en la app ya figura el retiro de 4.000"}
+{"id": "T075", "lang": "pt", "label": "duplicate_charge", "text": "minha mensalidade da Smart Fit veio repetida esse mes, duas de 119,90 no dia 10"}
+{"id": "T076", "lang": "pt", "label": "other_in_scope", "text": "qual o prazo pra abrir uma contestação de compra no cartão?"}
+{"id": "T077", "lang": "es", "label": "unrecognized_charge", "text": "alguien esta usando mi tarjeta?? me llego notificacion de una compra en Uber Eats en Monterrey y yo vivo en Guadalajara"}
+{"id": "T078", "lang": "es", "label": "not_received", "text": "Cancelé mi vuelo con Volaris dentro del plazo y me prometieron el reembolso de US$ 210, ya pasaron 2 meses y nada"}
+{"id": "T079", "lang": "es", "label": "card_lost_stolen", "text": "Me robaron la cartera con todas mis tarjetas hace una hora, necesito bloquear ya"}
+{"id": "T080", "lang": "es", "label": "unrecognized_charge", "text": "hay un debito automatico de 'APPLE.COM/BILL' por $99.000 que me cobran hace dos meses y yo nunca me suscribí a nada, ni tengo iphone"}
+{"id": "T081", "lang": "es", "label": "wrong_amount", "text": "En la tienda el precio decía $899 y en mi estado de cuenta aparece $1.899, compre una sola licuadora"}
+{"id": "T082", "lang": "pt", "label": "not_received", "text": "contratei um fotografo pro casamento, paguei sinal de 2 mil no cartao e o cara sumiu"}
+{"id": "T083", "lang": "es", "label": "atm_cash_not_dispensed", "text": "se fue la luz justo cuando estaba sacando efectivo del cajero, me descontaron 1.500 y no recibi nada"}
+{"id": "T084", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "a máquina engoliu as notas? não peguei nada e o extrato mostra saque de 250 reais dia 03/09"}
+{"id": "T085", "lang": "es", "label": "not_received", "text": "Compré unos audífonos en Linio por $1.299 el 2 de junio y nunca llegaron, el vendedor ya no contesta"}
+{"id": "T086", "lang": "es", "label": "duplicate_charge", "text": "la suscripcion de Spotify este mes salio triple, 3 cargos de 129 el mismo dia"}
+{"id": "T087", "lang": "es", "label": "out_of_scope", "text": "Quiero cambiar mi número de celular registrado"}
+{"id": "T088", "lang": "pt", "label": "not_received", "text": "Comprei um celular na OLX pelo pagamento seguro, R$ 1.350, e o produto nunca chegou"}
+{"id": "T089", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "Fiz um saque em Buenos Aires de 20.000 pesos argentinos no caixa automático e ele não entregou o dinheiro, mas cobrou no cartão"}
+{"id": "T090", "lang": "pt", "label": "unrecognized_charge", "text": "Boa tarde. Na fatura de maio consta um débito da Google Play de R$ 54,90 que não foi feito por mim nem por ninguém da família"}
+{"id": "T091", "lang": "pt", "label": "unrecognized_charge", "text": "Tô vendo um gasto internacional de US$ 230 numa tal de BKG*HOTEL sendo que eu nunca reservei hotel nenhum"}
+{"id": "T092", "lang": "es", "label": "not_received", "text": "pedi comida por DiDi Food, el repartidor marco entregado pero nunca llego, 312 pesos"}
+{"id": "T093", "lang": "pt", "label": "out_of_scope", "text": "o gerente da minha agência foi grosseiro comigo, quero registrar reclamação"}
+{"id": "T094", "lang": "es", "label": "atm_cash_not_dispensed", "text": "Buenas noches, intenté sacar plata en un cajero Link, dio error de operación no realizada pero el saldo bajó $20.000"}
+{"id": "T095", "lang": "pt", "label": "out_of_scope", "text": "qual o horário de funcionamento da agência da Paulista?"}
+{"id": "T096", "lang": "es", "label": "other_in_scope", "text": "quiero abrir una disputa"}
+{"id": "T097", "lang": "es", "label": "unrecognized_charge", "text": "en mi resumen figura TIENDA ROPA LUNA SRL por $34.500 del 20/04, ni idea de que comercio es, jamas compre ahi"}
+{"id": "T098", "lang": "es", "label": "card_lost_stolen", "text": "me asaltaron saliendo del super y se llevaron el celular y la tarjeta"}
+{"id": "T099", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "Saquei 800 reais no caixa 24h mas vieram só 750, faltou uma nota de 50"}
+{"id": "T100", "lang": "pt", "label": "not_received", "text": "paguei a matrícula de um curso de inglês de 600 reais e a escola fechou antes de começar as aulas"}
+{"id": "T101", "lang": "pt", "label": "wrong_amount", "text": "Usei um cupom de 30 reais no iFood, o app mostrou o desconto mas cobrou o valor cheio de R$ 87,00"}
+{"id": "T102", "lang": "pt", "label": "wrong_amount", "text": "abasteci 150 reais no posto Shell e na fatura veio 1.500, o frentista digitou errado"}
+{"id": "T103", "lang": "es", "label": "duplicate_charge", "text": "en el estacionamiento de la plaza pague 40 pesos y me aparece 40 y otra vez 40"}
+{"id": "T104", "lang": "es", "label": "not_received", "text": "hice un pedido en una tienda de ropa de instagram, 890 pesos, me mandaron un numero de guia falso y no llego nada"}
+{"id": "T105", "lang": "es", "label": "not_received", "text": "compre entradas para un concierto que se cancelo y la ticketera nunca me devolvio los 2.400"}
+{"id": "T106", "lang": "pt", "label": "duplicate_charge", "text": "Bom dia, no dia 21/08 meu cartão foi debitado três vezes pelo mesmo pedido na Amazon, valor de R$ 245,00"}
+{"id": "T107", "lang": "es", "label": "card_lost_stolen", "text": "me bajaron la billetera en el colectivo, adentro estaba la visa"}
+{"id": "T108", "lang": "pt", "label": "out_of_scope", "text": "preciso atualizar meu endereço"}
+{"id": "T109", "lang": "pt", "label": "not_received", "text": "pedi um lanche pelo Rappi, nunca chegou e o app nao quer devolver os 58 reais"}
+{"id": "T110", "lang": "pt", "label": "other_in_scope", "text": "Queria contestar uma compra"}
+{"id": "T111", "lang": "pt", "label": "duplicate_charge", "text": "Comprei uma passagem na Gol de R$ 712,45 uma vez só e foi lançado 2x"}
+{"id": "T112", "lang": "es", "label": "other_in_scope", "text": "sí, ese"}
+{"id": "T113", "lang": "es", "label": "unrecognized_charge", "text": "Hola, tengo la tarjeta conmigo pero salen 3 compras en Amazon US de US$ 49,99 cada una que jamás autoricé"}
+{"id": "T114", "lang": "es", "label": "wrong_amount", "text": "Me cobraron una comisión de 35 pesos por sacar dinero en un cajero de ustedes mismos, eso se supone que es gratis"}
+{"id": "T115", "lang": "es", "label": "duplicate_charge", "text": "Hice un solo pedido en Rappi de $27.900 pero en mi estado de cuenta figura repetido"}
+{"id": "T116", "lang": "es", "label": "card_lost_stolen", "text": "me la sacaron de la mochila en el concierto, que hago para que no la usen?"}
+{"id": "T117", "lang": "pt", "label": "card_lost_stolen", "text": "esqueci o cartão na maquininha do mercado e quando voltei já tinham sumido com ele"}
+{"id": "T118", "lang": "pt", "label": "wrong_amount", "text": "Cobraram anuidade de R$ 480 sendo que meu cartão era pra ser isento"}
+{"id": "T119", "lang": "pt", "label": "card_lost_stolen", "text": "bateram minha carteira no metrô da Sé hoje cedo"}
+{"id": "T120", "lang": "pt", "label": "duplicate_charge", "text": "comprei uma geladeira na Magalu de R$ 1.899,00, uma unidade só, e na fatura tem duas cobranças iguais"}
+{"id": "T121", "lang": "es", "label": "out_of_scope", "text": "La ejecutiva de la sucursal centro me atendió pésimo, quiero poner una queja"}
+{"id": "T122", "lang": "es", "label": "other_in_scope", "text": "quiero hacer un reclamo por una compra con la tarjeta"}
+{"id": "T123", "lang": "es", "label": "atm_cash_not_dispensed", "text": "fui al cajero de Banorte a sacar 2.000, la maquina hizo ruido pero no salio el dinero y ya me lo descontaron"}
+{"id": "T124", "lang": "es", "label": "duplicate_charge", "text": "Buenas tardes, el pago del colegio de $380.000 se debitó dos veces de mi tarjeta el 5 de agosto, y era una sola cuota"}
+{"id": "T125", "lang": "es", "label": "wrong_amount", "text": "El taxi marcó $85.000 en el taximetro y en la tarjeta me pasaron $185.000"}
+{"id": "T126", "lang": "pt", "label": "duplicate_charge", "text": "Paguei R$ 156,80 no Pão de Açúcar e a cobrança veio em dobro na fatura"}
+{"id": "T127", "lang": "pt", "label": "out_of_scope", "text": "quero fazer um empréstimo consignado, quais as taxas?"}
+{"id": "T128", "lang": "pt", "label": "other_in_scope", "text": "a de ontem"}
+{"id": "T129", "lang": "pt", "label": "wrong_amount", "text": "Comprei no AliExpress por US$ 35 e a conversão ficou muito acima da cotação do dia, cobraram quase 300 reais"}
+{"id": "T130", "lang": "pt", "label": "unrecognized_charge", "text": "Apareceu uma compra de R$ 389,90 na Shopee na minha fatura que eu não fiz, nem tenho conta lá"}
+{"id": "T131", "lang": "pt", "label": "duplicate_charge", "text": "paguei a conta de luz no cartão e veio cobrado 2 vezes, 287 reais cada"}
+{"id": "T132", "lang": "es", "label": "duplicate_charge", "text": "hola, en el Walmart pasaron mi tarjeta, la terminal dio error y la volvieron a pasar, ahora tengo los dos cobros de 643,20"}
+{"id": "T133", "lang": "pt", "label": "wrong_amount", "text": "minha compra parcelada em 10x de 120 virou 10x de 150 sem eu ter combinado juros nenhum"}
+{"id": "T134", "lang": "es", "label": "wrong_amount", "text": "El hotel en Cancún me cobró 4 noches y solo me quedé 3, me pasaron $9.600 en vez de $7.200"}
+{"id": "T135", "lang": "pt", "label": "duplicate_charge", "text": "O Uber cobrou a mesma corrida duas vezes, R$ 32,50 cada, ontem às 22h"}
+{"id": "T136", "lang": "pt", "label": "card_lost_stolen", "text": "Fui assaltado agora há pouco, levaram minha carteira com o cartão de crédito"}
+{"id": "T137", "lang": "pt", "label": "out_of_scope", "text": "esqueci a senha do aplicativo e o reconhecimento facial não funciona"}
+{"id": "T138", "lang": "es", "label": "card_lost_stolen", "text": "no encuentro mi tarjeta de debito por ningun lado desde ayer"}
+{"id": "T139", "lang": "pt", "label": "atm_cash_not_dispensed", "text": "o caixa eletronico so soltou 100 das 200 que eu pedi, e descontou os 200"}
+{"id": "T140", "lang": "es", "label": "not_received", "text": "Di de baja el gimnasio en marzo con carta firmada y aun asi me cobraron abril y mayo, 600 cada mes, y no me lo quieren devolver"}

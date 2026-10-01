@@ -335,7 +335,16 @@ func (t *turn) system(msg string, selected *string) error {
 		return t.reply("abstain", intent, nil, "SEC-INJ-01")
 	}
 
-	if _, known := t.o.Policy.Type(cls.Label); known && !cls.Abstain {
+	// Second opinion: when the classifier is unsure, its best guess is still used if the model's independent reading
+	// of the same message names the same type. Two different models agreeing is the evidence; any disagreement
+	// keeps the question to the customer, because a wrong type applies the wrong deadlines and amount limits.
+	confident := !cls.Abstain
+	if cls.Abstain && r.ex.DisputeType != "" && r.ex.DisputeType == cls.Label {
+		confident = true
+		t.audit("understand", t.o.LLM.Name(), fmt.Sprintf("model reading type=%s agrees with the classifier's guess (confidence %.2f)", r.ex.DisputeType, cls.Confidence),
+			cls.Label, "", 0)
+	}
+	if _, known := t.o.Policy.Type(cls.Label); known && confident {
 		st.DisputeType = cls.Label
 	}
 	if st.DisputeType == "" {

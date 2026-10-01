@@ -224,3 +224,35 @@ func TestRefusalScreenRefusesWhateverTheType(t *testing.T) {
 		t.Errorf("got outcome=%s rules=%v pending=%v, want abstain SEC-INJ-01 and no action", out.Outcome, out.RuleIDs, out.PendingAction)
 	}
 }
+
+// typedModel is the fake provider, except that its extraction reads every message as the given dispute type.
+type typedModel struct {
+	llm.Fake
+	dtype string
+}
+
+func (m typedModel) Extract(ctx context.Context, text, lang string, today time.Time) (llm.Extraction, llm.Usage, error) {
+	ex, u, err := llm.Fake{}.Extract(ctx, text, lang, today)
+	ex.DisputeType = m.dtype
+	return ex, u, err
+}
+
+func TestUnsureClassifierActsOnlyWhenTheModelAgrees(t *testing.T) {
+	ref1, _ := demoRefs(t)
+	unsure := `{"label":"wrong_amount","confidence":0.45,"abstain":true,"model_version":"stub"}`
+	for _, tc := range []struct {
+		model    string
+		wantType bool
+	}{{"wrong_amount", true}, {"unrecognized_charge", false}, {"", false}} {
+		o := newOrchestrator(t, mlStub(t, unsure), 15*time.Minute)
+		o.LLM = typedModel{dtype: tc.model}
+		out, err := o.HandleMessage(context.Background(), customer(ref1), contract.ChatRequest{Message: "me cobraron otro valor", Lang: "es"}, "system")
+		if err != nil {
+			t.Fatal(err)
+		}
+		asked := out.Outcome == "clarify" && slices.Contains(out.RuleIDs, "CLARIFY-TYPE")
+		if asked == tc.wantType {
+			t.Errorf("model %q: outcome=%s rules=%v; want type set=%t", tc.model, out.Outcome, out.RuleIDs, tc.wantType)
+		}
+	}
+}

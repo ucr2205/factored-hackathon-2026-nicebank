@@ -90,40 +90,42 @@ There are two case sets. **v2** (`eval/cases/v2/`, 120 test cases) was written a
 before the current classifier was trained, so it is the headline number. **v1** (118 test cases) informed the last
 training change (see `docs/ml_labels.md`), so it is no longer a clean held-out set and is kept for history.
 
-| Metric (test v2, 95% Wilson CI) | Current system | Without the screen | Previous classifier | Baseline |
-|---|---|---|---|---|
-| Correct outcome (outcome + action + policy rule) | **79.2%** (95/120; 71–85%) | 70.8% (85/120) | 65.0% (78/120) | 5.8% (7/120) |
-| Safe automated resolution | **72.7%** (32/44; 58–84%) | 75.0% (33/44) | 56.8% (25/44) | 0% (0/44) |
-| Unsafe outcomes | **0%** (0/120; 0–3%) | 0% | 1.7% (2/120) | 0% (0/120) |
-| Adversarial cases (injection, other person's data) | **100%** (26/26) | 57.7% (15/26) | 57.7% (15/26) | 0% |
-| Escalation recall / precision | **71.4%** (20/28) / **87.0%** (20/23) | 71.4% / 95.2% | 75.0% / 80.8% | 25.0% / 14.9% |
-| Sent to a human | 19.2% | 17.5% | 21.7% | 39.2% |
-| Latency p50 / p95 per turn | 1,034 / 1,314 ms | 774 / 1,199 ms | 803 / 1,200 ms | 1 / 15 ms |
-| LLM cost per case | USD 0.00010 | USD 0.00006 | USD 0.00007 | 0 |
+| Metric (test v2, 95% Wilson CI) | Current system | Refusal screen, no second opinion | Retrained classifier only | First classifier | Baseline |
+|---|---|---|---|---|---|
+| Correct outcome (outcome + action + policy rule) | **86.7%** (104/120; 79–92%) | 79.2% (95/120) | 70.8% (85/120) | 65.0% (78/120) | 5.8% (7/120) |
+| Safe automated resolution | **81.8%** (36/44; 68–90%) | 72.7% | 75.0% | 56.8% | 0% |
+| Unsafe outcomes | **0%** (0/120; 0–3%) | 0% | 0% | 1.7% (2/120) | 0% |
+| Adversarial cases (injection, other person's data) | **100%** (26/26) | 100% | 57.7% | 57.7% | 0% |
+| Escalation recall / precision | **89.3%** (25/28) / **92.6%** (25/27) | 71.4% / 87.0% | 71.4% / 95.2% | 75.0% / 80.8% | 25.0% / 14.9% |
+| Sent to a human | 22.5% | 19.2% | 17.5% | 21.7% | 39.2% |
+| Latency p50 / p95 per turn | 969 / 1,251 ms | 1,034 / 1,314 ms | 774 / 1,199 ms | 803 / 1,200 ms | 1 / 15 ms |
+| LLM cost per case | USD 0.00012 | USD 0.00010 | USD 0.00006 | USD 0.00007 | 0 |
 
-Columns, left to right: current system (classifier `e5-tfidf-avg-273b2af3-all` + DeepSeek refusal screen,
-`deepseek-prompts-v3`); the same classifier without the screen; the previous classifier; the rules-only baseline.
-The screen waits for the extraction before answering, which adds about 0.25 s to the median turn.
+The current system is the retrained classifier (`e5-tfidf-avg-273b2af3-all`) plus two answers from the DeepSeek call
+that already extracts the facts (`deepseek-prompts-v4`): a refusal screen (another person's data, rewriting the
+assistant's rules, money without a process) and a second opinion on the dispute type, used only when the classifier
+is unsure and the two agree (ADR 0004). The middle columns are the same evaluation at each earlier step.
 
-None of the 25 remaining errors is a wrong action: 20 are dispute paraphrases the classifier is not confident about
-(the assistant asks which problem it is), 3 are out-of-scope requests answered with a question, 1 vague message is
-sent to a human, and 2 are the first two requests after a backend restart, where the classifier call timed out and
-the turn was safely handed to a human (`ESC-TECH-01`). The safe-automation drop (33 → 32) is one of those two.
-On test v1 the classifier without the screen scored 87.3% (103/118) with 0 unsafe outcomes (previous: 88.1%).
+None of the 16 remaining errors is a wrong action: 11 are dispute paraphrases where the classifier was unsure and
+the model did not confirm its guess (the assistant asks which problem it is), 3 are out-of-scope requests answered
+with a question, 1 vague message is sent to a human, and 1 classifier call timed out (`ESC-TECH-01`, handed to a
+human). On test v1 the retrained classifier without the model's answers scored 87.3% (103/118), 0 unsafe.
 
-The refusal screen was also measured on its own (`backend/cmd/screencheck`) on 120 messages written by a separate
-agent with no access to the repository: **60/60 refusals caught and 0/60 legitimate messages refused**, in three
-runs; the regex guard alone caught 0/60. Details: ADR 0004.
+Both model answers were also measured on their own, on messages written by a separate agent with no access to the
+repository and measured once: the refusal screen refused **60/60** attacks and **0/60** legitimate messages (the regex
+guard alone caught 0/60); the dispute type was right for **89.3%** of 140 messages with the agreement rule versus
+78.6% for the classifier alone, with no additional wrong types. Commands: `backend/cmd/screencheck`,
+`backend/cmd/typecheck`.
 
 The drop from v1 to v2 is the honest finding: the same team wrote the training phrasings and v1, so v1 overstated
 how well the classifier handles new wordings. Both sets are still written by the team (and an AI assistant); a set
 written by people outside the ML work is the next step (`docs/production_gap.md`).
 
 Versions: policy 0.2.0, classifier `e5-tfidf-avg-273b2af3-all` (previous: `e5-tfidf-avg-1dd695a4`), DeepSeek Flash
-with `deepseek-prompts-v3` (the 70.8% and 65.0% columns used v2), `LLM_COMPOSE=template`.
+with `deepseek-prompts-v4` (79.2%: v3; 70.8% and 65.0%: v2), `LLM_COMPOSE=template`.
 
 Component results: classifier corpus test macro-F1 0.90 vs 0.43 for the keyword baseline ([`docs/ml_report.md`](docs/ml_report.md));
-retrieval recall@3 0.93 over policy + FAQ; DeepSeek Flash extraction 100% amount / 96% date / 100% merchant on 26
+retrieval recall@3 0.93 over policy + FAQ; DeepSeek Flash extraction 100% amount / 100% date / 100% merchant on 26
 messages (ADR 0004). Reproduce: `make train`, `make test-ml`, `make rag`, `make eval`;
 backend integration tests: `cd backend && go test -tags integration ./internal/orchestrator/` (see the test file
 header for `TEST_DATABASE_URL`).

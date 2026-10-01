@@ -17,7 +17,15 @@ type Extraction struct {
 	// "instruction_override" or "bypass_process"; empty for normal messages. It is never merged into the
 	// conversation state: it only concerns the message it came with.
 	Refuse string `json:"-"`
+	// DisputeType is the model's reading of what happened (one of DisputeTypes), or empty when the message does not
+	// say. The orchestrator only uses it as a second opinion when the classifier is unsure; like Refuse it is never
+	// stored in the conversation state.
+	DisputeType string `json:"-"`
 }
+
+// DisputeTypes are the values Extraction.DisputeType may take (taxonomy C6 without the two non-type labels).
+var DisputeTypes = map[string]bool{"unrecognized_charge": true, "duplicate_charge": true, "wrong_amount": true,
+	"not_received": true, "atm_cash_not_dispensed": true, "card_lost_stolen": true}
 
 // RefuseReasons are the values Extraction.Refuse may take.
 var RefuseReasons = map[string]bool{"third_party_data": true, "instruction_override": true, "bypass_process": true}

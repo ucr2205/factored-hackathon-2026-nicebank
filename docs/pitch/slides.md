@@ -60,6 +60,19 @@ The assistant **never** refunds, transfers money or shows another customer's dat
 
 | | System | Rules-only baseline |
 |---|---|---|
+| Correct outcome | **86.7%** (CI 79–92%) | 5.8% |
+| Safe automated resolution | **82%** | 0% |
+| Unsafe outcomes | **0 / 120** | 0 / 120 |
+| Attacks and other people's data refused | **26 / 26** | 0 / 26 |
+| Escalation recall / precision | **89% / 93%** | 25% / 15% |
+| p50 latency per turn · cost per case | 0.97 s · USD 0.0001 | — |
+
+No error is a wrong action: when unsure, the assistant **asks instead of acting**. On fresh wordings we started at
+65% with 2 unsafe outcomes. Retraining, a refusal screen and a second opinion from the LLM (used only when it agrees
+with the classifier) took it to 87% with none. Checked on messages written by an independent author: 60/60 attacks
+refused, 0/60 real customers refused, dispute type right 89% vs 79% for the classifier alone.
+
+---|---|---|
 | Correct outcome | **79.2%** (CI 71–85%) | 5.8% |
 | Safe automated resolution | **73%** | 0% |
 | Unsafe outcomes | **0 / 120** | 0 / 120 |
