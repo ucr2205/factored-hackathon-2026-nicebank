@@ -27,7 +27,8 @@ type Client struct {
 }
 
 func New(baseURL string) *Client {
-	return &Client{baseURL: baseURL, http: &http.Client{Timeout: 2 * time.Second}, retries: 2}
+	// 3 s per attempt: a warm classification takes ~20-50 ms, but a cold one took ~1.4 s and must not fail the turn.
+	return &Client{baseURL: baseURL, http: &http.Client{Timeout: 3 * time.Second}, retries: 2}
 }
 
 // Classify tries once plus up to two retries with backoff; the caller falls back to a human on error.

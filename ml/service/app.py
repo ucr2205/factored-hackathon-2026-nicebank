@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Literal
@@ -80,6 +81,23 @@ class Model:
 
 
 MODEL = Model(MODEL_FILE)
+
+
+def _keep_warm(every_s: float) -> None:
+    """After a few idle minutes the first request took ~1.4 s instead of ~20 ms (weights paged out, cold thread pool),
+    long enough to time out the backend's call. One tiny inference at startup and then every `every_s` seconds keeps
+    the model resident; it costs a few ms of CPU per interval."""
+    MODEL.proba("warm up")
+    while every_s > 0:
+        time.sleep(every_s)
+        try:
+            MODEL.proba("warm up")
+        except Exception:  # noqa: BLE001  (a failed warm-up must never kill the service)
+            pass
+
+
+KEEP_WARM_SECONDS = float(os.getenv("KEEP_WARM_SECONDS", "30"))
+threading.Thread(target=_keep_warm, args=(KEEP_WARM_SECONDS,), daemon=True, name="keep-warm").start()
 
 app = FastAPI(title="ml-service", version=MODEL.version)
 app.mount("/metrics", make_asgi_app())
