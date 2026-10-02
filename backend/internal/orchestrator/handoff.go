@@ -57,8 +57,8 @@ func (t *turn) escalateWithFacts(reason, ruleID, intent string, txn *tools.Trans
 				txn.ID, money(txn.Amount, txn.Currency, "es"), orDash(txn.Merchant), txn.Date.Format("2006-01-02 15:04"),
 				orDash(txn.Country), txn.CardLast4, txn.Status),
 			Source: "transactions"})
-		if usd, fx, err := tools.AmountUSD(t.ctx, t.tx, *txn); err == nil {
-			h.VerifiedFacts = append(h.VerifiedFacts, contract.Fact{Fact: fmt.Sprintf("Monto en USD: %.2f (%s)", usd, fx), Source: "exchange_rates"})
+		if c, err := tools.ConvertUSD(t.ctx, t.tx, *txn); err == nil {
+			h.VerifiedFacts = append(h.VerifiedFacts, contract.Fact{Fact: staffAmount(*txn, c), Source: "exchange_rates"})
 		}
 	}
 	for _, a := range taken {
@@ -107,9 +107,42 @@ func (t *turn) txnFacts(txn tools.Transaction) map[string]string {
 		name = d.DisplayName[t.lang]
 	}
 	return map[string]string{
-		"amount": money(txn.Amount, txn.Currency, t.lang), "merchant": orDash(txn.Merchant),
+		"amount": t.amountText(txn), "merchant": orDash(txn.Merchant),
 		"date": t.dateText(txn.Date), "last4": txn.CardLast4, "brand": txn.CardBrand, "type": name,
 	}
+}
+
+// amountText is the amount the customer reads: in the card's currency and, when that is not USD, its USD
+// equivalent and the rate used, so the figure the policy judged is visible ("1.250.000,00 COP (≈ 316,25 USD;
+// tasa del 12 de junio: 1 USD = 3.952,57 COP)"). A missing rate never hides the amount itself.
+func (t *turn) amountText(txn tools.Transaction) string {
+	base := money(txn.Amount, txn.Currency, t.lang)
+	if txn.Currency == "USD" {
+		return base
+	}
+	c, err := tools.ConvertUSD(t.ctx, t.tx, txn)
+	if err != nil {
+		return base
+	}
+	approx := "≈ " + money(c.USD, "USD", t.lang)
+	if c.Rate <= 0 {
+		return fmt.Sprintf("%s (%s)", base, approx)
+	}
+	label := map[string]string{"es": "tasa del", "pt": "câmbio de"}[t.lang]
+	return fmt.Sprintf("%s (%s; %s %s: 1 USD = %s)", base, approx, label, t.dateText(c.RateDate), money(1/c.Rate, txn.Currency, t.lang))
+}
+
+// staffAmount is the agent's verified fact: both amounts and the exact rate with its date.
+func staffAmount(txn tools.Transaction, c tools.Conversion) string {
+	switch {
+	case txn.Currency == "USD":
+		return fmt.Sprintf("Monto: %s (sin conversión)", money(txn.Amount, "USD", "es"))
+	case c.Rate <= 0:
+		return fmt.Sprintf("Monto: %s = %s (equivalente del dataset, sin tasa del día)", money(txn.Amount, txn.Currency, "es"), money(c.USD, "USD", "es"))
+	}
+	return fmt.Sprintf("Monto: %s = %s · tasa 1 USD = %s (1 %s = %s USD) del %s", money(txn.Amount, txn.Currency, "es"),
+		money(c.USD, "USD", "es"), money(1/c.Rate, txn.Currency, "es"), txn.Currency,
+		strings.Replace(strings.TrimRight(fmt.Sprintf("%.8f", c.Rate), "0"), ".", ",", 1), c.RateDate.Format("02/01/2006"))
 }
 
 // money formats 1234.5 as "1.234,50 MXN" (es/pt use dot thousands and comma decimals).

@@ -100,7 +100,7 @@ export function guarantees(c: AdminConfig): string[] {
   if (g.never?.length) out.push(`Nunca puede ${listNi(g.never.map((n) => NEVER[n] ?? n))}.`);
   if (g.confirm_actions?.length) out.push("Ninguna acción se ejecuta sin que el cliente la confirme.");
   if (g.step_up_actions?.includes("block_card")) out.push("Bloquear una tarjeta exige además el código de la app autenticadora.");
-  out.push("Todo monto se evalúa en USD con la tasa de cambio del día del movimiento.");
+  out.push("Todo monto se evalúa en USD con la tasa de cambio del día del movimiento. El cliente y el agente ven el monto en su moneda, su equivalente en USD y la tasa usada.");
   if (g.session_idle_minutes) out.push(`La conversación se cierra tras ${g.session_idle_minutes} minutos sin actividad.`);
   return out;
 }

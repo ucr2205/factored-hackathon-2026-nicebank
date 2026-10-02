@@ -102,23 +102,45 @@ func GetTransaction(ctx context.Context, tx pgx.Tx, id string) (Transaction, err
 		FROM transactions t JOIN products p USING (product_id) WHERE t.transaction_id = $1`, id))
 }
 
-// AmountUSD converts with the exchange rate of the transaction date (ADR 0002); falls back to the last prior rate.
-func AmountUSD(ctx context.Context, tx pgx.Tx, t Transaction) (float64, string, error) {
+// Conversion is a transaction amount in USD at the exchange rate of its date (ADR 0002).
+type Conversion struct {
+	USD      float64
+	Rate     float64   // USD per unit of the transaction currency; 0 when only the dataset's amount_usd was available
+	RateDate time.Time // the rate's date (the last one on or before the transaction date)
+}
+
+// ConvertUSD converts with the exchange rate of the transaction date; falls back to the last prior rate, then to
+// the dataset's own amount_usd (no rate to show).
+func ConvertUSD(ctx context.Context, tx pgx.Tx, t Transaction) (Conversion, error) {
 	if t.Currency == "USD" {
-		return t.Amount, "USD 1.0", nil
+		return Conversion{USD: t.Amount, Rate: 1, RateDate: t.Date}, nil
 	}
-	var rate float64
-	var day time.Time
+	var c Conversion
 	err := tx.QueryRow(ctx, `SELECT exchange_rate::float8, rate_date FROM exchange_rates
 		WHERE source_currency = $1 AND target_currency = 'USD' AND rate_date <= $2::date
-		ORDER BY rate_date DESC LIMIT 1`, t.Currency, t.Date).Scan(&rate, &day)
+		ORDER BY rate_date DESC LIMIT 1`, t.Currency, t.Date).Scan(&c.Rate, &c.RateDate)
 	if err != nil {
 		if t.AmountUSD != nil {
-			return *t.AmountUSD, "dataset amount_usd", nil
+			return Conversion{USD: *t.AmountUSD}, nil
 		}
-		return 0, "", fmt.Errorf("no %s->USD rate for %s", t.Currency, t.Date.Format(time.DateOnly))
+		return Conversion{}, fmt.Errorf("no %s->USD rate for %s", t.Currency, t.Date.Format(time.DateOnly))
 	}
-	return math.Round(t.Amount*rate*100) / 100, fmt.Sprintf("%s->USD %.6f (%s)", t.Currency, rate, day.Format(time.DateOnly)), nil
+	c.USD = math.Round(t.Amount*c.Rate*100) / 100
+	return c, nil
+}
+
+// AmountUSD is ConvertUSD plus a one-line description of the rate used, for the audit trail.
+func AmountUSD(ctx context.Context, tx pgx.Tx, t Transaction) (float64, string, error) {
+	c, err := ConvertUSD(ctx, tx, t)
+	switch {
+	case err != nil:
+		return 0, "", err
+	case t.Currency == "USD":
+		return c.USD, "USD 1.0", nil
+	case c.Rate == 0:
+		return c.USD, "dataset amount_usd", nil
+	}
+	return c.USD, fmt.Sprintf("%s->USD %.6f (%s)", t.Currency, c.Rate, c.RateDate.Format(time.DateOnly)), nil
 }
 
 type Card struct {
