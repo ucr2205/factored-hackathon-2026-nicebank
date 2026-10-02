@@ -101,22 +101,24 @@ actualizado: 2026-10-01
   cifrada, 400.000 productos y 4,4 M transacciones; los mismos `cliente01–20` de siempre en Keycloak, con correos
   de prueba únicos `clienteNN@example.test`.
 
-## Qué falta, por prioridad
+## Qué falta, por prioridad (revisado el 2 oct)
 
-1. 🔴 **Arnés de evaluación** con ~200 casos held-out (ES/PT, normal, ambiguo, humano, adversarial), métricas
-   del sistema contra el baseline con intervalos de confianza, p50/p95 y costo. → [[Persona 4 - Evaluación y pitch]]
-2. 🔴 **Clasificador real** que reemplace las palabras clave (baselines, TF-IDF, embeddings; Laya se descartó el 30 sep).
-   ⚠️ **Su guía se reconfiguró el 29 sep**: sin texto de disputas en el dataset, el corpus es
-   `team_generated` (ES/PT) con lotes separados de la evaluación; las transcripciones solo dan ejemplos
-   fuera de alcance. → [[Persona 3 - IA y ML]]
-3. 🟢 **Datos:** ~~reporte de calidad~~, ~~EDA del Gate 1~~, ~~ETL raw → silver~~ y ~~loader a Postgres~~
-   (hechos); queda el caso de negocio del pitch (`analysis/03_business_case.py`). → [[Persona 2 - Datos]]
-4. 🔴 **Entregables:** README, `docs/architecture.md`, `docs/production_gap.md`, 4–6 slides y video.
-5. ⚪ ~~**Producto:** "Mis disputas", cerrar casos en la consola, correo al resolver~~ → **fuera del alcance**
-   (30 sep), no cambian la historia del pitch. Ver [[Visión de producto#Qué NO hacemos (congelado el 30 sep)]].
-6. 🟡 **Pruebas de integración en Go:** aislamiento RLS, expiración de sesión y fallas de herramientas.
-7. 🟡 **Despliegue:** URL pública (enlaces y logo de los correos), quitar el cliente `eval-harness` y los
-   usuarios de prueba, gestor de secretos, apagar Swagger (`DOCS_ENABLED=false`).
+Ya hecho por el equipo: arnés de evaluación (120 casos de prueba v2, sistema 86,7% vs baseline 5,8%, 0 inseguros),
+clasificador real (`e5-tfidf-avg`, macro-F1 0,90), deck de 6 slides EN/ES, `docs/architecture.md`,
+`docs/production_gap.md`, README con resultados y pruebas de integración en Go (RLS, sesión expirada, falla del
+clasificador). Lo que queda:
+
+1. 🔴 **Video del pitch (3–5 min)** y **envío** a hackathon.admin@factored.ai el lunes 5: repo, URL pública, slides y video.
+2. 🔴 **Acceso del jurado:** el repo es privado (hacerlo público o invitar al jurado, revisando antes que no haya
+   secretos); credenciales de demo para el jurado y **cómo hará el paso 2FA** (sin código no puede probar el bloqueo:
+   darle la semilla TOTP de un usuario demo como QR, o mostrarlo en el video).
+3. 🔴 **Servidor público:** entregar el paquete de datos y la `PII_KEY` por canal seguro, adaptar el realm, decidir
+   `/jaeger` y `/prometheus`, y probar la guía de pruebas en `https://hackathon.evon.solutions`.
+4. 🟡 **Evaluación final** antes del congelamiento (calendario D9): volver a correr `make eval` con todo lo del 2 oct
+   y actualizar las cifras del README y del deck si cambian.
+5. 🟡 **Seguridad antes de publicar:** rotar la clave de DeepSeek (se pegó en un chat el 27 sep) y revisar que el
+   repo no tenga credenciales reales.
+6. 🟢 Caso de negocio con números para el pitch (`analysis/03_business_case.py`, P2), si el deck lo necesita.
 
 ## Decisiones que esperan al líder
 
@@ -126,9 +128,7 @@ actualizado: 2026-10-01
 - [ ] **Logos de tarjeta:** theSVG para las tres marcas (recomendado) o Flaticon con atribución + acuerdo de
   Mastercard.
 - [ ] Qué hacer con la línea `Co-Authored-By` en los 11 commits antiguos (dejarlos o reescribir historia).
-- [ ] Limpiar la cola de casos de prueba (`make seed`): hay casos "Revisión humana (baseline)" creados por
-  pruebas.
-- [ ] **Gate 1:** confirmar el flujo de disputas (el EDA lo recomienda, ver [[Datos del proyecto#Lo que dice el EDA del Gate 1]]).
+- [x] **Gate 1:** flujo de disputas confirmado por el EDA.
 - [x] **Taxonomía C6** (P2 + P3 + P4): "Cobro indebido" → `wrong_amount` (decidido el 28 sep; ver
   `analysis/mappings/contact_reason_to_flow.csv`).
 
