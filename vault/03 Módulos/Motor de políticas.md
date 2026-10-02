@@ -55,6 +55,11 @@ Un cargo **pendiente que el cliente no reconoce** (o duplicado) sí se puede dis
 `cliente05` tiene un cobro revertido (42,37 USD en Streaming Music) y un intento rechazado (987,65 USD en Electro
 Mundo Online).
 
+> [!info] El cliente ve la conversión
+> El monto que juzga la política (en USD, con la tasa del día del movimiento) también se le muestra al cliente y al
+> agente: moneda original, equivalente en USD y tasa con su fecha. Así nadie se sorprende de que, por ejemplo, un
+> cobro de 2.500.000 COP pase a un especialista (supera los 500 USD).
+
 > [!warning] Equidad
 > Ninguna regla puede depender del **segmento, país o acento** del cliente. Los montos se comparan en USD para que
 > la misma regla valga igual en México, Colombia y Argentina ([[Decisiones (ADR)]], ADR 0002).

@@ -35,6 +35,16 @@ actualizado: 2026-10-01
 
 ## Lo que ya funciona
 
+- **Paquete para cargar la base en el servidor (2 oct):** `make db-bundle` deja en Descargas un zip (~290 MB) con
+  `load_db.py` (Poetry + loguru), el SQL de tablas y seguridad, un CSV por tabla y el realm. En el servidor, con la
+  conexión en variables de entorno, crea el rol y las tablas si faltan, verifica archivos y `PII_KEY`, y carga todo
+  en una transacción (~3 min). Probado en una base vacía. Guía: `deploy/dbload/README.md`.
+
+- **Montos en ambas monedas (2 oct):** cuando el cobro no está en USD, el cliente lee el monto en su moneda, el
+  equivalente en USD y la tasa usada: *"612.607,59 COP (≈ 156,21 USD; tasa del 16 de junio: 1 USD = 3.921,57 COP)"*
+  (ES y PT, también en los correos). El agente ve *"Monto: … COP = … USD · tasa 1 USD = … COP (1 COP = … USD) del
+  dd/mm/aaaa"*. Es la misma cifra en USD que evalúa la política (ADR 0002).
+
 - **Gateway con rutas (2 oct):** una sola entrada local (`http://localhost:8090`, el mismo
   esquema de rutas que el nginx del servidor en `deploy/evon/`) con la app en `/`, el API en `/api` y **Jaeger, Prometheus y Mailpit en `/jaeger`, `/prometheus` y
   `/mail` detrás de usuario y contraseña** (`make env` los crea). Probado el 2 oct: sin login dan 401, con login abren, y `/metrics` no queda expuesto. Guía de pruebas completa en Claude Docs ("Guía de pruebas NiceBank").
