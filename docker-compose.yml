@@ -57,15 +57,18 @@ services:
   mailpit:
     # Local mail catcher: Keycloak emails (password reset) land here instead of real inboxes.
     image: axllent/mailpit:v1.21
+    environment:
+      MP_WEBROOT: /mail                 # served under /mail/ (gateway path; direct: http://localhost:8025/mail/)
     ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
 
   jaeger:
     image: jaegertracing/all-in-one:1.62.0
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
+      QUERY_BASE_PATH: /jaeger          # served under /jaeger/ (gateway path; direct: http://localhost:16686/jaeger/)
       # Monitor tab (rate, errors, duration per operation): reads the collector's span metrics from Prometheus.
       METRICS_STORAGE_TYPE: prometheus
-      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      PROMETHEUS_SERVER_URL: http://prometheus:9090/prometheus
       PROMETHEUS_QUERY_NAMESPACE: traces_span_metrics
       PROMETHEUS_QUERY_NORMALIZE_CALLS: "true"
       PROMETHEUS_QUERY_NORMALIZE_DURATION: "true"
@@ -82,7 +85,9 @@ services:
   prometheus:
     image: prom/prometheus:v2.54.1
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus",
-              "--storage.tsdb.retention.time=15d", "--web.enable-lifecycle"]
+              "--storage.tsdb.retention.time=15d", "--web.enable-lifecycle",
+              # served under /prometheus/ (gateway path; direct: http://localhost:9090/prometheus/)
+              "--web.route-prefix=/prometheus", "--web.external-url=${PUBLIC_URL:-http://localhost:8090}/prometheus/"]
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./infra/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
@@ -130,6 +135,7 @@ services:
       MAIL_REDIRECT_TO: ${MAIL_REDIRECT_TO:-}
       MAIL_BCC: ${MAIL_BCC:-}
       MAIL_APP_URL: ${MAIL_APP_URL:-http://localhost:8088/chat}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8090}   # the gateway's origin, allowed by CORS
       MAIL_ALLOW_REAL_RECIPIENTS: ${MAIL_ALLOW_REAL_RECIPIENTS:-false}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-deepseek-flash}
@@ -144,10 +150,30 @@ services:
       keycloak: { condition: service_healthy }
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_TOOLS_URL: ${PUBLIC_URL:-http://localhost:8090}
     ports: ["127.0.0.1:8088:80"]   # production build; for development use `npm run dev` (port 5173)
     depends_on: [backend]
+
+  gateway:
+    # One public entry point, routed by path: the app at /, the API at /api, and Jaeger, Prometheus and Mailpit
+    # at /jaeger, /prometheus and /mail behind a username and password (`make env` creates it in .env).
+    # Locally: http://localhost:8090. In a deployment set SITE_ADDRESS to the public domain and PUBLIC_URL to
+    # https://<domain>, and publish ports 80 and 443 instead: Caddy then gets the HTTPS certificate by itself.
+    image: caddy:2.9-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      TOOLS_USER: ${TOOLS_USER:-equipo}
+      TOOLS_PASSWORD_HASH: ${TOOLS_PASSWORD_HASH:-}   # empty: only the gateway refuses to start (run make env)
+    volumes:
+      - ./infra/gateway/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data                 # HTTPS certificates when SITE_ADDRESS is a real domain
+    ports: ["127.0.0.1:${GATEWAY_PORT:-8090}:80"]
+    depends_on: [frontend, backend, jaeger, prometheus, mailpit]
 
 volumes:
   pgdata:
   promdata:
+  caddydata:

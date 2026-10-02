@@ -28,4 +28,6 @@ export async function api<T>(path: string, token: string, init?: { method?: "GET
   return data as T;
 }
 
-export const JAEGER_URL = import.meta.env.VITE_JAEGER_URL ?? "http://localhost:16686";
+// Jaeger, Prometheus and Mailpit are reached through the gateway (/jaeger, /prometheus, /mail; team login).
+export const TOOLS_URL = import.meta.env.VITE_TOOLS_URL ?? "http://localhost:8090";
+export const JAEGER_URL = `${TOOLS_URL}/jaeger`;

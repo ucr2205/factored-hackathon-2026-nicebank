@@ -66,7 +66,9 @@ func Load() Config {
 		OIDCJWKSURL:    envOr("OIDC_JWKS_URL", "http://localhost:8080/realms/latam-bank/protocol/openid-connect/certs"),
 		OIDCAudience:   envOr("OIDC_AUDIENCE", "disputes-api"),
 		PolicyFile:     envOr("POLICY_FILE", "../policies/disputes.yaml"),
-		AllowedOrigins: []string{envOr("ALLOWED_ORIGIN", "http://localhost:5173"), "http://localhost:8088"},
+		// The dev server, the container build and the gateway (PUBLIC_URL, the public entry point).
+		AllowedOrigins: []string{envOr("ALLOWED_ORIGIN", "http://localhost:5173"), "http://localhost:8088",
+			envOr("PUBLIC_URL", "http://localhost:8090")},
 		DemoToday:      today.Add(23*time.Hour + 59*time.Minute),
 		SessionIdle:    time.Duration(idle) * time.Minute,
 

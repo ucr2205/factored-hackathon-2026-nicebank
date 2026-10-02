@@ -18,7 +18,7 @@ import urllib.request
 
 KEYCLOAK = "http://localhost:8080/realms/latam-bank/protocol/openid-connect/token"
 API = "http://localhost:8081"
-MAILPIT = "http://localhost:8025"
+MAILPIT = "http://localhost:8025/mail"  # Mailpit runs under /mail (MP_WEBROOT), like behind the gateway
 HTTP_TIMEOUT = 20  # seconds; a hung service must fail the run, not block it
 EVAL_CLIENT = ("eval-harness", "eval-harness-local-secret")  # test-only values from the realm seed
 

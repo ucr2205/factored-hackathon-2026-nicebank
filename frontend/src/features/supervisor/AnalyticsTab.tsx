@@ -22,6 +22,7 @@ import {
   Waypoints,
 } from "lucide-react";
 import type { Analytics, AnalyticsRange } from "../../api/types";
+import { JAEGER_URL, TOOLS_URL } from "../../api/client";
 import { useResource } from "../../api/useResource";
 import { brand } from "../../app/theme";
 import { Section, Stat } from "../../components/Panels";
@@ -59,8 +60,7 @@ const RANGES: { value: AnalyticsRange; label: string }[] = [
   { value: "all", label: "Todo" },
 ];
 
-const PROMETHEUS_URL = import.meta.env.VITE_PROMETHEUS_URL ?? "http://localhost:9090";
-const JAEGER_URL = import.meta.env.VITE_JAEGER_URL ?? "http://localhost:16686";
+const PROMETHEUS_URL = `${TOOLS_URL}/prometheus`;
 
 /** Prometheus with several graphs at once (the nicebank:* recording rules). */
 function prometheusLink(exprs: string[], window = "6h") {

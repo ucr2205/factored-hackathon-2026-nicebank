@@ -1,11 +1,11 @@
 ARG VITE_API_URL=http://localhost:8081
 ARG VITE_OIDC_AUTHORITY=http://localhost:8080/realms/latam-bank
-ARG VITE_JAEGER_URL=http://localhost:16686
+ARG VITE_TOOLS_URL=http://localhost:8090
 
 FROM node:22-alpine AS build
 ARG VITE_API_URL
 ARG VITE_OIDC_AUTHORITY
-ARG VITE_JAEGER_URL
+ARG VITE_TOOLS_URL
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
