@@ -1,0 +1,50 @@
+# Traces: services -> collector (OTLP) -> nicebank-jaeger. Same processing as infra/otel/config.yaml (local), with
+# the server's container names. The collector also derives span metrics (rate, errors, duration per operation)
+# that nicebank-prometheus scrapes on :8889 and Jaeger's Monitor tab reads back.
+receivers:
+  otlp:
+    protocols:
+      grpc: { endpoint: 0.0.0.0:4317 }
+      http: { endpoint: 0.0.0.0:4318 }
+
+processors:
+  batch: {}
+  # Defense in depth: drop attributes that could carry personal data if a service sets them by mistake.
+  attributes/strip_pii:
+    actions:
+      - { pattern: '^(customer|user|enduser)\..*', action: delete }
+      - { pattern: '(?i).*(email|first_name|last_name|full_name|document_number|phone|card_number|customer_ref|completion|message\.text|authorization|cookie).*', action: delete }
+      - { pattern: '(?i)^(.*\.)?prompt(s)?(\..*)?$', action: delete }
+      - { pattern: '(?i).*\.(input|output)\.(messages|text|content).*', action: delete }
+      # client.address is kept on purpose (validation and investigations): the backend sets it to the validated
+      # client IP (TRUSTED_PROXIES rules). The raw TCP peer is dropped, since behind a proxy it is the proxy.
+      - { key: network.peer.address, action: delete }
+
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 4s, 8s]
+    dimensions:
+      - name: http.route
+      - name: chat.outcome
+      - name: chat.mode
+      - name: chat.lang
+    metrics_flush_interval: 15s
+
+exporters:
+  otlp/jaeger:
+    endpoint: nicebank-jaeger:4317
+    tls: { insecure: true }
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/strip_pii, batch]
+      exporters: [otlp/jaeger, spanmetrics]
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      exporters: [prometheus]

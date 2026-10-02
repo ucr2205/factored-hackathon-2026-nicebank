@@ -1,0 +1,287 @@
+# Servicios de NiceBank para el servidor EVON (hackathon.evon.solutions).
+# NO es un compose independiente: este bloque está pegado dentro de `services:` del docker-compose.yaml
+# del servidor, que ya define la red `red` (192.168.100.0/24). Se versiona aquí para que el repo
+# refleje exactamente lo desplegado. Si cambias algo, actualiza también el compose del servidor.
+# Guía completa: deploy/evon/README.md
+
+services:
+# ===================== NICEBANK (sistema de disputas - hackathon) =====================
+# Código en /opt/servicios-apis/EVON/nicebank (raíz del repo repo-hackhaton-main).
+# Postgres propio de NiceBank (nicebank-postgres, con pgvector): BD "nicebank" y BD "keycloak".
+# Un solo dominio, por rutas en el nginx del host: /  -> frontend (3013), /api/ -> backend (8013), /auth/ -> Keycloak (8180)
+
+        nicebank-postgres:
+                container_name: nicebank-postgres
+                # Misma imagen y versión mayor que usa el desarrollador (sus dumps restauran sin conversión).
+                image: pgvector/pgvector:pg16
+                restart: always
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.20
+                # Solo en localhost: para mantenimiento o carga de datos por túnel SSH. Nunca exponer.
+                ports:
+                         - '127.0.0.1:5434:5432'
+                env_file:
+                         - /mnt/EVON_proyectos_env/EVON/nicebank/postgres/.env
+                environment:
+                        TZ: America/Caracas
+                volumes:
+                        - /opt/servicios-apis/EVON/nicebank_data/postgres:/var/lib/postgresql/data
+                        # Se ejecutan SOLO la primera vez (directorio de datos vacío): pgvector, roles, esquema, RLS, BD keycloak.
+                        - /opt/servicios-apis/EVON/nicebank/infra/postgres/init:/docker-entrypoint-initdb.d:ro
+                shm_size: 256mb
+                security_opt:
+                         - no-new-privileges:true
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "1.0"
+                           memory: 1g
+                healthcheck:
+                    test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+                    interval: 10s
+                    timeout: 5s
+                    retries: 20
+                    start_period: 30s
+                logging:
+                    driver: json-file
+                    options:
+                            max-size: "20m"
+                            max-file: "5"
+
+        nicebank-ml:
+                container_name: nicebank-ml
+                image: nicebank-ml:v1
+                build:
+                       context: /opt/servicios-apis/EVON/nicebank/ml/service
+                restart: always
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.14
+                # Sin puerto publicado: solo lo consume el backend por la red interna.
+                environment:
+                        TZ: America/Caracas
+                security_opt:
+                         - no-new-privileges:true
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "2.0"
+                           memory: 2g
+                healthcheck:
+                    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+                    interval: 15s
+                    timeout: 5s
+                    retries: 10
+                    start_period: 60s
+                logging:
+                    driver: json-file
+                    options:
+                            max-size: "20m"
+                            max-file: "5"
+
+        nicebank-keycloak:
+                container_name: nicebank-keycloak
+                image: quay.io/keycloak/keycloak:26.0
+                # Modo producción (no start-dev). --import-realm solo importa si el realm aún no existe en la BD.
+                command: ["start", "--import-realm"]
+                restart: always
+                depends_on:
+                        nicebank-postgres: { condition: service_healthy }
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.15
+                ports:
+                         - '127.0.0.1:8180:8080'
+                env_file:
+                         - /mnt/EVON_proyectos_env/EVON/nicebank/keycloak/.env
+                environment:
+                        TZ: America/Caracas
+                        KC_DB: postgres
+                        KC_HOSTNAME: https://hackathon.evon.solutions/auth
+                        KC_HTTP_RELATIVE_PATH: /auth
+                        KC_HTTP_MANAGEMENT_RELATIVE_PATH: /   # health en :9000/health/ready (no público)
+                        KC_PROXY_HEADERS: xforwarded
+                        KC_HTTP_ENABLED: "true"
+                        KC_HEALTH_ENABLED: "true"
+                volumes:
+                        - /opt/servicios-apis/EVON/nicebank/infra/keycloak:/opt/keycloak/data/import:ro
+                        - /opt/servicios-apis/EVON/nicebank/infra/keycloak/themes/nicebank:/opt/keycloak/themes/nicebank:ro
+                security_opt:
+                         - no-new-privileges:true
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "1.0"
+                           memory: 1536M
+                healthcheck:
+                    test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+                    interval: 15s
+                    timeout: 5s
+                    retries: 30
+                    start_period: 60s
+                logging:
+                    driver: json-file
+                    options:
+                            max-size: "20m"
+                            max-file: "5"
+
+        nicebank-jaeger:
+                container_name: nicebank-jaeger
+                image: jaegertracing/all-in-one:1.62.0
+                restart: always
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.19
+                environment:
+                        TZ: America/Caracas
+                        COLLECTOR_OTLP_ENABLED: "true"
+                        # Servido bajo /jaeger/ (ruta del nginx del host con login; sin él, por túnel SSH).
+                        QUERY_BASE_PATH: /jaeger
+                        # Pestaña Monitor (tasa, errores y duración por operación): lee las span metrics de nicebank-prometheus.
+                        METRICS_STORAGE_TYPE: prometheus
+                        PROMETHEUS_SERVER_URL: http://nicebank-prometheus:9090/prometheus
+                        PROMETHEUS_QUERY_NAMESPACE: traces_span_metrics
+                        PROMETHEUS_QUERY_NORMALIZE_CALLS: "true"
+                        PROMETHEUS_QUERY_NORMALIZE_DURATION: "true"
+                ports:
+                         - '127.0.0.1:16686:16686'   # solo localhost: público únicamente por el nginx con login
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "0.5"
+                           memory: 512M
+
+        # Métricas, reglas nicebank:* y alertas (infra/prometheus/rules.yml). Opcional: sin él, el chat funciona igual.
+        # Servido bajo /prometheus/ (ruta del nginx del host con login). Verifica que la IP .21 esté libre en "red".
+        nicebank-prometheus:
+                container_name: nicebank-prometheus
+                image: prom/prometheus:v2.54.1
+                restart: always
+                command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus",
+                          "--storage.tsdb.retention.time=15d",
+                          "--web.route-prefix=/prometheus", "--web.external-url=https://hackathon.evon.solutions/prometheus/"]
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.21
+                ports:
+                         - '127.0.0.1:9091:9090'   # solo localhost (9091 para no chocar con otro Prometheus del host)
+                volumes:
+                        - /opt/servicios-apis/EVON/nicebank/deploy/evon/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+                        - /opt/servicios-apis/EVON/nicebank/infra/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+                        - /opt/servicios-apis/EVON/nicebank_data/prometheus:/prometheus
+                environment:
+                        TZ: America/Caracas
+                security_opt:
+                         - no-new-privileges:true
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "0.5"
+                           memory: 512M
+
+        nicebank-otel:
+                container_name: nicebank-otel
+                image: otel/opentelemetry-collector-contrib:0.111.0
+                command: ["--config=/etc/otelcol/config.yaml"]
+                restart: always
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.18
+                volumes:
+                        - /opt/servicios-apis/EVON/nicebank/deploy/evon/otel-config.yaml:/etc/otelcol/config.yaml:ro
+                environment:
+                        TZ: America/Caracas
+                depends_on: [nicebank-jaeger]
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "0.5"
+                           memory: 256M
+
+        nicebank-b:
+                container_name: nicebank-backend
+                image: nicebank-backend:v1
+                build:
+                       context: /opt/servicios-apis/EVON/nicebank/backend
+                restart: always
+                read_only: true
+                security_opt:
+                         - no-new-privileges:true
+                cap_drop:
+                         - ALL
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.16
+                ports:
+                         - '127.0.0.1:8013:8013'
+                # Secretos (DATABASE_URL, PII_KEY, DEEPSEEK_API_KEY, SMTP...) en este archivo:
+                env_file:
+                         - /mnt/EVON_proyectos_env/EVON/nicebank/backend/.env
+                environment:
+                        TZ: America/Caracas
+                        HTTP_ADDR: ":8013"
+                        ML_SERVICE_URL: http://nicebank-ml:8000
+                        OIDC_ISSUER: https://hackathon.evon.solutions/auth/realms/latam-bank
+                        OIDC_JWKS_URL: http://nicebank-keycloak:8080/auth/realms/latam-bank/protocol/openid-connect/certs
+                        OIDC_AUDIENCE: disputes-api
+                        ALLOWED_ORIGIN: https://hackathon.evon.solutions
+                        POLICY_FILE: /policies/disputes.yaml
+                        OTEL_EXPORTER_OTLP_ENDPOINT: http://nicebank-otel:4318
+                        OTEL_SERVICE_NAME: disputes-backend
+                        MAIL_APP_URL: https://hackathon.evon.solutions/chat
+                        PUBLIC_URL: https://hackathon.evon.solutions
+                        TRUSTED_PROXIES: 192.168.100.1/32
+                        DOCS_ENABLED: "false"
+                volumes:
+                        - /opt/servicios-apis/EVON/nicebank/policies:/policies:ro
+                depends_on:
+                        nicebank-postgres: { condition: service_healthy }
+                        nicebank-ml: { condition: service_healthy }
+                        nicebank-keycloak: { condition: service_healthy }
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "1.0"
+                           memory: 512M
+                logging:
+                    driver: json-file
+                    options:
+                            max-size: "20m"
+                            max-file: "5"
+
+        nicebank-f:
+                container_name: nicebank-frontend
+                image: nicebank-frontend:v1
+                build:
+                       context: /opt/servicios-apis/EVON/nicebank/frontend
+                       # Vite incrusta estas URLs en el bundle y en la CSP: si cambian, hay que reconstruir la imagen.
+                       args:
+                               VITE_API_URL: https://hackathon.evon.solutions
+                               VITE_OIDC_AUTHORITY: https://hackathon.evon.solutions/auth/realms/latam-bank
+                               # Base de los enlaces a /jaeger y /prometheus (supervisión y consola); ver la sección de herramientas.
+                               VITE_TOOLS_URL: https://hackathon.evon.solutions
+                restart: always
+                networks:
+                        red:
+                                ipv4_address: 192.168.100.17
+                ports:
+                         - '127.0.0.1:3013:80'
+                environment:
+                        TZ: America/Caracas
+                depends_on: [nicebank-b]
+                deploy:
+                  resources:
+                        limits:
+                           cpus: "0.5"
+                           memory: 256M
+                logging:
+                    driver: json-file
+                    options:
+                            max-size: "20m"
+                            max-file: "5"
+# =================== FIN NICEBANK ===================
+
+networks:
+        red:
+                external: true   # en el servidor la define su docker-compose.yaml

@@ -70,12 +70,17 @@ make smoke                                # reseed + run the scripted end-to-end
 
 | URL | What |
 |---|---|
+| http://localhost:8090 | **Gateway**: the app at `/`, the API at `/api`, and the tools below behind the team login (`TOOLS_USER` / `TOOLS_PASSWORD` in `.env`, created by `make env`) |
+| http://localhost:8090/jaeger/ | Jaeger (traces; Monitor tab for rate, errors and duration per operation) |
+| http://localhost:8090/prometheus/ | Prometheus (metrics, `nicebank:*` rules and alerts) |
+| http://localhost:8090/mail/ | Mailpit (test mailbox: notifications and password-reset emails) |
 | http://localhost:8088 | Web app (production build). For development: `cd frontend && npm run dev` → http://localhost:5173 |
 | http://localhost:8081/api/health | Backend |
-| http://localhost:16686 | Jaeger (traces) |
-| http://localhost:9090 | Prometheus (metrics) |
 | http://localhost:8080 | Keycloak (realm `latam-bank`) |
-| http://localhost:8025 | Mailpit (test mailbox: password-reset emails) |
+
+The gateway mirrors the server's routing locally. The real server (`https://hackathon.evon.solutions`) uses the
+host nginx instead (see "Server deployment (EVON)" below); on a host without its own proxy the gateway could serve
+the domain itself (`SITE_ADDRESS=<domain>`, `PUBLIC_URL=https://<domain>`, ports 80/443, automatic HTTPS).
 
 Test users (local test realm only, see [`infra/keycloak/README.md`](infra/keycloak/README.md)): `cliente01`–`cliente20`
 (customers; card blocking asks for a TOTP code from the test seed), `agente01`, `agente02` (agents), `supervisor01`.
@@ -102,6 +107,7 @@ analysis/   reproducible EDA scripts    eval/       evaluation harness + cases
 policies/   disputes.yaml (policy spec) prompts/    versioned LLM prompts
 knowledge/  FAQ corpus (es/pt) for RAG  infra/      compose configs (Keycloak, Postgres, OTel...)
 docs/       inventory, findings, architecture, ADRs
+deploy/     server deployment (deploy/evon: hackathon.evon.solutions)
 scripts/    task entry points used by the Makefile
 ```
 
@@ -160,3 +166,11 @@ header for `TEST_DATABASE_URL`).
 
 Synthetic data with no real dispute text, a team-written evaluation set, an external LLM, simulated card networks,
 test identities and single-host infrastructure. Details and what each would need: [`docs/production_gap.md`](docs/production_gap.md).
+
+## Server deployment (EVON)
+
+The public demo runs at `https://hackathon.evon.solutions` on the EVON server, with a dedicated Postgres, Keycloak
+in production mode under `/auth`, and a single domain routed by the host nginx (`/` app, `/api/` backend, `/auth/`
+Keycloak; optionally `/jaeger/` and `/prometheus/` behind a team login). Everything server-specific lives in
+[`deploy/evon/`](deploy/evon/README.md) (guide in Spanish). The local stack above is unchanged; locally the Caddy
+gateway (`http://localhost:8090`) mirrors the same paths.
