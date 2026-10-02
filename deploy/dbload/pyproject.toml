@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "nicebank-db-loader"
+version = "1.0.0"
+description = "Creates the NiceBank database objects and loads the data bundle into Postgres"
+authors = ["NiceBank team"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+psycopg = { version = "^3.2", extras = ["binary"] }
+loguru = "^0.7"
+cryptography = "^44.0"
+python-dotenv = "^1.0"
+
+[build-system]
+requires = ["poetry-core>=1.8"]
+build-backend = "poetry.core.masonry.api"

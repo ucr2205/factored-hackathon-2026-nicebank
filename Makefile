@@ -2,7 +2,7 @@
 # Python dependencies are managed with Poetry only (pyproject.toml + poetry.lock).
 PY ?= poetry run python
 
-.PHONY: help setup env data inventory profile eda etl test-etl seed smoke test load train test-ml rag eval
+.PHONY: help setup env data inventory profile eda etl test-etl seed smoke test load train test-ml rag eval db-bundle
 
 help:
 	@echo "make setup      - install Python dependencies with Poetry (add ML deps: poetry install --with ml)"
@@ -21,6 +21,7 @@ help:
 	@echo "make test-ml    - ml-service tests (contract C2, parity with training, latency)"
 	@echo "make rag        - index policy + FAQ into kb_chunks and evaluate retrieval (stack up)"
 	@echo "make eval       - evaluation harness on the frozen test split, system vs baseline (stack up, SMTP on Mailpit)"
+	@echo "make db-bundle  - zip the loader, schema SQL and data CSVs for a server (deploy/dbload; needs make seed)"
 
 setup:
 	poetry install
@@ -73,3 +74,6 @@ rag:
 eval:
 	$(PY) eval/check_overlap.py
 	$(PY) eval/run_eval.py --split test
+
+db-bundle:
+	$(PY) scripts/build_db_bundle.py

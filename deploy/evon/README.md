@@ -93,7 +93,15 @@ Esto cambia las URLs de redirección del cliente `web` de localhost a tu dominio
 
 Las tablas quedan vacías: los datos vienen de un dataset de ~5 GB en S3 que pasa por un ETL. Calcula varios GB de disco (150 mil clientes, 400 mil productos, 4.4 millones de transacciones). Hay dos caminos.
 
-**A (recomendado): que el desarrollador te entregue un volcado.** En su máquina, después de `make seed`:
+**A (recomendado): el paquete de carga.** El desarrollador corre `make db-bundle` y te entrega
+`nicebank-db-bundle-<fecha>.zip` (~290 MB): trae el script `load_db.py` (Poetry + loguru), el SQL de las tablas y
+la seguridad, un CSV por tabla y el realm del mismo momento. Crea el rol de la aplicación y las tablas si faltan,
+verifica cada archivo (filas y SHA-256) y la `PII_KEY`, y carga todo en una sola transacción (unos 3 minutos). Se
+configura con variables de entorno; la guía está en el `README.md` del zip (y en `deploy/dbload/`). Con el
+contenedor ya inicializado, basta con: `DB_HOST=127.0.0.1 DB_PORT=5434 DB_NAME=nicebank DB_ADMIN_USER=nicebank_admin`
+(más contraseñas, `APP_DB_USER=nicebank_app` y la `PII_KEY` en su `.env`) y `poetry run python load_db.py`.
+
+**A2: un volcado de Postgres.** En su máquina, después de `make seed`:
 
 ```bash
 pg_dump -Fc --data-only -h localhost -p 5433 -U bank_admin bank > nicebank_datos.dump

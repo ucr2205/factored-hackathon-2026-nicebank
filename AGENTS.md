@@ -87,6 +87,7 @@ make seed            # full silver dataset into Postgres via etl/load_postgres.p
 make smoke           # reseed + 24 end-to-end API checks in 10 scenarios (must stay green)
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
+make db-bundle       # zip for a server: deploy/dbload loader (Poetry + loguru), schema SQL, one CSV per table
 ```
 Gateway http://localhost:8090 (Caddy, `infra/gateway/Caddyfile`; the one public entry point): app at `/`, API at
 `/api`, and Jaeger `/jaeger/`, Prometheus `/prometheus/`, Mailpit `/mail/` behind the team login (`TOOLS_USER` /
