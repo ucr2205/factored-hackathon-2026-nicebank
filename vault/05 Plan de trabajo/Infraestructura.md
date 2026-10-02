@@ -40,7 +40,7 @@ Prioridad: **P0** imprescindible para entregar · **P1** importante · **P2** si
 | P1 | `make etl` y `make eval` en el Makefile | P2, P4 | 30 sep / 2 oct |
 | P1 | Límites de recursos (CPU/memoria) por servicio en compose | Líder | vie 2 oct |
 | P1 | Backups/`pg_dump` antes del demo | Líder | dom 4 oct |
-| P2 | Dashboard de Grafana (latencia, resultados, escalamientos) | Líder | vie 2 oct |
+| ~~P2~~ | ~~Dashboard de Grafana~~ → descartado el 1 oct: lo cubren el Resumen del supervisor y Prometheus con reglas y alertas ([[Observabilidad]]) | Líder | — |
 | P2 | CI básico (build + tests) en GitHub Actions | Líder | — |
 | P0 | Eliminar el cliente `eval-harness`, usuarios de prueba y de carga en el despliegue público | Líder | dom 4 oct |
 | P1 | Copiar este vault al repo en `vault/` | Líder | lun 28 sep |

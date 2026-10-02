@@ -84,7 +84,7 @@ make etl             # raw -> silver pipeline: contracts, quarantine, lineage (d
 make test-etl        # pipeline tests over the labeled fixture (late arrival, idempotency...)
 docker compose up -d --build
 make seed            # full silver dataset into Postgres via etl/load_postgres.py (needs make etl)
-make smoke           # reseed + 25 end-to-end API checks in 10 scenarios (must stay green)
+make smoke           # reseed + 24 end-to-end API checks in 10 scenarios (must stay green)
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
 ```
@@ -117,7 +117,7 @@ account panel, agent console, supervisor view; NiceBank-branded Keycloak login, 
 recovery; pseudonymized identity (opaque `customer_ref`, encrypted names, reveal-on-claim); DeepSeek provider
 (`LLM_PROVIDER=deepseek`, Flash with Pro fallback, Fake as last resort; default is still `fake`); Go unit
 tests; customer email notifications (outbox + worker, HTML template, `NiceBank <nicebank@evon.solutions>`,
-Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 25/25 green. The classifier is still a **keyword stub** behind contract C2.
+Mailpit locally, real SMTP only with `MAIL_REDIRECT_TO`, ADR 0005); `make smoke` 24/24 green. The classifier is still a **keyword stub** behind contract C2.
 
 Data quality (P2, `make profile` → `docs/data_quality_report.md`, 2026-09-28): 23.5 M rows, no duplicates (not
 even content repeated under a new key), no late arrivals, no unreadable lines. Fact tables hold 84–88% of the
@@ -188,7 +188,10 @@ channel) and take ~15 days, with 20% SLA breaches and 75% still open. But the da
 
 ### Lead — backend / frontend / security / infra
 - Real LLM provider wiring, session-expiry and tool-failure tests, RLS integration test in Go, frontend polish,
-  observability dashboard (optional), reviews of every PR, contracts and gates.
+  reviews of every PR, contracts and gates. Observability is done (2026-10-01): no Grafana; the supervisor
+  "Resumen" (`GET /api/admin/analytics`) covers business KPIs, Prometheus has `infra/prometheus/rules.yml`
+  (`nicebank:*` recording rules, alerts) and Jaeger has route-named spans, real step durations and the Monitor tab
+  (collector spanmetrics). New metric labels must stay bounded (route patterns, enums; never ids or raw paths).
 
 ## Team documentation
 

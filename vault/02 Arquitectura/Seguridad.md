@@ -33,6 +33,7 @@ tags: [arquitectura, seguridad]
 | Un servicio devuelve una respuesta gigante | El backend lee como máximo 64 KB de ml-service | [[Backend (Go)]] |
 | Un dato personal se cuela en una traza | El colector de OpenTelemetry borra atributos por **patrón** de nombre (correo, nombre, documento, teléfono, tarjeta…) | [[Observabilidad]] |
 | Inyección de código en la web | Cabeceras de seguridad en nginx: CSP estricta, `X-Frame-Options`, `nosniff`, `Referrer-Policy` | [[Frontend]] |
+| Clickjacking sobre la página del código 2FA (que ahora se muestra dentro de la app) | Keycloak solo se deja enmarcar por los orígenes de NiceBank (`frame-ancestors` en el realm); la app solo enmarca a Keycloak (`frame-src`); la página de retorno solo se deja enmarcar por la propia app, no ejecuta más que su script y no envía `Referer`. La respuesta se pasa con `postMessage` verificando el origen, y `oidc-client-ts` sigue validando `state` y PKCE | [[Frontend#Código de verificación (2FA) sin salir de la página]] |
 
 > [!example] Cómo se prueba
 > `make smoke` verifica: prompt injection bloqueado, bloqueo rechazado sin TOTP y que `cliente02` **no** puede
@@ -69,4 +70,5 @@ puede ver la identidad, otro agente tampoco, y la consulta aparece en la auditor
 
 HTTPS en todos los servicios, eliminar el cliente `eval-harness` y los usuarios de prueba, secretos en un
 gestor (no `.env`), rotación de claves (cifrado por sobre con KMS; `key_version` ya existe), límites de tasa
-por usuario, retención de datos definida.
+por usuario, retención de datos definida. Cambiar en el realm los orígenes de `frame-ancestors` (hoy `localhost:5173` y `:8088`) por
+el dominio real de la app, y no exponer Prometheus ni Jaeger sin autenticación.

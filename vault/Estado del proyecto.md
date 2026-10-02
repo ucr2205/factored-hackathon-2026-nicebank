@@ -1,6 +1,6 @@
 ---
 tags: [estado, resumen, seguimiento]
-actualizado: 2026-09-30
+actualizado: 2026-10-01
 ---
 
 # Estado del proyecto
@@ -10,7 +10,7 @@ actualizado: 2026-09-30
 > líder. Se actualiza **cada vez que cambia algo** en el código, la infraestructura o el plan. Si algo aquí no
 > coincide con lo que ves en el repo, el repo manda y esta página se corrige.
 
-**Hoy:** miércoles 30 sep 2026 (día 5 de 10) · **Gate 2 hoy:** caso normal de punta a punta ·
+**Hoy:** jueves 1 oct 2026 (día 6 de 10) · **Siguiente:** Gate 3, viernes 2 oct (todo construido + primera evaluación completa) ·
 **Foco del producto:** [[Visión de producto]] (qué construimos y qué quedó fuera) ·
 **Congelamiento:** domingo 4 oct 20:00 · **Entrega:** lunes 5 oct. Ver [[Calendario y gates]].
 
@@ -21,12 +21,12 @@ actualizado: 2026-09-30
 | Chat del cliente y orquestador | ✅ Listo | Entiende, decide con reglas, actúa con confirmación, verifica y escala | [[Orquestador]] |
 | **Explicar el cobro antes de disputar** | ✅ Nuevo (30 sep) | Revertido, rechazado o pendiente: lo explica con el movimiento real; un intento rechazado no reconocido propone bloquear la tarjeta | [[Motor de políticas]] |
 | Inteligencia artificial (LLM) | ✅ Listo | DeepSeek Flash real, Pro de respaldo y reglas como último recurso | [[LLM]] |
-| Identidad y seguridad | ✅ Listo | Referencia opaca, nombres cifrados, TOTP, RLS, endurecimiento | [[Seguridad]] |
+| Identidad y seguridad | ✅ Listo | Referencia opaca, nombres cifrados, TOTP (ahora en una ventana sobre el chat), RLS, endurecimiento | [[Seguridad]] |
 | Correos al cliente | ✅ Listo | 3 correos con diseño NiceBank + recuperación de contraseña, mismo servidor | [[Notificaciones por correo]] |
-| Consola del agente y supervisión | ✅ Listo | En español claro; prioridad y tiempo de espera en la cola | [[Frontend]] |
-| Logs, trazas y métricas | ✅ Listo | Un log por petición con `request_id` y `trace_id`; Jaeger y Prometheus | [[Observabilidad]] |
+| Consola del agente y supervisión | ✅ Listo | En español claro; **Resumen con 8 KPIs y 7 gráficas**; barra burdeos y menos blanco | [[Frontend]] |
+| Logs, trazas y métricas | ✅ Listo | Prometheus con reglas, alertas y datos persistentes; Jaeger legible, filtrable y con pestaña Monitor | [[Observabilidad]] |
 | Documentación del API | ✅ Listo | Swagger UI en http://localhost:8081/api/docs | [[Backend (Go)]] |
-| Pruebas | 🟡 Parcial | 35 pruebas en Go, smoke 25/25, JMeter sin errores; faltan pruebas de integración | [[Estrategia de pruebas]] |
+| Pruebas | 🟡 Parcial | 50 pruebas en Go, smoke 24/24, JMeter sin errores; faltan pruebas de integración | [[Estrategia de pruebas]] |
 | Clasificador de casos | 🔴 Provisional | Sigue siendo por palabras clave | [[ml-service (clasificador)]] |
 | Datos y ETL | ✅ Listo | **Pipeline raw → silver + loader**: el sistema ya carga el dataset completo saneado (150k clientes, 4,4M transacciones); falta solo el caso de negocio del pitch | [[ETL y calidad de datos]] |
 | **Evaluación (sistema vs baseline)** | 🔴 **Falta** | Sin arnés ni casos held-out: es entregable obligatorio | [[Evaluación]] |
@@ -34,6 +34,19 @@ actualizado: 2026-09-30
 | Despliegue | 🟡 Pendiente | Lo hace la empresa; falta URL pública y quitar lo de prueba | [[Infraestructura]] |
 
 ## Lo que ya funciona
+
+- **Observabilidad que se entiende (1 oct).** Prometheus "no mostraba nada" porque no es un tablero y no tenía
+  reglas, métricas HTTP ni datos guardados. Ahora tiene 13 reglas con nombre `nicebank:*`, 7 alertas, métricas por
+  ruta, costo de DeepSeek y la cola de casos, guarda 15 días y trae [[Observabilidad#Prometheus en 5 enlaces|5 enlaces
+  listos]]. En Jaeger las trazas se llaman como la ruta (`POST /api/chat`), cada paso tiene su duración real, se
+  ven las llamadas al clasificador y se puede filtrar por resultado, regla, tipo de disputa o idioma; la pestaña
+  **Monitor** muestra tasa, errores y duración por operación. Grafana se descartó.
+- **Código 2FA sin salir de la página (1 oct):** ventana sobre el chat desenfocado con la página de código de
+  Keycloak; si no carga, cae al flujo anterior. Probado de punta a punta con `cliente05` (bloqueo verificado sin
+  recargar) y con Cancelar.
+- **Resumen del supervisor (1 oct):** periodo de 24 h a todo, KPIs (resueltas sin una persona, escalamientos,
+  tiempos, cola, bloqueos, correos) y gráficas (respuestas en el tiempo, asistente vs baseline, reglas, embudo,
+  motivos de escalamiento, tiempo por paso, idioma), desde `GET /api/admin/analytics`.
 
 - **Foco de producto (30 sep).** Los organizadores pidieron pensar como constructores de producto. La frase:
   *un cliente describe a medias un cobro que no reconoce y en menos de un minuto tiene su disputa abierta y
@@ -112,7 +125,7 @@ actualizado: 2026-09-30
 |---|---|
 | La evaluación empieza tarde y no hay números para el jurado | Es la prioridad 1; el `scripts/smoke_chat.py` ya sirve de base |
 | El clasificador por palabras clave falla en mensajes reales | P3 entrena uno de verdad; mientras, el sistema pregunta cuando duda |
-| DeepSeek se cae o tarda | Pro de respaldo y reglas locales; el cliente nunca se queda sin respuesta |
+| DeepSeek se cae o tarda | Pro de respaldo y reglas locales; el cliente nunca se queda sin respuesta. ⚠️ El 1 oct Jaeger mostró un turno de 13,6 s: Flash falló a los 8 s y Pro tardó 5,6 s más. Revisar el tiempo de espera de Flash (P3) |
 | Los datos traen 84–88% de las filas anunciadas | ✅ Explicado en el reporte de calidad: el faltante está repartido parejo en el tiempo, no son datos por llegar |
 | No hay ningún cargo duplicado real en los datos | El tipo `duplicate_charge` se demuestra y evalúa con casos `team_generated` (P4) |
 | Un reclamo no se puede ligar a su transacción (`affected_product_id` ajeno, montos reclamados al azar) | La transacción se busca con lo que dice el cliente en el chat, como ya hace el backend |
@@ -127,8 +140,8 @@ actualizado: 2026-09-30
 
 | Indicador | Valor |
 |---|---|
-| Pruebas unitarias en Go | 35 funciones, todas en verde |
-| `make smoke` | 25/25 verificaciones en 10 escenarios (el 10 es "explicar antes de disputar") |
+| Pruebas unitarias en Go | 50 funciones, todas en verde |
+| `make smoke` | 24/24 verificaciones en 10 escenarios (el 10 es "explicar antes de disputar") |
 | JMeter (5 usuarios, 60 s, DeepSeek) | 0 errores · chat p50 970 ms / p95 1,3 s · fuera de alcance p50 12 ms |
 | Comparación de modelos (`llmcheck`) | Flash: 100% monto, 93% fecha, 100% comercio, 1,0 s, USD 0,0017 por 16 mensajes |
 | Costo de DeepSeek por mensaje | ~USD 0,0001 |

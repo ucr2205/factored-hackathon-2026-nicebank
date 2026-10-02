@@ -15,7 +15,7 @@ dueño: Persona 4
 
 | Qué | Qué mide | Cómo se corre |
 |---|---|---|
-| `scripts/smoke_chat.py` | 10 escenarios de punta a punta (25 comprobaciones): normal ES, ambiguo, duplicado PT, no soportado PT + prompt injection, bloqueo sin TOTP, aislamiento entre clientes, baseline, **identidad seudonimizada** (8), **correos** (9) y **explicar antes de disputar** (10) | `make smoke` |
+| `scripts/smoke_chat.py` | 10 escenarios de punta a punta (24 comprobaciones): normal ES, ambiguo, duplicado PT, no soportado PT + prompt injection, bloqueo sin TOTP, aislamiento entre clientes, baseline, **identidad seudonimizada** (8), **correos** (9) y **explicar antes de disputar** (10) | `make smoke` |
 | `backend/cmd/llmcheck` | Acierto de monto, fecha y comercio del LLM en 16 mensajes ES/PT, latencia y costo por proveedor | `cd backend && go run ./cmd/llmcheck` |
 | JMeter | Tiempos (p50/p95) y errores con varios usuarios a la vez | `make load` ([[Pruebas de carga con JMeter]]) |
 
