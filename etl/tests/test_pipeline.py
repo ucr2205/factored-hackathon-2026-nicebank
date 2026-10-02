@@ -16,6 +16,7 @@ from etl.pipeline.state import StateStore
 
 
 def run_all(cfg):
+    """Run the pipeline over every table present in the fixture."""
     run_pipeline(cfg, tables=TABLES_IN_FIXTURE)
 
 

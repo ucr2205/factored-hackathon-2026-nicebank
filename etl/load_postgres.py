@@ -11,7 +11,7 @@ Mexico, ...): backend queries and the frontend label map read those values direc
 translation layer anywhere. Demo customers get unique clienteNN@example.test contact emails so
 notifications never depend on the sanitized (mostly nulled) dataset emails.
 
-Usage: python etl/load_postgres.py   (Postgres from docker compose must be running)
+Usage: make seed   (or: poetry run python etl/load_postgres.py; Postgres from docker compose must be running)
 """
 
 from __future__ import annotations
@@ -44,6 +44,7 @@ CARD_TYPES = ("Credit Card", "Debit Card")
 
 
 def log(msg: str) -> None:
+    """Print a timestamped progress line."""
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
@@ -81,6 +82,7 @@ def demo_fixtures(con: duckdb.DuckDBPyConnection, ordered_ids: list[str]) -> lis
 
 
 def connect_silver(cfg: PipelineConfig) -> duckdb.DuckDBPyConnection:
+    """In-memory DuckDB with one view per silver table the loader needs; exits if any is missing."""
     con = duckdb.connect()
     for table in ("customers", "products", "transactions", "daily_exchange_rates",
                   "service_agents", "dim_merchants"):
@@ -128,6 +130,7 @@ def pick_demo_customers(con: duckdb.DuckDBPyConnection) -> list[dict]:
 
 def copy_rows(cur: psycopg.Cursor, copy_sql: str,
               con: duckdb.DuckDBPyConnection, select_sql: str) -> int:
+    """Stream the rows of a DuckDB query into Postgres with COPY in batches; returns the row count."""
     res = con.execute(select_sql)
     n = 0
     with cur.copy(copy_sql) as copy:
@@ -142,6 +145,7 @@ def copy_rows(cur: psycopg.Cursor, copy_sql: str,
 
 
 def main() -> None:
+    """Truncate the operational tables, then load silver, encrypted identities, fixtures and Keycloak users."""
     cfg = PipelineConfig()
     con = connect_silver(cfg)
     log("selecting demo customers from silver")

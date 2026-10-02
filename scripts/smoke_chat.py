@@ -1,7 +1,8 @@
 """End-to-end smoke test of the chat API through Keycloak test users (eval-harness client, test env only).
 
-Usage: poetry run python scripts/smoke_chat.py
+Usage: `make smoke` (reseeds first), or poetry run python scripts/smoke_chat.py with the stack up and seeded.
 Exits non-zero if a scripted scenario does not reach its expected outcome.
+Also imported as a library: eval/run_eval.py uses `token` and `call`, scripts/totp.py uses `totp`.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ def totp(secret: str, period: int = 30) -> str:
 
 
 def token(user: str) -> str:
+    """Access token for a test user via the eval-harness direct grant (with the demo TOTP for cliente* users)."""
     form = {"grant_type": "password", "client_id": EVAL_CLIENT[0], "client_secret": EVAL_CLIENT[1],
             "username": user, "password": f"Test-Only-{user}"}
     if user.startswith("cliente"):  # demo customers have a TOTP credential, which the direct grant flow requires
@@ -42,6 +44,7 @@ def token(user: str) -> str:
 
 
 def call(tok: str, path: str, payload: dict | None = None) -> tuple[int, dict]:
+    """Send `payload` as JSON (GET when None) to the API with the bearer token; returns (HTTP status, JSON body)."""
     req = urllib.request.Request(API + path, data=json.dumps(payload).encode() if payload is not None else None,
                                  headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
     try:
@@ -52,6 +55,7 @@ def call(tok: str, path: str, payload: dict | None = None) -> tuple[int, dict]:
 
 
 def chat(tok: str, session: str | None, message: str, lang: str, **extra) -> dict:
+    """POST one /api/chat turn, print the exchange and return the response body."""
     status, body = call(tok, "/api/chat", {"session_id": session, "message": message, "lang": lang, **extra})
     print(f"  [{lang}] > {message}\n        < ({status}) {body.get('outcome')} {body.get('rule_ids')} :: {body.get('reply', body)}")
     return body
@@ -70,12 +74,14 @@ def wait_for_mail(subject_part: str, timeout: float = 15.0) -> list[dict]:
 
 
 def expect(cond: bool, what: str, failures: list[str]) -> None:
+    """Print OK/FAIL for a check and record `what` in `failures` when `cond` is false."""
     print(("  OK   " if cond else "  FAIL ") + what)
     if not cond:
         failures.append(what)
 
 
 def main() -> int:
+    """Run every scripted scenario; returns the exit code (1 if any check failed)."""
     failures: list[str] = []
 
     print("1) Normal case (ES): unrecognized charge -> confirm -> verified case")

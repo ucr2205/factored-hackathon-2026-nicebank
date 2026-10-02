@@ -14,10 +14,12 @@ from .specs import TableSpec
 
 
 def silver_name(spec: TableSpec, col: str) -> str:
+    """Column name in silver (after the spec's renames)."""
     return spec.rename.get(col, col)
 
 
 def build_schema(spec: TableSpec) -> pa.DataFrameSchema:
+    """Pandera schema for a table's silver columns: nullability, closed domains (isin) and numeric ranges."""
     columns: dict[str, pa.Column] = {}
     for col in spec.types:
         if col in spec.drop:

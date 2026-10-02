@@ -7,7 +7,7 @@ restores transparent rounded corners and writes every size the product uses:
 - infra/keycloak/themes/nicebank/login/resources/img/nicebank-mark.png (128) for the login theme
 - backend/internal/notify/assets/nicebank-mark.png (96) embedded in emails as an inline image
 
-Usage: poetry run python scripts/build_brand_assets.py
+Usage: poetry run python scripts/build_brand_assets.py   (no make target; Pillow comes from the dev group)
 """
 
 from __future__ import annotations
@@ -29,6 +29,7 @@ OUTPUTS = {
 
 
 def is_burgundy(px: tuple[int, int, int]) -> bool:
+    """True for an RGB pixel in the logo's burgundy range (heuristic thresholds measured on the source)."""
     r, g, b = px
     return r > 90 and r - g > 55 and r - b > 25 and g < 70
 
@@ -57,12 +58,14 @@ def find_symbol(img: Image.Image, step: int = 3) -> tuple[int, int, int, int]:
 
 
 def rounded_mask(size: int, radius: int, scale: int = 4) -> Image.Image:
+    """Anti-aliased rounded-square alpha mask of `size` px, drawn at `scale`x and downsampled."""
     big = Image.new("L", (size * scale, size * scale), 0)
     ImageDraw.Draw(big).rounded_rectangle((0, 0, size * scale - 1, size * scale - 1), radius=radius * scale, fill=255)
     return big.resize((size, size), Image.LANCZOS)
 
 
 def main() -> None:
+    """Crop the symbol from the source logo, round its corners and write every size in OUTPUTS."""
     img = Image.open(SOURCE).convert("RGB")
     box = find_symbol(img)
     symbol = img.crop(box).convert("RGBA")

@@ -66,6 +66,7 @@ PG_DSN = "host={h} port={p} dbname={d} user={u} password={pw}".format(
 
 
 def pii_cipher() -> AESGCM:
+    """AES-GCM cipher from PII_KEY (base64, 32 bytes); exits with a hint when it is missing."""
     key = base64.b64decode(os.environ.get("PII_KEY", ""))
     if len(key) != 32:
         raise SystemExit("PII_KEY missing or not 32 bytes base64: run `make env` (writes it to .env)")
@@ -73,6 +74,7 @@ def pii_cipher() -> AESGCM:
 
 
 def encrypt(aead: AESGCM, customer_id: str, column: str, value: str) -> bytes:
+    """Encrypt as nonce || ciphertext || tag, bound to customer, column and key version (backend pii.Decrypt)."""
     nonce = os.urandom(12)
     aad = f"{customer_id}|{column}|v{KEY_VERSION}".encode()
     return nonce + aead.encrypt(nonce, value.encode("utf-8"), aad)
@@ -90,10 +92,12 @@ def customer_refs(ordered_ids: list[str]) -> dict[str, str]:
 
 
 def csv_glob(table: str) -> str:
+    """Glob for every daily CSV of a partitioned raw table."""
     return (RAW / table / "*" / "*" / "*" / "*.csv").as_posix()
 
 
 def pick_customers(con: duckdb.DuckDBPyConnection) -> list[dict]:
+    """Deterministic 20 demo customers: active, with recent card purchases, spread over country and segment."""
     since = (DEMO_TODAY - timedelta(days=WINDOW_DAYS)).date().isoformat()
     rows = con.execute(f"""
         WITH cards AS (
@@ -132,6 +136,7 @@ def pick_customers(con: duckdb.DuckDBPyConnection) -> list[dict]:
 
 
 def load(con: duckdb.DuckDBPyConnection, chosen: list[dict], refs: dict[str, str]) -> dict[str, int]:
+    """Load demo customers with their history, agents and exchange rates from raw CSVs; returns row counts."""
     ids = [c["customer_id"] for c in chosen]
     con.execute("CREATE TEMP TABLE demo_ids (customer_id VARCHAR)")
     con.executemany("INSERT INTO demo_ids VALUES (?)", [[i] for i in ids])
@@ -233,6 +238,7 @@ def team_fixtures(products: list[tuple], customers: list[tuple], ordered_ids: li
 
 
 def write_mapping_and_realm(chosen: list[dict], ordered_ids: list[str], refs: dict[str, str]) -> None:
+    """Write etl/seeds/demo_customers.csv and the Keycloak realm users (test customers, load-test users, staff)."""
     SEEDS.mkdir(parents=True, exist_ok=True)
     by_id = {c["customer_id"]: c for c in chosen}
     with (SEEDS / "demo_customers.csv").open("w", newline="", encoding="utf-8") as fh:
@@ -281,6 +287,7 @@ def write_mapping_and_realm(chosen: list[dict], ordered_ids: list[str], refs: di
 
 
 def main() -> None:
+    """Run the deprecated demo seed (kept for reference; use make seed)."""
     con = duckdb.connect()
     chosen = pick_customers(con)
     # Order follows (country, segment); cliente01 is a Mexican Basic customer (normal ES demo).

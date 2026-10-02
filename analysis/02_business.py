@@ -12,7 +12,7 @@ Outcome columns (was_resolved, was_escalated, sla_breached, resolution, compensa
 here only to describe today's service; they are evaluation labels and never system or model inputs.
 
 Reads the DuckDB copy built by analysis/01_profile.py (run `make profile` first).
-Usage: python analysis/02_business.py
+Usage: make eda, or poetry run python analysis/02_business.py
 """
 
 from __future__ import annotations
@@ -59,27 +59,33 @@ FLOW_MAPPING = [
 
 
 def log(msg: str) -> None:
+    """Print a timestamped progress line."""
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def pct(part, whole, digits: int = 1) -> str:
+    """part/whole as a percentage string, or a dash when either is missing or whole is 0."""
     return "—" if not whole or part is None else f"{100 * part / whole:.{digits}f}%"
 
 
 def n(value) -> str:
+    """Integer with thousands separators, or a dash for None."""
     return "—" if value is None else f"{value:,}"
 
 
 def f1(value, suffix: str = "") -> str:
+    """Number with one decimal and an optional suffix, or a dash for None."""
     return "—" if value is None else f"{value:,.1f}{suffix}"
 
 
 def md_table(header: list[str], rows: list[list], align: str) -> list[str]:
+    """Markdown table lines (with a trailing blank line)."""
     return ["| " + " | ".join(header) + " |", "|" + align + "|",
             *["| " + " | ".join(str(c) for c in r) + " |" for r in rows], ""]
 
 
 def write_csv(path: Path, header: list[str], rows: list) -> None:
+    """Write a header and rows to a CSV file with LF line endings, creating its folder."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as fh:
         w = csv.writer(fh, lineterminator="\n")
@@ -117,6 +123,7 @@ def views(con: duckdb.DuckDBPyConnection) -> None:
 
 
 def dispute_case() -> str:
+    """SQL predicate selecting complaints whose category is a card-charge dispute (DISPUTE_CATEGORIES)."""
     cats = ", ".join(f"'{c}'" for c in DISPUTE_CATEGORIES)
     return f"(category IN ({cats}))"
 
@@ -124,6 +131,7 @@ def dispute_case() -> str:
 # ---------- 1. volume ----------
 
 def volume(con) -> dict:
+    """Question 1: complaint and contact volumes, dispute share, cuts by country/segment/channel, monthly range."""
     res = {}
     res["complaints_total"] = con.execute("SELECT count(*) FROM complaints").fetchone()[0]
     res["by_category"] = con.execute("""
@@ -160,6 +168,7 @@ def volume(con) -> dict:
 # ---------- 2. pain ----------
 
 def pain(con) -> dict:
+    """Question 2: resolution time, SLA breaches, backlog, escalation and CSAT, disputes vs other categories."""
     res = {}
     res["complaints"] = con.execute(f"""
         SELECT CASE WHEN {dispute_case()} THEN category ELSE 'Other categories' END AS grp, count(*),
@@ -238,6 +247,7 @@ def matching(con) -> dict:
 
 
 def data_assets(con) -> dict:
+    """Question 3: card products and transactions, fraud labels and how much dispute text the dataset holds."""
     res = {}
     res["cards"] = con.execute("""SELECT product_type, count(*) FROM raw_products WHERE product_type LIKE 'Tarjeta%'
                                   GROUP BY 1 ORDER BY 1""").fetchall()
@@ -265,6 +275,7 @@ def data_assets(con) -> dict:
 # ---------- report ----------
 
 def verdict(v: dict, p: dict, m: dict, d: dict) -> tuple[str, list[list[str]]]:
+    """Gate 1 decision and the evidence row per question (volume, pain, data)."""
     share = sum(c for cat, _, c in v["by_category"] if cat in DISPUTE_CATEGORIES) / v["complaints_total"]
     disp = [r for r in p["complaints"] if r[0] in DISPUTE_CATEGORIES]
     sla = sum(r[1] * r[4] for r in disp) / sum(r[1] for r in disp)
@@ -296,6 +307,7 @@ def verdict(v: dict, p: dict, m: dict, d: dict) -> tuple[str, list[list[str]]]:
 
 
 def render(v: dict, p: dict, m: dict, d: dict) -> str:
+    """Full Markdown text of docs/eda_findings.md."""
     today = dt.date.today().isoformat()
     decision, rows = verdict(v, p, m, d)
     L = ["# EDA Findings — Gate 1", "",
@@ -423,6 +435,7 @@ def render(v: dict, p: dict, m: dict, d: dict) -> str:
 
 
 def main() -> None:
+    """CLI entry point (make eda): compute the three answers, write the C6 mapping CSV and the report."""
     if not DB_FILE.exists():
         raise SystemExit("data/profile.duckdb not found: run `make profile` first.")
     started = time.time()

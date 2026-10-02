@@ -23,6 +23,7 @@ TABLES_IN_FIXTURE = ["branches", "service_agents", "customers", "products",
 
 @pytest.fixture
 def cfg(tmp_path: Path) -> PipelineConfig:
+    """PipelineConfig over a private copy of the fixture dataset under tmp_path, with small resource limits."""
     raw = tmp_path / "raw"
     shutil.copytree(FIXTURES, raw)
     return PipelineConfig(
@@ -37,6 +38,7 @@ def cfg(tmp_path: Path) -> PipelineConfig:
 
 
 def silver_rows(cfg: PipelineConfig, table: str, order_by: str) -> list[dict]:
+    """All rows of a silver table as dicts, ordered by order_by."""
     con = duckdb.connect()
     rel = con.sql(f"SELECT * FROM read_parquet('{silver_glob(cfg, table)}', "
                   f"hive_partitioning = true) ORDER BY {order_by}")
@@ -47,6 +49,7 @@ def silver_rows(cfg: PipelineConfig, table: str, order_by: str) -> list[dict]:
 
 
 def quarantine_rows(cfg: PipelineConfig, table: str) -> list[dict]:
+    """All quarantined rows of a table as dicts (each carries the rule id that rejected it)."""
     glob = (cfg.quarantine_dir / table / "*.parquet").as_posix()
     con = duckdb.connect()
     rel = con.sql(f"SELECT * FROM read_parquet('{glob}')")

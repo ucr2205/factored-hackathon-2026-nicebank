@@ -36,6 +36,7 @@ class BizKey:
 
 @dataclass(frozen=True)
 class TableSpec:
+    """Everything the pipeline needs to know about one table; stages, contracts and tests are generated from it."""
     types: dict[str, str]  # column -> DuckDB type (raw column names, pre-rename)
     pk: tuple[str, ...]
     event: str | None = None  # business event timestamp; process_date is only the load watermark

@@ -20,6 +20,7 @@ def _run_id() -> str:
 
 @dataclass(frozen=True)
 class PipelineConfig:
+    """Paths and DuckDB resource limits for one pipeline run; run_id tags every lineage row it writes."""
     raw_dir: Path = REPO_ROOT / "data" / "raw"
     silver_dir: Path = REPO_ROOT / "data" / "silver"
     quarantine_dir: Path = REPO_ROOT / "data" / "quarantine"
@@ -31,6 +32,7 @@ class PipelineConfig:
     validate_batch_rows: int = 500_000  # upper bound per Pandera batch (digital_events ~430k/month)
 
     def duckdb_pragmas(self) -> list[str]:
+        """DuckDB settings for this run (spill directory, memory limit, threads); creates the spill directory."""
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
         return [
             f"SET temp_directory = '{self.tmp_dir.as_posix()}'",

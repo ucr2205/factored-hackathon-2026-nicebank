@@ -39,16 +39,19 @@ CREATE TABLE IF NOT EXISTS quality_findings (
 
 @dataclass(frozen=True)
 class RawFile:
+    """One raw CSV as the watermark sees it: path relative to the raw directory, size and modification time."""
     rel_path: str
     size: int
     mtime_ns: int
 
     @property
     def key(self) -> tuple[str, int, int]:
+        """Watermark key: a file is pending again when any of the three values changes."""
         return (self.rel_path, self.size, self.mtime_ns)
 
 
 def list_raw_files(cfg: PipelineConfig, table: str) -> list[RawFile]:
+    """Current raw files of a table (partitioned folder or single root-level CSV)."""
     spec = TABLES[table]
     if spec.partitioned_raw:
         paths = sorted((cfg.raw_dir / table).rglob("*.csv"))
@@ -63,6 +66,7 @@ def list_raw_files(cfg: PipelineConfig, table: str) -> list[RawFile]:
 
 
 class StateStore:
+    """Read/write access to data/etl_state.duckdb: per-file watermark, run lineage and quality findings."""
     def __init__(self, cfg: PipelineConfig):
         self.cfg = cfg
         Path(cfg.state_db).parent.mkdir(parents=True, exist_ok=True)
@@ -70,6 +74,7 @@ class StateStore:
         self.con.execute(DDL)
 
     def close(self) -> None:
+        """Close the DuckDB connection."""
         self.con.close()
 
     def pending_files(self, table: str) -> tuple[list[RawFile], list[RawFile]]:
@@ -84,6 +89,7 @@ class StateStore:
         return [f for f in files if f.key not in seen], files
 
     def mark_processed(self, table: str, files: list[RawFile]) -> None:
+        """Record files as processed by this run (watermark)."""
         rows = [(table, f.rel_path, f.size, f.mtime_ns, self.cfg.run_id, dt.datetime.now()) for f in files]
         self.con.executemany(
             "INSERT OR REPLACE INTO etl_files VALUES (?, ?, ?, ?, ?, ?)", rows
@@ -91,6 +97,7 @@ class StateStore:
 
     def record_run(self, table: str, started: dt.datetime, *, files_read: int, rows_read: int,
                    rows_valid: int, rows_quarantined: int, rows_pk_deduped: int, status: str) -> None:
+        """Append one etl_runs row with the counts of a table's run."""
         self.con.execute(
             "INSERT INTO etl_runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [self.cfg.run_id, table, started, dt.datetime.now(), files_read, rows_read,
@@ -98,10 +105,12 @@ class StateStore:
         )
 
     def record_findings(self, table: str, findings: dict[str, int]) -> None:
+        """Store non-zero quality finding counts (rule id -> rows) for this run."""
         rows = [(self.cfg.run_id, table, rule, n) for rule, n in findings.items() if n]
         if rows:
             self.con.executemany("INSERT INTO quality_findings VALUES (?, ?, ?, ?)", rows)
 
     def runs(self, table: str | None = None):
+        """All etl_runs rows, optionally for one table, oldest first."""
         q = "SELECT * FROM etl_runs" + (" WHERE table_name = ?" if table else "") + " ORDER BY started_at"
         return self.con.execute(q, [table] if table else []).fetchall()

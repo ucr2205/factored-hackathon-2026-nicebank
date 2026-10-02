@@ -5,6 +5,7 @@ chunks by doc_id (a dispute type has one chunk per language). A TF-IDF character
 chunks is reported as a lexical baseline. Results are printed and logged to MLflow (experiment "rag").
 
 Usage (after ml/rag/index.py): poetry run python ml/rag/evaluate.py [--ml-url http://127.0.0.1:8000]
+`make rag` runs both steps; needs `poetry install --with ml` (scikit-learn, mlflow).
 """
 
 from __future__ import annotations
@@ -34,10 +35,12 @@ FAQ_COVERS = {c["doc_id"]: c["covers"] for c in faq_chunks()}
 
 
 def credited(doc: str) -> set[str]:
+    """Doc ids that retrieving `doc` counts as: itself plus the policy chunks an FAQ answer covers."""
     return {doc, *FAQ_COVERS.get(doc, [])}
 
 
 def embed_query(ml_url: str, text: str) -> list[float]:
+    """e5 query vector for `text` from ml-service /embed (kind=query)."""
     body = json.dumps({"texts": [text], "kind": "query"}).encode()
     req = urllib.request.Request(f"{ml_url}/embed", data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -45,6 +48,7 @@ def embed_query(ml_url: str, text: str) -> list[float]:
 
 
 def ranked_docs(rows: list[tuple[str, float]]) -> list[str]:
+    """Distinct doc ids in rank order from (doc_id, distance) rows already sorted best first."""
     seen, out = set(), []
     for doc, _ in rows:
         if doc not in seen:
@@ -62,6 +66,7 @@ def first_hit(ranked: list[str], expected: list[str]) -> int | None:
 
 
 def score(ranks: list[list[str]], queries: list[dict]) -> dict[str, float]:
+    """recall@1/3/5 and MRR over the queries, given each query's ranked doc ids."""
     hits = [first_hit(r, q["expected"]) for r, q in zip(ranks, queries)]
     out = {f"recall_at_{k}": float(np.mean([h is not None and h <= k for h in hits])) for k in KS}
     out["mrr"] = float(np.mean([1 / h if h else 0.0 for h in hits]))
@@ -69,6 +74,7 @@ def score(ranks: list[list[str]], queries: list[dict]) -> dict[str, float]:
 
 
 def main() -> None:
+    """Rank every labeled query densely (e5 + pgvector) and lexically (TF-IDF), print and log both to MLflow."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--ml-url", default="http://127.0.0.1:8000")
     args = ap.parse_args()

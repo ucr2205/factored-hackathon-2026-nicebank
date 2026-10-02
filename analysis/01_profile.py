@@ -11,7 +11,7 @@ prefixes and coordinates.
 Personal columns (names, documents, contact data, card numbers, IPs, free text) are measured, but their values
 are never written to the report or to the detail files.
 
-Usage: python analysis/01_profile.py [--tables t1 t2 ...] [--reload]
+Usage: make profile, or poetry run python analysis/01_profile.py [--tables t1 t2 ...] [--reload]
   --tables  profile only these tables (the report still covers every table profiled so far)
   --reload  re-read the CSV files even if data/raw/ did not change since the last load
 Outputs: docs/data_quality_report.md, detail CSV/JSON files in analysis/out/profile/ (git-ignored).
@@ -54,6 +54,7 @@ PII = {"first_name", "last_name", "document_number", "date_of_birth", "email", "
 
 @dataclass(frozen=True)
 class Table:
+    """What the profiler needs per table: primary key, business event column, foreign keys and raw layout."""
     pk: tuple[str, ...]
     event: str | None = None                  # business event timestamp (process_date is the load date)
     parents: dict[str, tuple[str, str]] = field(default_factory=dict)  # column -> (parent table, key)
@@ -144,26 +145,32 @@ COUNTRY_COLUMNS = [("customers", "country"), ("branches", "country"), ("service_
 # ---------- helpers ----------
 
 def q(name: str) -> str:
+    """Quote a SQL identifier."""
     return '"' + name.replace('"', '""') + '"'
 
 
 def lit(value: str) -> str:
+    """Quote a SQL string literal."""
     return "'" + value.replace("'", "''") + "'"
 
 
 def raw(name: str) -> str:
+    """Quoted name of the DuckDB table holding a table's raw text rows (raw_<name>)."""
     return q(f"raw_{name}")
 
 
 def as_ts(col: str) -> str:
+    """SQL expression casting a text column to TIMESTAMP (NULL when it does not parse)."""
     return f"try_cast({q(col)} AS TIMESTAMP)"
 
 
 def as_num(col: str) -> str:
+    """SQL expression casting a text column to DOUBLE (NULL when it does not parse)."""
     return f"try_cast({q(col)} AS DOUBLE)"
 
 
 def null_like(col: str) -> str:
+    """SQL predicate: the column holds a textual null token (NULL_TOKENS, case- and space-insensitive)."""
     return f"lower(trim({q(col)})) IN ({', '.join(lit(t) for t in NULL_TOKENS)})"
 
 
@@ -181,14 +188,17 @@ TYPE_ORDER = ["boolean", "integer", "decimal", "timestamp", "date", "date or tim
 
 
 def pct(part: float, whole: float, digits: int = 1) -> str:
+    """part/whole as a percentage string, or a dash when whole is 0."""
     return "—" if not whole else f"{100 * part / whole:.{digits}f}%"
 
 
 def n(value) -> str:
+    """Integer with thousands separators, or a dash for None."""
     return "—" if value is None else f"{value:,}"
 
 
 def write_csv(path: Path, header: list[str], rows: list) -> None:
+    """Write a header and rows to a CSV file, creating its folder."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as fh:
         w = csv.writer(fh)
@@ -197,15 +207,18 @@ def write_csv(path: Path, header: list[str], rows: list) -> None:
 
 
 def log(msg: str) -> None:
+    """Print a timestamped progress line."""
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
 def loaded_tables(con: duckdb.DuckDBPyConnection) -> set[str]:
+    """Tables of TABLES already loaded into the profile database."""
     names = {r[0] for r in con.execute("SELECT table_name FROM information_schema.tables").fetchall()}
     return {t for t in TABLES if f"raw_{t}" in names}
 
 
 def business_columns(con: duckdb.DuckDBPyConnection, name: str) -> list[str]:
+    """Columns of a raw table without the loader's bookkeeping columns (_file, _part_date)."""
     cols = [r[0] for r in con.execute(f"DESCRIBE {raw(name)}").fetchall()]
     return [c for c in cols if not c.startswith("_")]
 
@@ -213,6 +226,7 @@ def business_columns(con: duckdb.DuckDBPyConnection, name: str) -> list[str]:
 # ---------- load ----------
 
 def source_files(name: str, t: Table) -> list[Path]:
+    """Raw CSV files of a table: every daily partition, or the single root-level file."""
     if t.partitioned:
         return sorted((RAW_DIR / name).rglob("*.csv"))
     path = RAW_DIR / f"{name}.csv"
@@ -220,6 +234,10 @@ def source_files(name: str, t: Table) -> list[Path]:
 
 
 def load(con: duckdb.DuckDBPyConnection, name: str, t: Table, reload: bool) -> bool:
+    """Load a table's CSVs as text into raw_<name>, counting rejected lines; reused when files are unchanged.
+
+    Returns False when the table has no files.
+    """
     files = source_files(name, t)
     if not files:
         log(f"{name}: no files in data/raw/, skipped")
@@ -261,6 +279,10 @@ def load(con: duckdb.DuckDBPyConnection, name: str, t: Table, reload: bool) -> b
 # ---------- per-table profile ----------
 
 def column_stats(con, name: str, cols: list[str]) -> list[dict]:
+    """Per-column nulls, null tokens, distinct values, padding and the inferred type with its malformed count.
+
+    The type is the first in TYPE_ORDER matched by at least TYPE_SHARE of the values that are not null or null tokens.
+    """
     # Exact distinct counts up to APPROX_ABOVE rows; the approximation is off by >10% on some id columns.
     exact = con.execute(f"SELECT count(*) FROM {raw(name)}").fetchone()[0] <= APPROX_ABOVE
     distinct = "count(DISTINCT {})" if exact else "approx_count_distinct({})"
@@ -309,6 +331,7 @@ def categorical_values(con, name: str, stats: list[dict], partitioned: bool) -> 
 
 
 def malformed_detail(con, name: str, stats: list[dict], partitioned: bool) -> dict[str, dict]:
+    """Malformed values per column: top examples (never for personal columns) and the months they appear in."""
     out = {}
     for s in stats:
         if not s["malformed"]:
@@ -328,6 +351,10 @@ def malformed_detail(con, name: str, stats: list[dict], partitioned: bool) -> di
 
 
 def pk_checks(con, name: str, t: Table, cols: list[str]) -> dict:
+    """Primary-key nulls and duplicates, plus content duplicates re-issued under a new id.
+
+    Key duplicates are split into identical and conflicting copies, with their spread across files and days.
+    """
     keys = ", ".join(q(k) for k in t.pk)
     rowhash = f"hash({', '.join(q(c) for c in cols)})"
     not_null = " AND ".join(f"{q(k)} IS NOT NULL" for k in t.pk)
@@ -446,6 +473,7 @@ def enum_drift(values: dict[str, list], first: str, last: str) -> list[dict]:
 
 
 def profile(con, name: str, t: Table) -> dict:
+    """Profile one table, write its detail files under analysis/out/profile/<table>/ and return the summary."""
     log(f"{name}: profiling")
     cols = business_columns(con, name)
     meta = con.execute("SELECT files, bytes, rows, rejected FROM _load_meta WHERE tbl = ?", [name]).fetchone()
@@ -468,6 +496,7 @@ def profile(con, name: str, t: Table) -> dict:
 # ---------- cross-table checks ----------
 
 def cross_checks(con, have: set[str]) -> dict:
+    """Cross-table checks: orphans, owner consistency, date order, phones, coordinates, countries and FX."""
     log("cross-table checks")
     res: dict = {"orphans": [], "consistency": [], "date_order": [], "phones": [], "coords": [], "countries": {}}
 
@@ -571,6 +600,7 @@ def cross_checks(con, have: set[str]) -> dict:
 
 
 def fx_checks(con, have: set[str]) -> dict:
+    """Exchange-rate coverage and jumps, and how amount_usd compares with amount x the transaction-date rate."""
     fx: dict = {}
     fx["pairs"] = con.execute(f"""
         SELECT source_currency, target_currency, count(*), count(DISTINCT "date"), min("date"), max("date"),
@@ -610,6 +640,7 @@ def fx_checks(con, have: set[str]) -> dict:
 # ---------- report ----------
 
 def md_table(header: list[str], rows: list[list], align: str | None = None) -> list[str]:
+    """Markdown table lines (with a trailing blank line)."""
     align = align or "|".join("---" for _ in header)
     lines = ["| " + " | ".join(header) + " |", "|" + align + "|"]
     lines += ["| " + " | ".join(str(c) for c in r) + " |" for r in rows]
@@ -617,6 +648,7 @@ def md_table(header: list[str], rows: list[list], align: str | None = None) -> l
 
 
 def fmt_value(v) -> str:
+    """Value as inline code for the report, truncated to 60 characters; shows padding with repr."""
     if v is None:
         return "*(null)*"
     s = str(v).replace("|", "\\|").replace("\n", " ")
@@ -624,6 +656,7 @@ def fmt_value(v) -> str:
 
 
 def key_findings(p: dict[str, dict], x: dict) -> list[str]:
+    """Bullet points for the report's key-findings section, built from the profiles and cross checks."""
     out = []
     facts = [s for s in p.values() if "monthly" in s]
 
@@ -843,6 +876,7 @@ def _spellings(x: dict) -> dict[str, set]:
 
 
 def render_report(p: dict[str, dict], x: dict) -> str:
+    """Full Markdown text of docs/data_quality_report.md."""
     today = dt.date.today().isoformat()
     L = ["# Data Quality Report", "",
          f"Generated by `analysis/01_profile.py` on {today} from the local raw copy (`data/raw/`). "
@@ -1004,6 +1038,7 @@ def render_report(p: dict[str, dict], x: dict) -> str:
 
 
 def table_section(s: dict) -> list[str]:
+    """Markdown section with one table's profile: keys, duplicates, timing, columns and values."""
     k, tm = s["pk"], s["timing"]
     L = [f"### `{s['table']}`", "",
          f"{n(s['rows'])} rows in {n(s['files'])} file(s); primary key `{', '.join(s['pk_columns'])}`: "
@@ -1074,6 +1109,7 @@ def table_section(s: dict) -> list[str]:
 # ---------- main ----------
 
 def main() -> None:
+    """CLI entry point (make profile): load and profile the tables, run the cross checks and write the report."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tables", nargs="*", choices=list(TABLES), help="Only (re)profile these tables.")
     parser.add_argument("--reload", action="store_true", help="Re-read the CSV files even if unchanged.")

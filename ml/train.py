@@ -12,9 +12,9 @@ model is the lowest one whose validation precision (over the messages it does no
 Everything is logged to MLflow (file:ml/mlruns). The chosen model is exported as plain JSON (no pickle) to
 ml/service/model/classifier.json so the service image can be built from the repository.
 
-Usage:
+Usage (`make train` runs both steps; needs `poetry install --with ml`):
     poetry run python ml/data/generate_utterances.py
-    poetry run python ml/train.py [--serve auto|M2|M3]
+    poetry run python ml/train.py [--serve auto|M2|M3] [--refit]
 """
 
 from __future__ import annotations
@@ -52,6 +52,7 @@ C_GRID = [0.25, 1.0, 4.0, 16.0, 64.0]
 
 
 def load_jsonl(path: Path) -> list[dict]:
+    """Read a JSONL file into a list of dicts, skipping blank lines."""
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
@@ -81,6 +82,7 @@ class E5:
 
 
 def tfidf_pipeline(c: float):
+    """Model M1: word (1-2) + char_wb (2-5) TF-IDF into a class-balanced logistic regression with C=`c`."""
     features = FeatureUnion([
         ("word", TfidfVectorizer(analyzer="word", ngram_range=(1, 2), min_df=1, sublinear_tf=True, strip_accents="unicode", lowercase=True)),
         ("char", TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 5), min_df=2, sublinear_tf=True, strip_accents="unicode", lowercase=True)),
@@ -89,6 +91,7 @@ def tfidf_pipeline(c: float):
 
 
 def metrics(y_true: list[str], y_pred: list[str], langs: list[str]) -> dict[str, float]:
+    """Accuracy and macro-F1 over LABELS, overall and per language (`*_es`, `*_pt`) when that language is present."""
     out = {"accuracy": accuracy_score(y_true, y_pred),
            "macro_f1": f1_score(y_true, y_pred, labels=LABELS, average="macro", zero_division=0)}
     for lang in ("es", "pt"):
@@ -118,12 +121,14 @@ def pick_threshold(y_true: list[str], y_pred: list[str], conf: np.ndarray) -> tu
 
 
 def coverage_at(y_true: list[str], y_pred: list[str], conf: np.ndarray, t: float) -> tuple[float, float]:
+    """Return (precision over non-abstained messages, coverage) at threshold `t`; NaN precision if none kept."""
     correct = np.array([a == b for a, b in zip(y_true, y_pred)])
     keep = conf >= t
     return (float(correct[keep].mean()) if keep.any() else float("nan")), float(keep.mean())
 
 
 def main() -> None:
+    """Evaluate B0, B1, M1, M2 and M3, log each run to MLflow and export the `--serve` model to classifier.json."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--serve", default="auto", help="model to export for ml-service: M2, M3 or auto (best val macro-F1)")
     ap.add_argument("--refit", action="store_true",

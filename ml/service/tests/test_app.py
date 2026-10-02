@@ -1,6 +1,6 @@
 """Tests for ml-service: contract C2, parity with training, known stub failures and latency.
 
-Run from the repository root (needs `poetry install --with ml`):
+Run from the repository root (needs `poetry install --with ml`), or with `make test-ml`:
     poetry run pytest ml/service/tests -q
 """
 
@@ -28,10 +28,12 @@ GOLDEN = json.loads((SERVICE / "model" / "golden.json").read_text(encoding="utf-
 
 @pytest.fixture(scope="module")
 def client() -> TestClient:
+    """FastAPI TestClient over the service app, shared by the whole module."""
     return TestClient(service.app)
 
 
 def classify(client: TestClient, text: str, lang: str | None = "es") -> dict:
+    """POST /classify with `text` (and `lang` unless None), assert HTTP 200 and return the JSON body."""
     body = {"text": text} if lang is None else {"text": text, "lang": lang}
     r = client.post("/classify", json=body)
     assert r.status_code == 200, r.text

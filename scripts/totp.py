@@ -3,7 +3,7 @@
 Demo customers carry a test-only TOTP seed in the local realm (`nicebank-demo-otp-<username>`, see
 infra/keycloak/README.md), so nobody needs to enroll a phone. Local test realm only.
 
-Usage: poetry run python scripts/totp.py cliente03
+Usage: poetry run python scripts/totp.py cliente03   (no make target)
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from smoke_chat import totp
 
 
 def main() -> None:
+    """Print the current code for the clienteNN in argv and the seconds left in its 30 s window."""
     if len(sys.argv) != 2 or not sys.argv[1].startswith("cliente"):
         sys.exit("usage: poetry run python scripts/totp.py clienteNN")
     left = 30 - int(time.time()) % 30

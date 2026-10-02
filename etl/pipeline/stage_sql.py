@@ -178,6 +178,10 @@ _COORDS_REPLACE = ("CASE WHEN c._coords_bad THEN NULL ELSE c.latitude END AS lat
 
 
 def build_ext(con: duckdb.DuckDBPyConnection, table: str) -> None:
+    """stg_clean -> stg_ext: per-table derived columns and quality flags (joins already-built silver tables).
+
+    Tables without derived columns pass through unchanged.
+    """
     sql = {
         "branches": f"""
             SELECT c.* EXCLUDE (_coords_bad) REPLACE ({_COORDS_REPLACE}),

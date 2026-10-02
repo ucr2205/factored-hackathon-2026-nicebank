@@ -67,6 +67,7 @@ def standardize_sql(column: str, mapping_name: str) -> str:
 
 # Card brand from the BIN (same rules seed_demo.py uses); applied before product_number is dropped.
 def card_brand_sql(number: str) -> str:
+    """SQL CASE expression mapping a card number column to visa, mastercard, amex or other (NULL stays NULL)."""
     return f"""CASE WHEN {number} IS NULL THEN NULL
         WHEN {number} LIKE '4%' THEN 'visa'
         WHEN regexp_matches({number}, '^(5[1-5]|222[1-9]|22[3-9]|2[3-6]|27[01]|2720)') THEN 'mastercard'

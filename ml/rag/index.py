@@ -11,6 +11,7 @@ Passages are embedded by ml-service (/embed, kind=passage, the same e5 model the
 and passages share one vector space. Re-running replaces every row of the same sources (idempotent).
 
 Usage (stack running): poetry run python ml/rag/index.py [--ml-url http://127.0.0.1:8000]
+`make rag` runs it and then ml/rag/evaluate.py (which also imports `faq_chunks` from here).
 """
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ QUEUE = {"fraud": {"es": "fraude", "pt": "fraude"}, "disputes": {"es": "disputas
 
 
 def dispute_type_text(d: dict, lang: str) -> str:
+    """Customer-language (es/pt) passage for one dispute type: name, escalation, eligibility window, auto limit."""
     name = d["display_name"][lang]
     parts = [f"{name}."]
     if lang == "es":
@@ -100,11 +102,13 @@ RULE_TEXT: dict[str, dict[str, str]] = {
 
 
 def localized(doc_id: str, key: str, g: dict, version: str) -> list[dict]:
+    """es and pt chunks for `key` from RULE_TEXT, formatted with the policy globals ([] if `key` has none)."""
     return [{"doc_id": doc_id, "lang": lang, "section": key, "text": RULE_TEXT[key][lang].format(**g), "version": version}
             for lang in ("es", "pt") if key in RULE_TEXT]
 
 
 def policy_chunks(policy: dict) -> list[dict]:
+    """Every policy chunk: dispute types (es/pt), explain_status and global rules (en + es/pt), globals."""
     version = f"policy-{policy['version']}"
     chunks = []
     names = {d["id"]: d["display_name"] for d in policy["dispute_types"]}
@@ -151,6 +155,7 @@ def faq_chunks() -> list[dict]:
 
 
 def embed(ml_url: str, texts: list[str]) -> tuple[list[list[float]], str]:
+    """Embed `texts` as passages through ml-service /embed in batches of 64; returns (vectors, model name)."""
     vectors, model = [], ""
     for i in range(0, len(texts), 64):
         body = json.dumps({"texts": texts[i:i + 64], "kind": "passage"}).encode()
@@ -163,6 +168,7 @@ def embed(ml_url: str, texts: list[str]) -> tuple[list[list[float]], str]:
 
 
 def main() -> None:
+    """Build policy and FAQ chunks, embed them and replace the policy:/faq: rows of kb_chunks."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--ml-url", default="http://127.0.0.1:8000")
     args = ap.parse_args()

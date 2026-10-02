@@ -61,10 +61,12 @@ def write_silver_months(con: duckdb.DuckDBPyConnection, cfg: PipelineConfig, tab
 
 
 def silver_glob(cfg: PipelineConfig, table: str) -> str:
+    """Glob matching every parquet file of a silver table (partitioned or not)."""
     return (cfg.silver_path(table) / "**" / "*.parquet").as_posix()
 
 
 def silver_exists(cfg: PipelineConfig, table: str) -> bool:
+    """True when the silver table has at least one parquet file."""
     root = cfg.silver_path(table)
     return root.exists() and any(root.rglob("*.parquet"))
 

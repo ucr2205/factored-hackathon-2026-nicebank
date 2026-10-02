@@ -78,6 +78,7 @@ FAMILIES: dict[str, dict[str, list[list[str]]]] = {
 
 
 def main() -> None:
+    """Render every template with a fixed seed into eval/screen/dev.jsonl ({id, lang, label, kind, text})."""
     rng = random.Random(20261001)
     rows = []
     for label, by_lang in FAMILIES.items():

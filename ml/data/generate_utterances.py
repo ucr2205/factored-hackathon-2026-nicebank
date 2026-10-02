@@ -14,6 +14,7 @@ Outputs (ml/data/build/, git-ignored):
     manifest.json   seed, counts per split/label/lang, SHA-256 of every text and of the whole corpus
 
 Usage: poetry run python ml/data/generate_utterances.py [--per-family 20] [--seed 20260930]
+(`make train` runs it before ml/train.py; eval/check_overlap.py also needs its corpus.)
 """
 
 from __future__ import annotations
@@ -374,6 +375,7 @@ CLOSERS = {"es": ["", "", "", ", me pueden ayudar?", ", qué hago?", ". Quiero r
 
 
 def amount(rng: random.Random, lang: str) -> str:
+    """Random amount string in words, US or Latin American number format, with a local currency symbol or code."""
     style = rng.random()
     if style < 0.2:
         return rng.choice(NUM_WORDS[lang]) + " " + rng.choice(["dólares", "pesos" if lang == "es" else "reais"])
@@ -388,10 +390,12 @@ def amount(rng: random.Random, lang: str) -> str:
 
 
 def strip_accents(s: str) -> str:
+    """Remove combining accent marks (NFKD) from `s`."""
     return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
 
 
 def add_typos(s: str, rng: random.Random) -> str:
+    """Apply 1-2 random letter deletions, swaps or doublings; strings with fewer than 4 letters are kept."""
     chars = list(s)
     for _ in range(rng.randint(1, 2)):
         idx = [i for i, c in enumerate(chars) if c.isalpha()]
@@ -409,12 +413,14 @@ def add_typos(s: str, rng: random.Random) -> str:
 
 
 def fill(template: str, rng: random.Random, lang: str) -> str:
+    """Fill a template's {amt}, {date}, {merchant} and {card} slots and collapse whitespace."""
     text = template.format(amt=amount(rng, lang), date=rng.choice(DATES[lang]),
                            merchant=rng.choice(MERCHANTS), card=rng.choice(CARD[lang]))
     return re.sub(r"\s+", " ", text).strip()
 
 
 def render(template: str, rng: random.Random, lang: str, short: bool) -> str:
+    """One utterance: filled template plus opener/closer (unless `short`), then accent, typo and casing noise."""
     core = fill(template, rng, lang)
     if not short:  # follow-up replies stay short and bare, like real chat turns
         core = rng.choice(OPENERS[lang]) + core + rng.choice(CLOSERS[lang])
@@ -457,6 +463,7 @@ def assign_splits(rng: random.Random) -> dict[tuple[str, str, int], str]:
 
 
 def transcripts_out_of_scope(rng: random.Random, max_rows: int) -> list[str]:
+    """Up to `max_rows` distinct masked customer turns from the silver transcripts ([] without polars or data)."""
     try:
         import polars as pl
     except ImportError:
@@ -472,6 +479,7 @@ def transcripts_out_of_scope(rng: random.Random, max_rows: int) -> list[str]:
 
 
 def main() -> None:
+    """Generate the corpus with family-level splits and write corpus.jsonl and manifest.json to ml/data/build/."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--per-family", type=int, default=20, help="utterances generated per template family")
     ap.add_argument("--seed", type=int, default=20260930)

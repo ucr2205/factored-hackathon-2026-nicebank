@@ -9,7 +9,7 @@ The sentences come from eval-only phrasings written for this file (not from ml/d
 verifies they do not near-duplicate the classifier's training corpus.
 
 Outputs: eval/cases/dev.jsonl (30%), eval/cases/test.jsonl (70%), eval/cases/TEST_HASH, eval/cases/manifest.json
-Usage (stack running, data seeded): poetry run python eval/build_cases.py
+Usage (stack running, data seeded): poetry run python eval/build_cases.py [--version v1|v2]   (no make target)
 
 Version v2 (--version v2, written to eval/cases/v2/): a second, independent set built after test v1 was scored. It
 uses a new phrasing bank (P_V2, written before the classifier was retrained and frozen with its own TEST_HASH), a
@@ -224,11 +224,13 @@ VERSIONS = {"v1": {"phrases": P, "seed": SEED, "out": OUT}, "v2": {"phrases": P_
 
 
 def say(template: str, **slots: str) -> str:
+    """Format a phrasing template with its slots and capitalize the first letter."""
     text = template.format(**slots)
     return text[0].upper() + text[1:]
 
 
 def fmt_amount(amount: float, currency: str, lang: str, rng: random.Random) -> str:
+    """Amount as a customer writes it: Latin American separators (1.234,56) plus a currency word or US$ form."""
     whole = amount == int(amount)
     s = f"{amount:,.0f}" if whole else f"{amount:,.2f}"
     s = s.replace(",", "_").replace(".", ",").replace("_", ".")  # 1.234,56
@@ -238,6 +240,7 @@ def fmt_amount(amount: float, currency: str, lang: str, rng: random.Random) -> s
 
 
 def fmt_date(d: date, lang: str, rng: random.Random) -> str:
+    """Date as a customer writes it, e.g. "el 5 de marzo" or "no dia 05/03"."""
     style = rng.random()
     if style < 0.5:
         return (f"el {d.day} de {MONTHS['es'][d.month - 1]}" if lang == "es" else f"em {d.day} de {MONTHS['pt'][d.month - 1]}")
@@ -263,6 +266,7 @@ def expected_for(dtype: str, status: str, age: int, usd: float) -> tuple[str, st
 
 
 def load_rows() -> tuple[list[dict], dict[str, dict]]:
+    """Demo customers' card purchases and withdrawals (USD at the day's rate, age in days); returns (rows, users)."""
     users = {u["customer_id"]: u for u in csv.DictReader((ROOT / "etl" / "seeds" / "demo_customers.csv").open(encoding="utf-8"))}
     with psycopg.connect(PG_DSN) as pg, pg.cursor() as cur:
         cur.execute("""
@@ -285,12 +289,14 @@ def load_rows() -> tuple[list[dict], dict[str, dict]]:
 
 
 def unique_match(row: dict, rows_by_cust: dict, types: tuple[str, ...]) -> bool:
+    """True when exactly one same-day movement of `types` is within max(1, 2%) of the row's amount (backend rule)."""
     same_day = [r for r in rows_by_cust[row["customer_id"]] if r["day"] == row["day"] and r["type"] in types]
     tol = max(1.0, row["amount"] * 0.02)
     return sum(abs(r["amount"] - row["amount"]) <= tol for r in same_day) == 1
 
 
 def main() -> None:
+    """Build the `--version` cases, split 30% dev / 70% test by category and language; write TEST_HASH, manifest."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--version", choices=sorted(VERSIONS), default="v1")
     args = ap.parse_args()

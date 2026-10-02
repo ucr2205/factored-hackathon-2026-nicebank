@@ -7,7 +7,7 @@
   the readable password stays in .env for the team. `--rotate-tools-password` replaces it.
 Secrets such as DEEPSEEK_API_KEY are never written by this script; paste them into .env yourself.
 
-Usage: poetry run python scripts/make_env.py [--rotate-tools-password]
+Usage: `make env`, or poetry run python scripts/make_env.py [--rotate-tools-password]
 """
 
 from __future__ import annotations
@@ -26,20 +26,24 @@ CADDY_IMAGE = "caddy:2.9-alpine"  # same image as the gateway, so the hash forma
 
 
 def has_value(lines: list[str], key: str) -> bool:
+    """True when `key` is present in the .env lines with a non-empty (unquoted) value."""
     return any(line.startswith(f"{key}=") and line.split("=", 1)[1].strip().strip("'\"") for line in lines)
 
 
 def set_values(lines: list[str], values: dict[str, str]) -> list[str]:
+    """Drop existing lines for the given keys and append `KEY=value` lines for them."""
     return [line for line in lines if line.split("=", 1)[0] not in values] + [f"{k}={v}" for k, v in values.items()]
 
 
 def bcrypt_hash(password: str) -> str:
+    """Bcrypt hash of `password` from Caddy's `hash-password` (runs the Caddy image through Docker)."""
     out = subprocess.run(["docker", "run", "--rm", CADDY_IMAGE, "caddy", "hash-password", "--plaintext", password],
                          check=True, capture_output=True, text=True)
     return out.stdout.strip()
 
 
 def main() -> None:
+    """Create .env if missing, add PII_KEY if unset and the tools login if unset or `--rotate-tools-password`."""
     if not ENV.exists():
         shutil.copyfile(EXAMPLE, ENV)
         print("Created .env from .env.example")

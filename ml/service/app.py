@@ -10,6 +10,12 @@ Abstention: the service abstains below the confidence threshold frozen at traini
 >= 0.95 plus a 0.02 margin). An abstained "out_of_scope" is returned as "other_in_scope": the backend ends the
 conversation on out_of_scope without looking at `abstain`, and a low-confidence guess must lead to a question,
 not to a refusal.
+
+Run: the `ml-service` container of docker-compose.yml (`docker compose up -d ml-service`, port 127.0.0.1:8000)
+serves it with `uvicorn app:app --host 0.0.0.0 --port 8000 --workers "$ML_WORKERS"` (ml/service/Dockerfile,
+2 workers by default). Locally, after `make train` wrote model/classifier.json (needs `poetry install --with ml`):
+    poetry run uvicorn --app-dir ml/service app:app --port 8000
+Tests: `make test-ml` (poetry run pytest ml/service/tests -q).
 """
 
 from __future__ import annotations
@@ -115,11 +121,13 @@ CLASSIFY_SECONDS = Histogram("ml_classify_seconds", "Classification latency",
 
 
 class ClassifyRequest(BaseModel):
+    """Request body of POST /classify (C2)."""
     text: str = Field(min_length=1, max_length=4000)
     lang: Literal["es", "pt"] | None = None  # accepted for C2 compatibility; the model is multilingual
 
 
 class ClassifyResponse(BaseModel):
+    """Response of POST /classify (C2): C6 label, confidence in [0, 1], abstain flag, model version."""
     label: str
     confidence: float
     abstain: bool
@@ -127,22 +135,26 @@ class ClassifyResponse(BaseModel):
 
 
 class EmbedRequest(BaseModel):
+    """Request body of POST /embed (C2): 1-64 texts and the e5 prefix kind (query or passage)."""
     texts: list[str] = Field(min_length=1, max_length=64)
     kind: Literal["query", "passage"] = "query"
 
 
 class EmbedResponse(BaseModel):
+    """Response of POST /embed (C2): one L2-normalized 384-dim vector per text and the model name@revision."""
     vectors: list[list[float]]
     model: str
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
+    """GET /health: liveness plus the served model version."""
     return {"status": "ok", "model_version": MODEL.version}
 
 
 @app.post("/classify", response_model=ClassifyResponse)
 def classify(req: ClassifyRequest) -> ClassifyResponse:
+    """POST /classify (C2): most probable C6 label; abstains below the frozen threshold."""
     start = time.perf_counter()
     p = MODEL.proba(req.text)
     best = int(p.argmax())
@@ -157,6 +169,7 @@ def classify(req: ClassifyRequest) -> ClassifyResponse:
 
 @app.post("/embed", response_model=EmbedResponse)
 def embed(req: EmbedRequest) -> EmbedResponse:
+    """POST /embed (C2): e5 vectors with the query or passage prefix, rounded to 6 decimals."""
     prefix = MODEL.query_prefix if req.kind == "query" else PASSAGE_PREFIX
     vectors = MODEL.encode(req.texts, prefix)
     return EmbedResponse(vectors=[[round(float(x), 6) for x in v] for v in vectors], model=MODEL.embed_name)

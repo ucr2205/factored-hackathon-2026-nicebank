@@ -4,6 +4,7 @@ Compares every turn in eval/cases/**/*.jsonl with every row of ml/data/build/cor
 (lowercase, no accents, digits -> 0, placeholders removed): exact matches and character 4-gram Jaccard > 0.8 fail.
 
 Usage: poetry run python ml/data/generate_utterances.py && poetry run python eval/check_overlap.py
+(`make eval` runs it before eval/run_eval.py --split test.)
 Exit code 1 when an overlap is found.
 """
 
@@ -21,6 +22,7 @@ THRESHOLD = 0.8
 
 
 def norm(text: str) -> str:
+    """Lowercase, strip accents, drop [NAME]/[EMAIL]/[NUMBER], digits -> 0, keep only letters, 0 and spaces."""
     t = unicodedata.normalize("NFKD", text.lower())
     t = "".join(c for c in t if not unicodedata.combining(c))
     t = re.sub(r"\[(name|email|number)\]", " ", t)
@@ -29,11 +31,13 @@ def norm(text: str) -> str:
 
 
 def grams(text: str) -> set[str]:
+    """Character 4-grams of `text` padded with one space on each side."""
     t = f" {text} "
     return {t[i:i + 4] for i in range(len(t) - 3)}
 
 
 def main() -> int:
+    """Compare every eval turn with the training corpus; print the max Jaccard and overlaps, return 1 if any."""
     if not CORPUS.exists():
         raise SystemExit("ml/data/build/corpus.jsonl missing: run ml/data/generate_utterances.py first")
     train = [norm(json.loads(line)["text"]) for line in CORPUS.read_text(encoding="utf-8").splitlines() if line.strip()]

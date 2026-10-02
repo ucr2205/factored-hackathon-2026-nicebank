@@ -5,7 +5,7 @@ table is a fast no-op, and re-synced or late partitions rebuild only the event m
 Every run records lineage (etl_runs, etl_files, quality_findings) in data/etl_state.duckdb and writes
 rejected rows with their rule ids under data/quarantine/. Rules: docs/etl_rules.md.
 
-Usage: python etl/pipeline/run.py [--tables t1 t2 ...] [--full] [--raw-dir PATH]
+Usage: poetry run python etl/pipeline/run.py [--tables t1 t2 ...] [--full] [--raw-dir PATH]
   --tables   only these tables (their silver dependencies must already exist)
   --full     reprocess everything even if the watermark says it is up to date
 """
@@ -31,6 +31,7 @@ from etl.pipeline.validate import validate_table  # noqa: E402
 
 
 def log(msg: str) -> None:
+    """Print a timestamped progress line."""
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
@@ -56,6 +57,12 @@ def affected_months(con: duckdb.DuckDBPyConnection, cfg: PipelineConfig, table: 
 
 
 def run_table(cfg: PipelineConfig, state: StateStore, table: str, full: bool) -> None:
+    """Run every stage for one table (ingest, clean, derive, dedup, uniqueness, validate, write).
+
+    Lineage (watermark, run counts, findings) is recorded at the end. A table with no pending files is a
+    no-op unless full is set; when only some partitions changed, only the event months they touch are
+    rebuilt (see affected_months).
+    """
     spec = TABLES[table]
     started = dt.datetime.now()
     pending, all_files = state.pending_files(table)
@@ -113,6 +120,7 @@ def run_table(cfg: PipelineConfig, state: StateStore, table: str, full: bool) ->
 
 
 def run_pipeline(cfg: PipelineConfig, tables: list[str] | None = None, full: bool = False) -> None:
+    """Run the given tables (default: all) in dependency order; a missing silver dependency stops the run."""
     state = StateStore(cfg)
     try:
         for table in topo_order(tables):
@@ -125,6 +133,7 @@ def run_pipeline(cfg: PipelineConfig, tables: list[str] | None = None, full: boo
 
 
 def main() -> None:
+    """CLI entry point (make etl); see the module docstring for the options."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tables", nargs="*", choices=list(TABLES), help="Only these tables.")
     parser.add_argument("--full", action="store_true", help="Ignore the watermark and reprocess.")

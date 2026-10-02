@@ -7,6 +7,7 @@ is created and runs are repeatable. The test split is refused unless its SHA-256
 Run it with the backend on Mailpit (baseline escalations queue handoff emails):
     SMTP_HOST=mailpit SMTP_PORT=1025 SMTP_SECURITY=none EMAIL_USERNAME= EMAIL_PASSWORD= docker compose up -d backend
     poetry run python eval/run_eval.py --split test [--modes system,baseline] [--set v2]
+`make eval` runs eval/check_overlap.py and then this script with --split test (default split: dev).
 
 Writes eval/reports/<split>[-v2]-<timestamp>.json (git-ignored) and a Markdown summary next to it.
 """
@@ -67,6 +68,7 @@ class Tokens:
 
 
 def load(split: str, case_set: str = "v1") -> list[dict]:
+    """Cases of `split` (dev, test or all) from `case_set`; exits if test.jsonl no longer matches TEST_HASH."""
     base = CASES if case_set == "v1" else CASES / case_set
     parts = ["dev", "test"] if split == "all" else [split]
     if "test" in parts:
@@ -81,6 +83,7 @@ def load(split: str, case_set: str = "v1") -> list[dict]:
 
 
 def run_case(tokens: Tokens, case: dict, mode: str) -> dict:
+    """Send every turn of `case` in one session (retry once on 401) and judge the last reply in `mode`."""
     path = "/api/chat" if mode == "system" else "/api/chat?mode=baseline"
     session, got, latency, cost = None, {}, 0.0, 0.0
     for text in case["turns"]:
@@ -102,6 +105,7 @@ def run_case(tokens: Tokens, case: dict, mode: str) -> dict:
 
 
 def versions() -> dict:
+    """Policy, prompt and classifier versions plus the backend's LLM_* settings (via docker inspect) for the report."""
     out = {"policy": re.search(r'version:\s*"([^"]+)"', (ROOT / "policies" / "disputes.yaml").read_text(encoding="utf-8")).group(1)}
     m = re.search(r'PromptVersion\s*=\s*"([^"]+)"', (ROOT / "backend" / "internal" / "llm" / "deepseek.go").read_text(encoding="utf-8"))
     out["prompt_version"] = m.group(1) if m else "unknown"
@@ -122,10 +126,12 @@ def versions() -> dict:
 
 
 def pct(r: dict) -> str:
+    """Format a `rate()` dict as "x.y% (k/n; IC95 lo-hi%)", or an em dash when n = 0."""
     return f"{100 * r['rate']:.1f}% ({r['k']}/{r['n']}; IC95 {100 * r['ci95'][0]:.0f}–{100 * r['ci95'][1]:.0f}%)" if r["n"] else "—"
 
 
 def markdown(report: dict) -> str:
+    """Markdown summary: metric table per mode, breakdowns by lang/segment/country/category, unsafe cases."""
     lines = [f"# Evaluation report — {report['split']} split, case set {report['case_set']} ({report['run_at']})", "",
              "Versions: " + ", ".join(f"{k}={v}" for k, v in report["versions"].items()), "",
              "| Metric | " + " | ".join(report["modes"]) + " |", "|---|" + "---|" * len(report["modes"])]
@@ -156,6 +162,7 @@ def markdown(report: dict) -> str:
 
 
 def main() -> None:
+    """Run the selected split and case set in every `--modes` mode and write the JSON and Markdown reports."""
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["dev", "test", "all"], default="dev")
     ap.add_argument("--modes", default="system,baseline")

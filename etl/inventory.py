@@ -3,7 +3,8 @@
 For every table it reports: files, size, format, partitioning, partition date range, missing days,
 header variants across files (schema evolution) and row counts compared to the organizer's figures.
 
-Usage: python etl/inventory.py [--no-rows]   (--no-rows skips the DuckDB row counts, which read every file)
+Usage: make inventory, or poetry run python etl/inventory.py [--no-rows]
+       (--no-rows skips the DuckDB row counts, which read every file)
 """
 
 from __future__ import annotations
@@ -34,11 +35,13 @@ PARTITION_RE = re.compile(r"year=(\d{4})/month=(\d{2})/day=(\d{2})")
 
 
 def read_header(path: Path) -> str:
+    """First line of a CSV file without the UTF-8 BOM (undecodable bytes replaced)."""
     with path.open("r", encoding="utf-8", errors="replace", newline="") as fh:
         return fh.readline().strip().lstrip("﻿")
 
 
 def collect() -> dict[str, list[Path]]:
+    """Raw CSV files grouped by table: the first folder under data/raw/, or the file stem for root-level tables."""
     tables: dict[str, list[Path]] = defaultdict(list)
     for path in sorted(RAW_DIR.rglob("*.csv")):
         rel = path.relative_to(RAW_DIR)
@@ -48,6 +51,7 @@ def collect() -> dict[str, list[Path]]:
 
 
 def partition_dates(files: list[Path]) -> list[dt.date]:
+    """Sorted day-partition dates (year=/month=/day=) found in the file paths."""
     dates = []
     for path in files:
         match = PARTITION_RE.search(path.as_posix())
@@ -71,6 +75,7 @@ def schema_variants(files: list[Path]) -> list[dict]:
 
 
 def count_rows(files: list[Path]) -> int:
+    """Physical row count over all files of a table with DuckDB (before any dedup)."""
     import duckdb  # imported lazily so --no-rows works without duckdb installed
 
     paths = [p.as_posix() for p in files]
@@ -79,6 +84,7 @@ def count_rows(files: list[Path]) -> int:
 
 
 def human_size(num_bytes: int) -> str:
+    """Byte count as a short human-readable size (B, KB, MB, GB)."""
     size = float(num_bytes)
     for unit in ("B", "KB", "MB", "GB"):
         if size < 1024 or unit == "GB":
@@ -88,6 +94,7 @@ def human_size(num_bytes: int) -> str:
 
 
 def render(tables: dict[str, list[Path]], with_rows: bool) -> str:
+    """Markdown text of docs/data_inventory.md: summary table, automatic flags and header variants per table."""
     today = dt.date.today().isoformat()
     lines = [
         "# Data Inventory",
@@ -158,6 +165,7 @@ def render(tables: dict[str, list[Path]], with_rows: bool) -> str:
 
 
 def main() -> None:
+    """CLI entry point: write docs/data_inventory.md (fails if data/raw/ is missing)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--no-rows", action="store_true", help="Skip row counts.")
     args = parser.parse_args()

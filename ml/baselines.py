@@ -2,6 +2,8 @@
 
 ml/service/app.py no longer contains this logic once the trained model ships, so the baseline lives here to stay
 reproducible in every MLflow comparison.
+
+Library only, not run directly: ml/train.py imports `keyword_classify` (run it with `make train`).
 """
 
 from __future__ import annotations
@@ -24,6 +26,7 @@ ABSTAIN_BELOW = 0.5
 
 
 def normalize(text: str) -> str:
+    """Lowercase, strip accents (NFKD combining marks) and collapse whitespace, as keyword-stub-0 did."""
     stripped = unicodedata.normalize("NFKD", text.lower())
     return re.sub(r"\s+", " ", "".join(c for c in stripped if not unicodedata.combining(c)))
 

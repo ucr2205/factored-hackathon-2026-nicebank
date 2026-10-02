@@ -3,7 +3,7 @@
 Incremental and idempotent: `aws s3 sync` only downloads new or changed objects, so re-running it
 picks up late-arriving partitions. Credentials come from the AWS CLI profile, never from this repo.
 
-Usage: python scripts/sync_data.py [--tables call_center_interactions complaints ...]
+Usage: `make data`, or poetry run python scripts/sync_data.py [--tables call_center_interactions complaints ...]
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ PARTITIONED_TABLES = {
 
 
 def find_aws_cli() -> str:
+    """Path of the AWS CLI (PATH, then the default Windows install); exits with install advice if missing."""
     found = shutil.which("aws")
     if found:
         return found
@@ -38,6 +39,7 @@ def find_aws_cli() -> str:
 
 
 def sync(aws: str, source: str, dest: Path, extra: list[str]) -> None:
+    """Run `aws s3 sync source dest` with the configured profile and region; raises on failure."""
     cmd = [aws, "s3", "sync", source, str(dest), "--profile", PROFILE, "--region", REGION,
            "--only-show-errors", *extra]
     print("->", " ".join(cmd))
@@ -45,6 +47,7 @@ def sync(aws: str, source: str, dest: Path, extra: list[str]) -> None:
 
 
 def main() -> None:
+    """Sync the whole bucket, or only the `--tables` given (partition folders or single CSVs), into data/raw/."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tables", nargs="*", help="Only sync these tables (default: everything).")
     args = parser.parse_args()

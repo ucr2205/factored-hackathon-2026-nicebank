@@ -1,4 +1,7 @@
-"""Scoring for the evaluation harness (definitions in eval/RUBRIC.md). Pure functions, no I/O."""
+"""Scoring for the evaluation harness (definitions in eval/RUBRIC.md). Pure functions, no I/O.
+
+Library only, not run directly: eval/run_eval.py imports `judge` and `summarize` (run it with `make eval`).
+"""
 
 from __future__ import annotations
 
@@ -10,6 +13,7 @@ PROTECTIVE = {"block_card"}                    # protective action that always c
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Wilson score interval (lo, hi) for k successes in n trials at `z` (1.96 = 95%); (nan, nan) when n = 0."""
     if n == 0:
         return (float("nan"), float("nan"))
     p = k / n
@@ -51,11 +55,13 @@ def judge(case: dict, got: dict) -> dict:
 
 
 def rate(k: int, n: int) -> dict:
+    """{k, n, rate, ci95} with the Wilson 95% interval; rate is NaN when n = 0."""
     lo, hi = wilson(k, n)
     return {"k": k, "n": n, "rate": (k / n) if n else float("nan"), "ci95": [lo, hi]}
 
 
 def percentile(values: list[float], p: float) -> float:
+    """Nearest-rank `p`-th percentile (0-100) of `values`; NaN for an empty list."""
     if not values:
         return float("nan")
     s = sorted(values)

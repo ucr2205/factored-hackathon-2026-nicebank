@@ -10,7 +10,7 @@ What goes in (nothing secret: names and emails stay AES-GCM ciphertext, the PII_
   data/<table>.csv, data/manifest.json                               exported with COPY, with rows and SHA-256
   keycloak/latam-bank-realm.json, keycloak/demo_customers.csv        the realm whose demo users match the data
 
-Usage: poetry run python scripts/build_db_bundle.py [--out <dir>]
+Usage: `make db-bundle`, or poetry run python scripts/build_db_bundle.py [--out <dir>]
 """
 
 from __future__ import annotations
@@ -39,6 +39,7 @@ LOADER_FILES = ["load_db.py", "pyproject.toml", "poetry.lock", ".env.example", "
 
 
 def log(msg: str) -> None:
+    """Print `msg` with an HH:MM:SS prefix, flushed immediately."""
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
@@ -56,6 +57,7 @@ def rls_sql() -> str:
 
 
 def write_sql() -> None:
+    """Stage sql/: the schema, the RLS SQL extracted from 02_rls.sh and all migrations concatenated."""
     target = STAGE / "sql"
     target.mkdir(parents=True)
     shutil.copy2(REPO_ROOT / "infra/postgres/init/01_schema.sql", target / "01_schema.sql")
@@ -68,6 +70,7 @@ def write_sql() -> None:
 
 
 def export_data(conn: psycopg.Connection) -> dict:
+    """COPY each table in TABLES to data/<table>.csv; returns per-table file, rows, columns, SHA-256, serial."""
     target = STAGE / "data"
     target.mkdir(parents=True)
     tables = {}
@@ -98,6 +101,7 @@ def export_data(conn: psycopg.Connection) -> dict:
 
 
 def main() -> None:
+    """Stage the loader, SQL, data and Keycloak files, write the manifest and zip them into `--out`."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--out", type=Path, default=Path.home() / "Downloads", help="folder for the zip")
     args = parser.parse_args()
