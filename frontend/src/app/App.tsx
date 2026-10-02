@@ -1,3 +1,5 @@
+// Routes and role gating: customers land on /chat, agents on /console (and /console/:id), supervisors on
+// /supervisor. Every route needs a Keycloak session; no API calls here (each page loads its own data).
 import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { Box, CircularProgress, Stack, Typography } from "@mui/material";
@@ -59,6 +61,7 @@ function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }
   return children;
 }
 
+/** Waits for the OIDC callback, sends signed-out visitors to login, then renders the role-gated routes. */
 export default function App() {
   const { ready, user } = useAuth();
   if (!ready) {

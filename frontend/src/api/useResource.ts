@@ -1,3 +1,4 @@
+// GET loader with optional polling, shared by the customer home, agent console and supervisor screens (uses api()).
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "./client";

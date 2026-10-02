@@ -1,5 +1,8 @@
+// Single HTTP client for the Go API (VITE_API_URL): every backend call in the app goes through api(), which sends
+// the in-memory bearer token and turns error bodies ({error, message}) into ApiError.
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8081";
 
+/** A failed API call: HTTP status (0 = backend unreachable) and the backend's error code (e.g. "session_expired"). */
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;

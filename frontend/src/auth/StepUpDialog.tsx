@@ -1,3 +1,4 @@
+// Mounted once in App. No API calls: the iframe talks to Keycloak and the result returns through modalNavigator.ts.
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, Stack, Typography, useMediaQuery } from "@mui/material";
 import { ShieldCheck } from "lucide-react";

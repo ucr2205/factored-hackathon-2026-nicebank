@@ -1,3 +1,5 @@
+// Customer chat window: messages, candidate and confirmation cards, suggestion chips, composer and the
+// session-expired dialog. A view over useChat; it makes no API calls itself.
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Alert,
@@ -24,6 +26,7 @@ import { useLang } from "../../app/i18n";
 import { ActionCard, Bubble, CandidateList, TurnBadges } from "./ChatParts";
 import type { useChat } from "./useChat";
 
+/** Renders the conversation held by `chat` and forwards sends, picks and confirm/decline decisions to it. */
 export default function ChatPanel({ chat }: { chat: ReturnType<typeof useChat> }) {
   const { t } = useLang();
   const [draft, setDraft] = useState("");

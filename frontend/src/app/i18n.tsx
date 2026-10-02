@@ -1,3 +1,5 @@
+// UI language (es/pt: browser locale by default, switchable in the navbar), every customer-facing string and
+// locale-safe money/date formatters. Staff screens are Spanish-only and keep their text inline.
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 export type Lang = "es" | "pt";
@@ -115,11 +117,13 @@ type Strings = (typeof STRINGS)["es"];
 
 const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: Strings } | null>(null);
 
+/** Holds the current language: Portuguese when the browser locale is pt-*, otherwise Spanish. */
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>(() => (navigator.language.startsWith("pt") ? "pt" : "es"));
   return <LangContext value={{ lang, setLang, t: STRINGS[lang] as Strings }}>{children}</LangContext>;
 }
 
+/** Current language, its setter and the string table `t`; throws outside LangProvider. */
 export function useLang() {
   const ctx = useContext(LangContext);
   if (!ctx) throw new Error("useLang must be used inside LangProvider");
@@ -129,6 +133,7 @@ export function useLang() {
 const LOCALES: Record<Lang, string> = { es: "es-MX", pt: "pt-BR" };
 
 // Intl throws on a non-ISO currency or an unparseable date; one bad dataset row must not blank the page.
+/** Amount in the UI locale's currency format (es-MX / pt-BR); "12.34 XYZ" when Intl rejects the currency. */
 export function formatMoney(amount: number, currency: string, lang: Lang) {
   try {
     return new Intl.NumberFormat(LOCALES[lang], { style: "currency", currency }).format(amount);
@@ -137,6 +142,7 @@ export function formatMoney(amount: number, currency: string, lang: Lang) {
   }
 }
 
+/** Medium date and short time in the UI locale; the raw ISO string when it cannot be parsed. */
 export function formatDateTime(iso: string, lang: Lang) {
   try {
     return new Intl.DateTimeFormat(LOCALES[lang], { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso));

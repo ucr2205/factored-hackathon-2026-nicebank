@@ -1,3 +1,4 @@
+// Decorative background for the login redirect screen and the account card; CSS keyframes only, no API calls.
 import { Box } from "@mui/material";
 import { keyframes } from "@emotion/react";
 

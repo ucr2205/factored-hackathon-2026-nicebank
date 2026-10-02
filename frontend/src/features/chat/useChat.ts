@@ -1,3 +1,5 @@
+// Customer chat state: POST /api/chat (messages and candidate picks), POST /api/chat/confirm (confirm or decline a
+// pending action, retried after a TOTP step-up) and GET /api/sessions/{id} to restore it after a full-page step-up.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import type { Candidate, ChatTurn, SessionView } from "../../api/types";

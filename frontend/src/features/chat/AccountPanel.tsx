@@ -1,3 +1,5 @@
+// Customer account card: cards with their status and recent movements by day; tapping a movement starts a dispute
+// in the chat. Renders GET /api/me/overview, which CustomerHome loads.
 import { Box, ButtonBase, Chip, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { ChevronRight } from "lucide-react";
 import type { Candidate, Overview } from "../../api/types";

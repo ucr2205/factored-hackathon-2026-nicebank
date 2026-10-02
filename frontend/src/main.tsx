@@ -1,3 +1,4 @@
+// Entry point: mounts App inside the NiceBank MUI theme, the es/pt language provider and the OIDC auth provider.
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { CssBaseline, ThemeProvider } from "@mui/material";

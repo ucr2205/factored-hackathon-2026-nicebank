@@ -1,8 +1,10 @@
+// Presentational pieces of a chat turn: message bubble, transaction candidates, confirm card and verified badges.
 import { Box, Button, Card, CardActionArea, Chip, Paper, Stack, Typography } from "@mui/material";
 import { BadgeCheck, CreditCard, Headset, KeyRound } from "lucide-react";
 import type { Candidate, ChatTurn, PendingAction } from "../../api/types";
 import { formatDateTime, formatMoney, useLang } from "../../app/i18n";
 
+/** One message; the customer's own messages sit on the right in burgundy. */
 export function Bubble({ role, text }: { role: "customer" | "assistant"; text: string }) {
   const mine = role === "customer";
   return (
@@ -26,6 +28,7 @@ export function Bubble({ role, text }: { role: "customer" | "assistant"; text: s
   );
 }
 
+/** Transactions matching the customer's description; clickable only on the latest turn while the chat is idle. */
 export function CandidateList({ candidates, active, onPick }: { candidates: Candidate[]; active: boolean; onPick: (c: Candidate) => void }) {
   const { lang, t } = useLang();
   return (
@@ -56,6 +59,7 @@ export function CandidateList({ candidates, active, onPick }: { candidates: Cand
   );
 }
 
+/** Confirm / decline buttons for a pending action, with a note when it will ask for the TOTP code. */
 export function ActionCard({ action, active, onDecide }: { action: PendingAction; active: boolean; onDecide: (confirm: boolean) => void }) {
   const { t } = useLang();
   return (
@@ -80,6 +84,7 @@ export function ActionCard({ action, active, onDecide }: { action: PendingAction
   );
 }
 
+/** Chips for actions verified by read-back (with their reference) and for a handoff to a specialist. */
 export function TurnBadges({ turn }: { turn: ChatTurn }) {
   const { t } = useLang();
   if (!turn.actions_verified.length && !turn.handoff_id) return null;

@@ -1,3 +1,5 @@
+// Agent case detail (/console/:id): GET /api/handoffs/{id} and GET /api/sessions/{id}/audit, plus the agent actions
+// POST /api/handoffs/{id}/claim, POST /api/handoffs/{id}/identity (audited reveal) and POST /api/handoffs/{id}/close.
 import { useState, type ReactNode } from "react";
 import { Link as RouterLink, useParams } from "react-router";
 import {
@@ -38,6 +40,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+/** Structured handoff, identity reveal and closing form for the claiming agent, and the readable audit trail. */
 export default function HandoffDetailPage() {
   const { id } = useParams();
   const { user, roles } = useAuth();

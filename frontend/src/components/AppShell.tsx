@@ -1,3 +1,5 @@
+// Frame of every signed-in screen: gradient navbar with role-based tabs (Chat, Casos, Supervisión), the es/pt
+// language switch and the account menu with logout. No API calls.
 import { useState, type ReactNode } from "react";
 import { NavLink } from "react-router";
 import {
@@ -21,6 +23,7 @@ import { useLang, type Lang } from "../app/i18n";
 import { useAuth } from "../auth/AuthProvider";
 
 
+/** NiceBank logo mark (static image from public/brand); decorative, so it has an empty alt. */
 export function BrandMark({ size = 32 }: { size?: number }) {
   return <Box component="img" src="/brand/nicebank-mark-512.png" alt="" sx={{ width: size, height: size, display: "block" }} />;
 }
@@ -53,6 +56,7 @@ function NavTab({ to, label, icon: Icon }: { to: string; label: string; icon: Lu
   );
 }
 
+/** Navbar plus a centered container for the routed page; tabs show only when the user has more than one. */
 export default function AppShell({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useLang();
   const { user, claims, roles, logout } = useAuth();

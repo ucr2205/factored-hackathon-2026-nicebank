@@ -1,3 +1,5 @@
+// Customer /chat page: GET /api/me/overview (cards, recent movements) and GET /api/me/disputes (polled every 30 s),
+// both reloaded when the chat verifies an action or creates a case; chat calls go through useChat.
 import { useEffect } from "react";
 import { Box } from "@mui/material";
 import type { MyDispute, Overview } from "../../api/types";

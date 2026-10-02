@@ -1,3 +1,4 @@
+// Handoff priority display for the agent console: badge, row accent color and wait time against demo targets.
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import { ArrowDown, Flame, Timer } from "lucide-react";
 import { brand } from "../../app/theme";
@@ -35,8 +36,10 @@ const STYLE: Record<Priority, { label: string; hint: string; bg: string; fg: str
   },
 };
 
+/** Left-border color of a queue row for this priority. */
 export const priorityBar = (p: Priority) => STYLE[p]?.bar ?? STYLE.low.bar;
 
+/** Pill with icon and Spanish label; the tooltip says what the level means for the agent. */
 export function PriorityBadge({ priority }: { priority: Priority }) {
   const s = STYLE[priority] ?? STYLE.low;
   return (
@@ -78,6 +81,7 @@ export function elapsed(fromIso: string, now = Date.now()): string {
 // A case waiting longer than this is flagged in the queue (demo targets, not a real SLA).
 const WAIT_TARGET_MIN: Record<Priority, number> = { high: 30, medium: 240, low: 1440 };
 
+/** Time since `since`, highlighted past the priority's wait target; the tooltip shows the exact date. */
 export function WaitTime({ since, priority, exact }: { since: string; priority: Priority; exact: string }) {
   const mins = (Date.now() - new Date(since).getTime()) / 60_000;
   const late = mins > (WAIT_TARGET_MIN[priority] ?? WAIT_TARGET_MIN.low);

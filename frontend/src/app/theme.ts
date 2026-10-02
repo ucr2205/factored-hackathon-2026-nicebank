@@ -15,6 +15,7 @@ export const brand = {
   gradient: "linear-gradient(120deg, #7A1F3D 0%, #4A1026 55%, #2E0A18 100%)",
 };
 
+/** MUI theme on the brand palette: flat bordered cards, pill buttons, burgundy table headers. */
 export const theme = createTheme({
   palette: {
     mode: "light",

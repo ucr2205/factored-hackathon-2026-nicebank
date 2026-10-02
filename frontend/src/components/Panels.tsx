@@ -1,3 +1,4 @@
+// Shared layout primitives (IconBadge, Section, Stat) used by the chat, agent console and supervisor screens.
 import type { ReactNode } from "react";
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import type { LucideIcon } from "lucide-react";

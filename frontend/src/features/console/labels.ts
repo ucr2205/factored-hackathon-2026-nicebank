@@ -47,6 +47,7 @@ export const PRIORITY_LABEL = { high: "alta", medium: "media", low: "baja" } as 
 // Queues are "<team>_<lang>" (e.g. fraud_es): shown as "Fraudes · español".
 const QUEUE_TEAMS: Record<string, string> = { disputes: "Disputas", fraud: "Fraudes" };
 const QUEUE_LANGS: Record<string, string> = { es: "español", pt: "portugués" };
+/** Readable queue name; unknown team or language parts are shown as they come. */
 export const queueLabel = (q: string) => {
   const [team, lang] = q.split("_");
   return [QUEUE_TEAMS[team] ?? team, QUEUE_LANGS[lang] ?? lang].filter(Boolean).join(" · ");

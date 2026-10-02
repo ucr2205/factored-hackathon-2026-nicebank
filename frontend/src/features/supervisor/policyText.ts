@@ -56,6 +56,7 @@ export function escalationLines(d: PolicyDisputeType): string[] {
   return lines;
 }
 
+/** Distinct rule ids behind a dispute type (auto, escalations, ineligible), for the technical view. */
 export const escalationRuleIds = (d: PolicyDisputeType) =>
   [d.rules?.auto, d.always_escalate?.rule_id, ...(d.escalate_if?.map((e) => e.rule_id) ?? []), d.rules?.ineligible]
     .filter((r, i, all): r is string => !!r && all.indexOf(r) === i);
@@ -113,12 +114,14 @@ export function modelLabel(provider: string, version: string): { name: string; d
   return { name: names[model] ?? model, detail: "Solo entiende el mensaje y redacta; no decide ni ejecuta acciones" };
 }
 
+/** Friendly name for the ml-service classifier model (keyword stub, trained model or unavailable). */
 export function classifierLabel(model: string): { name: string; detail: string } {
   if (model === "unavailable") return { name: "No disponible", detail: "El servicio de clasificación no responde" };
   if (model.startsWith("keyword-stub")) return { name: "Palabras clave (provisional)", detail: "Se reemplazará por el modelo entrenado" };
   return { name: model, detail: "Modelo entrenado que identifica el tipo de caso" };
 }
 
+/** Explains a team_generated policy origin; any other origin is shown as is. */
 export function originLabel(origin: string): string {
   return origin.startsWith("team_generated")
     ? "Política de ejemplo creada por el equipo para el hackathon; no es la política de un banco real."

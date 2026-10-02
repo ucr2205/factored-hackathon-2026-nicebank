@@ -1,3 +1,5 @@
+// OIDC session for the whole app (Keycloak, Authorization Code + PKCE): login/logout redirects, the redirect
+// callback, roles from the access token and the TOTP step-up (acr 2). Talks only to Keycloak, never to the API.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { User } from "oidc-client-ts";
 import { useLang } from "../app/i18n";
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthValue | null>(null);
 // The redirect callback must run once even though StrictMode mounts effects twice in development.
 let callbackOnce: Promise<User> | null = null;
 
+/** Provides the signed-in user, decoded claims, roles and the login, logout and step-up actions. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
@@ -84,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext value={value}>{children}</AuthContext>;
 }
 
+/** Auth context accessor; throws outside AuthProvider. */
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used inside AuthProvider");

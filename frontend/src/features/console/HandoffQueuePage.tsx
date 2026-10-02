@@ -1,3 +1,5 @@
+// Agent console queue (/console): GET /api/handoffs?status=open|claimed|closed, refreshed every 10 s; a row opens
+// the case detail.
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
@@ -39,6 +41,7 @@ function QueueSummary({ items, status }: { items: HandoffSummary[]; status: Queu
   );
 }
 
+/** Tabbed table of escalated cases in the order the backend returns them (open: priority, then longest wait). */
 export default function HandoffQueuePage() {
   const [status, setStatus] = useState<QueueStatus>("open");
   const { data, error, loading } = useResource<HandoffSummary[]>(`/api/handoffs?status=${status}`, 10_000);

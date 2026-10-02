@@ -1,3 +1,4 @@
+// Renders GET /api/me/disputes, which CustomerHome loads and polls; status labels follow the agent's resolution.
 import { Chip, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import type { MyDispute } from "../../api/types";
 import { formatDateTime, formatMoney, useLang } from "../../app/i18n";

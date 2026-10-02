@@ -1,3 +1,5 @@
+// Supervisor view (/supervisor): the "Resumen" tab (AnalyticsTab, lazy) and "Configuración y reglas", a
+// plain-Spanish reading of GET /api/admin/config (policy version, LLM, classifier and rules).
 import { lazy, Suspense, useState } from "react";
 import {
   Alert,
@@ -81,6 +83,7 @@ const AnalyticsTab = lazy(() => import("./AnalyticsTab"));
 const longDate = (iso: string) =>
   new Intl.DateTimeFormat("es", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(iso));
 
+/** Both tabs plus the "Ver detalle técnico" switch, which adds rule ids and raw configuration values. */
 export default function SupervisorPage() {
   const config = useResource<AdminConfig>("/api/admin/config");
   const [technical, setTechnical] = useState(false);

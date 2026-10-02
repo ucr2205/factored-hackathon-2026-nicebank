@@ -1,3 +1,5 @@
+// Supervisor "Resumen" tab: KPIs and charts from GET /api/admin/analytics?range=24h|7d|30d|all (refreshed every
+// 30 s), assistant vs. baseline included; technical mode adds links to Prometheus and Jaeger.
 import { useMemo, useState } from "react";
 import { Alert, Box, Chip, Grid, LinearProgress, Link, Stack, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
 import { BarChart } from "@mui/x-charts/BarChart";
@@ -86,6 +88,7 @@ function duration(s: number) {
 }
 const showValue = (v: number | null) => (v ? nf.format(v) : "");
 
+/** Period selector and dashboard; `technical` adds Prometheus/Jaeger links and raw rule counts. */
 export default function AnalyticsTab({ technical }: { technical: boolean }) {
   const [range, setRange] = useState<AnalyticsRange>("24h");
   const { data: a, error } = useResource<Analytics>(`/api/admin/analytics?range=${range}`, 30_000);
