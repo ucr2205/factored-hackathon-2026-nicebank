@@ -63,6 +63,12 @@ services:
     image: jaegertracing/all-in-one:1.62.0
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
+      # Monitor tab (rate, errors, duration per operation): reads the collector's span metrics from Prometheus.
+      METRICS_STORAGE_TYPE: prometheus
+      PROMETHEUS_SERVER_URL: http://prometheus:9090
+      PROMETHEUS_QUERY_NAMESPACE: traces_span_metrics
+      PROMETHEUS_QUERY_NORMALIZE_CALLS: "true"
+      PROMETHEUS_QUERY_NORMALIZE_DURATION: "true"
     ports: ["127.0.0.1:16686:16686"]
 
   otel-collector:
@@ -75,8 +81,12 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.54.1
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus",
+              "--storage.tsdb.retention.time=15d", "--web.enable-lifecycle"]
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+      - promdata:/prometheus            # metrics survive restarts and recreation
     ports: ["127.0.0.1:9090:9090"]
 
   ml-service:
@@ -140,3 +150,4 @@ services:
 
 volumes:
   pgdata:
+  promdata:

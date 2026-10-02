@@ -1,4 +1,6 @@
-# Traces: services -> collector (OTLP) -> Jaeger. Metrics are scraped by Prometheus directly from services.
+# Traces: services -> collector (OTLP) -> Jaeger. Service metrics are scraped by Prometheus directly from the
+# services; the collector adds span metrics (rate, errors, duration per operation) derived from the traces, which
+# Prometheus scrapes on :8889 and Jaeger's Monitor tab reads back from Prometheus.
 receivers:
   otlp:
     protocols:
@@ -12,19 +14,42 @@ processors:
   attributes/strip_pii:
     actions:
       - { pattern: '^(customer|user|enduser)\..*', action: delete }
-      - { pattern: '(?i).*(email|first_name|last_name|full_name|document_number|phone|card_number|customer_ref|prompt|completion|message\.text|authorization|cookie).*', action: delete }
+      - { pattern: '(?i).*(email|first_name|last_name|full_name|document_number|phone|card_number|customer_ref|completion|message\.text|authorization|cookie).*', action: delete }
+      # Prompt and model I/O contents (gen_ai.prompt, llm.prompt, llm.prompt.text...) are dropped; the reviewed
+      # prompt version (llm.prompt_version) is not content and is kept for filtering.
+      - { pattern: '(?i)^(.*\.)?prompt(s)?(\..*)?$', action: delete }
+      - { pattern: '(?i).*\.(input|output)\.(messages|text|content).*', action: delete }
       # client.address is kept on purpose (validation and investigations): the backend sets it to the validated
       # client IP (TRUSTED_PROXIES rules). The raw TCP peer is dropped, since behind a proxy it is the proxy.
       - { key: network.peer.address, action: delete }
+
+connectors:
+  # Rate, errors and duration (RED) per service and operation, plus the business dimensions we filter on.
+  # Only bounded attributes are used as dimensions (route patterns and enum values, never ids).
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 4s, 8s]
+    dimensions:
+      - name: http.route
+      - name: chat.outcome
+      - name: chat.mode
+      - name: chat.lang
+    metrics_flush_interval: 15s
 
 exporters:
   otlp/jaeger:
     endpoint: jaeger:4317
     tls: { insecure: true }
+  prometheus:
+    endpoint: 0.0.0.0:8889
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [attributes/strip_pii, batch]
-      exporters: [otlp/jaeger]
+      exporters: [otlp/jaeger, spanmetrics]
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      exporters: [prometheus]

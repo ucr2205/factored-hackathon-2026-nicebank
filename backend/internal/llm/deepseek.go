@@ -195,6 +195,7 @@ func (d *DeepSeek) call(ctx context.Context, op, model, system, user string, max
 	}
 	u := Usage{InputTokens: cr.Usage.PromptTokens, OutputTokens: cr.Usage.CompletionTokens,
 		CostUSD: (float64(cr.Usage.CacheHitTokens)*p.inHit + float64(miss)*p.inMiss + float64(cr.Usage.CompletionTokens)*p.out) / 1e6}
+	telemetry.LLMCost.WithLabelValues("deepseek", model).Add(u.CostUSD)
 	telemetry.LLMTokens.WithLabelValues("deepseek", "input").Add(float64(u.InputTokens))
 	telemetry.LLMTokens.WithLabelValues("deepseek", "output").Add(float64(u.OutputTokens))
 	span.SetAttributes(attribute.Int("llm.input_tokens", u.InputTokens), attribute.Int("llm.output_tokens", u.OutputTokens))

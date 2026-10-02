@@ -1,10 +1,21 @@
+# Prometheus stores the metrics; rules.yml turns them into readable series (nicebank:*) and alerts.
+# Ready-made graphs: vault/03 Módulos/Observabilidad.md ("Prometheus en 5 enlaces").
 global:
-  scrape_interval: 15s
+  scrape_interval: 10s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules.yml
 
 scrape_configs:
   - job_name: backend
     static_configs:
       - targets: ["backend:8081"]
   - job_name: ml-service
+    metrics_path: /metrics/
     static_configs:
       - targets: ["ml-service:8000"]
+  # Span metrics derived from the traces (also what Jaeger's Monitor tab shows).
+  - job_name: spanmetrics
+    static_configs:
+      - targets: ["otel-collector:8889"]

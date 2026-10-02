@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/factored-hackathon-2026/disputes/backend/internal/auth"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/config"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/contract"
@@ -65,6 +67,8 @@ func main() {
 	}
 	slog.Info("llm provider", "provider", model.Name(), "version", model.Version())
 	orch := orchestrator.New(db, pol, ml, model, cfg.DemoToday, cfg.SessionIdle)
+	telemetry.Preinit()
+	prometheus.MustRegister(orch.QueueCollector())
 	if orch.PII, err = pii.New(cfg.PIIKey, 1); err != nil {
 		slog.Error("PII_KEY missing or invalid (run `make env`); refusing to start", "err", err)
 		os.Exit(1)

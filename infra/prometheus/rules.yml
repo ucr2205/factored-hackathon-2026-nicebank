@@ -1,0 +1,87 @@
+# NiceBank recording rules (readable series for the graphs) and alerts. Shown under Status > Rules and Alerts.
+# Rates use 5m windows; with little traffic a ratio is empty (0/0) rather than 0, which is the honest answer.
+groups:
+  - name: nicebank-assistant
+    interval: 15s
+    rules:
+      - record: nicebank:turns:rate5m
+        expr: sum by (mode) (rate(chat_turns_total[5m]))
+      - record: nicebank:turns_by_outcome:rate5m
+        expr: sum by (mode, outcome) (rate(chat_turns_total[5m]))
+      # Share of turns that ended with a person (system vs baseline: the main comparison of the project).
+      - record: nicebank:escalation_ratio:5m
+        expr: sum by (mode) (rate(chat_turns_total{outcome="escalate"}[5m])) / sum by (mode) (rate(chat_turns_total[5m]))
+      - record: nicebank:resolve_ratio:5m
+        expr: sum by (mode) (rate(chat_turns_total{outcome="resolve"}[5m])) / sum by (mode) (rate(chat_turns_total[5m]))
+      - record: nicebank:turn_latency_seconds:p50_5m
+        expr: histogram_quantile(0.5, sum by (mode, le) (rate(chat_turn_duration_seconds_bucket[5m])))
+      - record: nicebank:turn_latency_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (mode, le) (rate(chat_turn_duration_seconds_bucket[5m])))
+      - record: nicebank:verified_actions:increase1h
+        expr: sum by (tool) (increase(tool_calls_total{status="verified"}[1h]))
+
+  - name: nicebank-platform
+    interval: 15s
+    rules:
+      - record: nicebank:http_requests:rate5m
+        expr: sum by (route) (rate(http_requests_total[5m]))
+      - record: nicebank:http_error_ratio:5m
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))
+      - record: nicebank:http_latency_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (route, le) (rate(http_request_duration_seconds_bucket[5m])))
+      - record: nicebank:llm_cost_usd:increase1h
+        expr: sum by (model) (increase(llm_cost_usd_total[1h]))
+      - record: nicebank:llm_calls:rate5m
+        expr: sum by (model, op, status) (rate(llm_calls_total[5m]))
+      - record: nicebank:ml_classify_latency_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (le) (rate(ml_classify_seconds_bucket[5m])))
+
+  - name: nicebank-alerts
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "El backend no responde a Prometheus"
+          description: "Nadie puede chatear ni atender casos. Revisa `docker compose logs backend`."
+      - alert: MLServiceDown
+        expr: up{job="ml-service"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "El clasificador (ml-service) no responde"
+          description: "Cada disputa pasa a un especialista por falla técnica (regla ESC-TECH-01)."
+      - alert: HighHTTPErrorRate
+        expr: nicebank:http_error_ratio:5m > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Más del 5% de las peticiones terminan en error 5xx"
+          description: "Busca los errores con su request_id en los logs del backend."
+      - alert: SlowTurnsP95
+        expr: nicebank:turn_latency_seconds:p95_5m{mode="system"} > 4
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "El 5% más lento de las respuestas tarda más de 4 s"
+          description: "Revisa en Jaeger qué paso del turno se demora (step.*, llm.*, ml.classify)."
+      - alert: LLMErrors
+        expr: sum(rate(llm_calls_total{status=~"error|invalid_json|empty"}[10m])) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "DeepSeek está fallando y el asistente usa el respaldo"
+          description: "Las respuestas siguen saliendo (Pro de respaldo o reglas), pero con menos calidad."
+      - alert: EmailDeliveryFailing
+        expr: sum(increase(notifications_total{status="failed"}[30m])) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: "Hay correos al cliente que no se pudieron entregar"
+          description: "Revisa el servidor SMTP y los logs `notifier: delivery failed`."
+      - alert: OldHandoffWaiting
+        expr: handoffs_oldest_wait_seconds > 1800
+        labels: { severity: warning }
+        annotations:
+          summary: "Un caso lleva más de 30 minutos esperando a un especialista"
+          description: "Ábrelo en la consola de casos (pestaña Abiertos)."

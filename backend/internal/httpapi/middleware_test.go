@@ -11,10 +11,15 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/testutil"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"gopkg.in/yaml.v3"
 
 	"github.com/factored-hackathon-2026/disputes/backend/internal/auth"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/logging"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/telemetry"
 )
 
 // captureLogs points the default logger at a buffer for the duration of a test.
@@ -154,4 +159,37 @@ func TestOpenAPICoversAllRoutes(t *testing.T) {
 			t.Errorf("openapi.yaml documents %s, which the router does not serve", k)
 		}
 	}
+}
+
+func TestSpanNamedAfterRouteAndHTTPMetrics(t *testing.T) {
+	captureLogs(t)
+	rec := tracetest.NewSpanRecorder()
+	tp := sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(rec))
+	s := &Server{}
+	h := otelhttp.NewHandler(testRouter(s, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) }),
+		"http", otelhttp.WithTracerProvider(tp))
+	matched := telemetry.HTTPRequests.WithLabelValues("/api/things/{id}", "GET", "204")
+	before := testutil.ToFloat64(matched)
+
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/things/42", nil))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/no/such/path/7", nil))
+
+	spans := rec.Ended()
+	if len(spans) != 2 || spans[0].Name() != "GET /api/things/{id}" || spans[1].Name() != "GET unmatched" {
+		t.Fatalf("server spans must be named after the route pattern, got %v", spanNames(spans))
+	}
+	if got := testutil.ToFloat64(matched) - before; got != 1 {
+		t.Fatalf("http_requests_total for the route pattern grew by %v, want 1", got)
+	}
+	if testutil.ToFloat64(telemetry.HTTPRequests.WithLabelValues("/no/such/path/7", "GET", "404")) != 0 {
+		t.Fatal("raw paths must never become metric labels")
+	}
+}
+
+func spanNames(spans []sdktrace.ReadOnlySpan) []string {
+	out := make([]string, len(spans))
+	for i, s := range spans {
+		out[i] = s.Name()
+	}
+	return out
 }

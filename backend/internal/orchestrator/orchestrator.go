@@ -221,13 +221,22 @@ func (o *Orchestrator) newTurn(ctx context.Context, tx pgx.Tx, p auth.Principal,
 // applied, latency and model cost. Never the customer's text or identity; session_id links it to the audit trail.
 func (o *Orchestrator) record(ctx context.Context, span trace.Span, out contract.ChatTurn, mode, lang string, start time.Time, err error) {
 	if err != nil {
+		span.SetAttributes(attribute.String("chat.outcome", "error"))
 		span.SetStatus(codes.Error, err.Error())
 		return
 	}
 	slog.InfoContext(ctx, "chat turn", "session_id", out.SessionID, "mode", mode, "lang", lang, "outcome", out.Outcome,
 		"rule_ids", out.RuleIDs, "latency_ms", time.Since(start).Milliseconds(), "llm", o.LLM.Name(),
 		"llm_cost_usd", out.CostUSD, "case_id", deref(out.CaseID), "handoff_id", deref(out.HandoffID))
-	span.SetAttributes(attribute.String("chat.outcome", out.Outcome), attribute.StringSlice("policy.rule_ids", out.RuleIDs))
+	last := ""
+	if n := len(out.RuleIDs); n > 0 {
+		last = out.RuleIDs[n-1]
+	}
+	// Plain string attributes: Jaeger's tag search matches them exactly (chat.outcome=escalate, chat.rule_id=...).
+	span.SetAttributes(attribute.String("chat.outcome", out.Outcome), attribute.StringSlice("policy.rule_ids", out.RuleIDs),
+		attribute.String("chat.rule_id", last), attribute.String("chat.session_id", out.SessionID),
+		attribute.String("chat.case_id", deref(out.CaseID)), attribute.String("chat.handoff_id", deref(out.HandoffID)),
+		attribute.String("llm.provider", o.LLM.Name()), attribute.Float64("llm.cost_usd", out.CostUSD))
 	telemetry.ChatTurns.WithLabelValues(lang, out.Outcome, mode).Inc()
 	telemetry.TurnDuration.WithLabelValues(mode).Observe(time.Since(start).Seconds())
 }
@@ -671,9 +680,16 @@ func (t *turn) addUsage(u llm.Usage) {
 }
 
 func (t *turn) audit(step, tool, summary, result, ruleID string, took time.Duration) {
-	_, span := t.o.tracer.Start(t.ctx, "step."+step, trace.WithAttributes(
+	// Steps are audited after they ran; the span is back-dated by the measured duration so Jaeger shows how long
+	// each step really took instead of a zero-width marker.
+	// "respond" records the whole turn's latency for the audit; its span stays a marker (chat.turn already spans it).
+	end, spanTook := time.Now(), took
+	if step == "respond" {
+		spanTook = 0
+	}
+	_, span := t.o.tracer.Start(t.ctx, "step."+step, trace.WithTimestamp(end.Add(-spanTook)), trace.WithAttributes(
 		attribute.String("step.tool", tool), attribute.String("step.result", result), attribute.String("policy.rule_id", ruleID)))
-	span.End()
+	span.End(trace.WithTimestamp(end))
 	_ = audit.Write(t.ctx, t.tx, audit.Event{SessionID: t.s.ID, Step: step, Tool: tool, Summary: summary,
 		Result: result, RuleID: ruleID, TraceID: t.traceID, Latency: took, Lang: t.lang, Mode: t.mode})
 }
@@ -703,6 +719,9 @@ func (t *turn) finish(start time.Time) (contract.ChatTurn, error) {
 		last = t.out.RuleIDs[n-1]
 	}
 	t.audit("respond", "", "turn completed", t.out.Outcome, last, time.Since(start))
+	if t.s.State.DisputeType != "" {
+		trace.SpanFromContext(t.ctx).SetAttributes(attribute.String("chat.dispute_type", t.s.State.DisputeType))
+	}
 	return t.out, nil
 }
 

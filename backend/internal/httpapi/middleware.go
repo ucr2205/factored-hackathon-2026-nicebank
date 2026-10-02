@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,9 +22,19 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/auth"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/logging"
 	"github.com/factored-hackathon-2026/disputes/backend/internal/store"
+	"github.com/factored-hackathon-2026/disputes/backend/internal/telemetry"
 )
 
 const requestIDHeader = "X-Request-ID"
+
+// knownMethod keeps arbitrary client-sent methods out of metric labels.
+func knownMethod(m string) string {
+	switch m {
+	case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions, http.MethodHead:
+		return m
+	}
+	return "OTHER"
+}
 
 // A client-supplied request id is reused only if it looks like an id (no log injection through the header).
 var validRequestID = regexp.MustCompile(`^[A-Za-z0-9._-]{8,64}$`)
@@ -59,10 +70,17 @@ func (s *Server) requestLog(next http.Handler) http.Handler {
 		if status == 0 {
 			status = http.StatusOK
 		}
-		route := r.URL.Path
+		route, pattern := r.URL.Path, "unmatched" // pattern: bounded label for metrics and span names
 		if rc := chi.RouteContext(r.Context()); rc != nil && rc.RoutePattern() != "" {
-			route = rc.RoutePattern()
+			route, pattern = rc.RoutePattern(), rc.RoutePattern()
 		}
+		// otelhttp names the server span before routing ("GET"); name it after the route once chi has matched it.
+		method := knownMethod(r.Method)
+		span := trace.SpanFromContext(ctx)
+		span.SetName(method + " " + pattern)
+		span.SetAttributes(attribute.String("http.route", pattern))
+		telemetry.HTTPRequests.WithLabelValues(pattern, method, strconv.Itoa(status)).Inc()
+		telemetry.HTTPDuration.WithLabelValues(pattern, method).Observe(time.Since(start).Seconds())
 		level := slog.LevelInfo
 		switch {
 		case route == "/api/health" || route == "/api/ready" || route == "/metrics":

@@ -8,7 +8,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const maxResponseBytes = 64 << 10
@@ -28,7 +31,10 @@ type Client struct {
 
 func New(baseURL string) *Client {
 	// 3 s per attempt: a warm classification takes ~20-50 ms, but a cold one took ~1.4 s and must not fail the turn.
-	return &Client{baseURL: baseURL, http: &http.Client{Timeout: 3 * time.Second}, retries: 2}
+	// The otelhttp transport adds an "ml.classify" client span per attempt and propagates the trace context.
+	transport := otelhttp.NewTransport(http.DefaultTransport, otelhttp.WithSpanNameFormatter(
+		func(_ string, r *http.Request) string { return "ml" + strings.ReplaceAll(r.URL.Path, "/", ".") }))
+	return &Client{baseURL: baseURL, http: &http.Client{Timeout: 3 * time.Second, Transport: transport}, retries: 2}
 }
 
 // Classify tries once plus up to two retries with backoff; the caller falls back to a human on error.
