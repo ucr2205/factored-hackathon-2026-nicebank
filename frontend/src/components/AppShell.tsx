@@ -20,7 +20,6 @@ import { brand } from "../app/theme";
 import { useLang, type Lang } from "../app/i18n";
 import { useAuth } from "../auth/AuthProvider";
 
-const LOGO_ROSE = "#E5769A"; // the "Bank" color of the logo
 
 export function BrandMark({ size = 32 }: { size?: number }) {
   return <Box component="img" src="/brand/nicebank-mark-512.png" alt="" sx={{ width: size, height: size, display: "block" }} />;
@@ -36,14 +35,14 @@ function NavTab({ to, label, icon: Icon }: { to: string; label: string; icon: Lu
         height: 64,
         px: { xs: 1.25, sm: 1.75 },
         gap: 1,
-        color: "text.secondary",
+        color: "rgba(255, 255, 255, 0.72)",
         fontWeight: 600,
         fontSize: 14,
         borderBottom: "3px solid transparent",
         borderTop: "3px solid transparent",
-        transition: "color .15s, border-color .15s",
-        "&:hover": { color: brand.burgundy },
-        "&.active": { color: brand.burgundy, borderBottomColor: brand.burgundy },
+        transition: "color .15s, border-color .15s, background-color .15s",
+        "&:hover": { color: "#FFFFFF", bgcolor: "rgba(255, 255, 255, 0.06)" },
+        "&.active": { color: "#FFFFFF", borderBottomColor: brand.logoRose },
       }}
     >
       <Icon size={18} />
@@ -73,17 +72,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <AppBar
         position="sticky"
         elevation={0}
-        sx={{ bgcolor: "#FFFFFF", color: "text.primary", borderTop: `3px solid ${brand.burgundy}`, borderBottom: 1, borderColor: "divider" }}
+        sx={{ background: brand.gradient, color: "#FFFFFF", boxShadow: "0 6px 20px rgba(46, 10, 24, 0.18)" }}
       >
         <Toolbar sx={{ gap: { xs: 1, sm: 2 }, minHeight: { xs: 64 }, px: { xs: 1.5, sm: 3 } }}>
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flexShrink: 0 }}>
             <BrandMark size={34} />
             <Box sx={{ display: { xs: nav.length > 1 ? "none" : "block", sm: "block" } }}>
               <Typography sx={{ fontWeight: 800, lineHeight: 1, fontSize: 19, letterSpacing: 0.2 }}>
-                <Box component="span" sx={{ color: brand.burgundy }}>Nice</Box>
-                <Box component="span" sx={{ color: LOGO_ROSE }}>Bank</Box>
+                <Box component="span" sx={{ color: "#FFFFFF" }}>Nice</Box>
+                <Box component="span" sx={{ color: brand.logoRose }}>Bank</Box>
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", md: "block" }, lineHeight: 1.3 }}>
+              <Typography variant="caption" sx={{ display: { xs: "none", md: "block" }, lineHeight: 1.3, color: "rgba(255, 255, 255, 0.65)" }}>
                 {isStaff ? t.staffTagline : t.brandTagline}
               </Typography>
             </Box>
@@ -106,7 +105,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 <span>{v.toUpperCase()}</span>
               </Stack>
             )}
-            sx={{ fontWeight: 700, color: brand.burgundy, "& .MuiSelect-icon": { color: brand.burgundy } }}
+            sx={{ fontWeight: 700, color: "#FFFFFF", "& .MuiSelect-icon": { color: "#FFFFFF" } }}
           >
             <MenuItem value="es">Español</MenuItem>
             <MenuItem value="pt">Português</MenuItem>
@@ -118,20 +117,20 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 onClick={(e) => setMenu(e.currentTarget)}
                 aria-label={t.accountMenu}
                 aria-haspopup="menu"
-                sx={{ borderRadius: 99, pl: 0.5, pr: { xs: 0.5, sm: 1 }, py: 0.5, gap: 1, "&:hover": { bgcolor: brand.blush } }}
+                sx={{ borderRadius: 99, pl: 0.5, pr: { xs: 0.5, sm: 1 }, py: 0.5, gap: 1, "&:hover": { bgcolor: "rgba(255, 255, 255, 0.08)" } }}
               >
-                <Avatar sx={{ width: 34, height: 34, bgcolor: brand.burgundy, fontSize: 14, fontWeight: 700 }}>
+                <Avatar sx={{ width: 34, height: 34, bgcolor: brand.logoRose, color: brand.burgundyDeep, fontSize: 14, fontWeight: 800 }}>
                   {name.slice(0, 1).toUpperCase()}
                 </Avatar>
                 <Box sx={{ display: { xs: "none", sm: "block" }, textAlign: "left" }}>
                   <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
                     {name}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
+                  <Typography variant="caption" sx={{ lineHeight: 1.2, color: "rgba(255, 255, 255, 0.65)" }}>
                     {role}
                   </Typography>
                 </Box>
-                <Box sx={{ display: { xs: "none", sm: "flex" }, color: "text.secondary" }}>
+                <Box sx={{ display: { xs: "none", sm: "flex" }, color: "rgba(255, 255, 255, 0.65)" }}>
                   <ChevronDown size={16} />
                 </Box>
               </ButtonBase>

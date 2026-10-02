@@ -17,7 +17,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { MessageSquarePlus, SendHorizontal } from "lucide-react";
+import { MessageSquarePlus, MessagesSquare, SendHorizontal } from "lucide-react";
+import { brand } from "../../app/theme";
+import { IconBadge } from "../../components/Panels";
 import { useLang } from "../../app/i18n";
 import { ActionCard, Bubble, CandidateList, TurnBadges } from "./ChatParts";
 import type { useChat } from "./useChat";
@@ -41,19 +43,20 @@ export default function ChatPanel({ chat }: { chat: ReturnType<typeof useChat> }
   };
 
   return (
-    <Paper sx={{ display: "flex", flexDirection: "column", height: { xs: "calc(100dvh - 96px)", md: "calc(100dvh - 120px)" }, border: "none", boxShadow: "0 12px 32px rgba(74, 16, 38, 0.10)" }}>
-      <Stack direction="row" sx={{ alignItems: "center", px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
+    <Paper sx={{ display: "flex", flexDirection: "column", overflow: "hidden", height: { xs: "calc(100dvh - 96px)", md: "calc(100dvh - 120px)" }, border: "none", boxShadow: "0 12px 32px rgba(74, 16, 38, 0.10)" }}>
+      <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", px: 2, py: 1.5, background: brand.gradient, color: "#FFFFFF" }}>
+        <IconBadge icon={MessagesSquare} size={32} inverted />
         <Typography variant="h6" sx={{ flex: 1 }}>
           {t.chatTitle}
         </Typography>
         <Tooltip title={t.newChat}>
-          <IconButton onClick={chat.reset} aria-label={t.newChat}>
+          <IconButton onClick={chat.reset} aria-label={t.newChat} sx={{ color: "#FFFFFF", "&:hover": { bgcolor: "rgba(255, 255, 255, 0.12)" } }}>
             <MessageSquarePlus size={20} />
           </IconButton>
         </Tooltip>
       </Stack>
 
-      <Stack spacing={1.5} sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+      <Stack spacing={1.5} sx={{ flex: 1, overflowY: "auto", p: 2, background: `linear-gradient(180deg, ${brand.blush} 0%, #FFFFFF 160px)` }}>
         <Bubble role="assistant" text={chat.welcome} />
         {chat.entries.map((entry) => {
           const isLast = entry === last;

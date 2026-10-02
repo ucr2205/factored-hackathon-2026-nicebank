@@ -13,7 +13,6 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  Paper,
   Stack,
   Switch,
   TextField,
@@ -29,15 +28,13 @@ import { useAuth } from "../../auth/AuthProvider";
 import { describeAudit, resultLabel, RULE_NAMES } from "./auditText";
 import { ACTION_NAMES, ACTION_STATUS, DISPUTE_TYPES, LANGS, queueLabel, REASONS, SOURCES, STEPS } from "./labels";
 import { PriorityBadge } from "./priority";
+import { Section as PanelSection } from "../../components/Panels";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Paper sx={{ p: 2 }}>
-      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-        {title}
-      </Typography>
+    <PanelSection compact title={title}>
       {children}
-    </Paper>
+    </PanelSection>
   );
 }
 
