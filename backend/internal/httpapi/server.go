@@ -75,6 +75,7 @@ func (s *Server) router() chi.Router {
 		r.With(auth.RequireAnyRole(writeError, "supervisor")).Group(func(r chi.Router) {
 			r.Get("/api/admin/config", func(w http.ResponseWriter, r *http.Request) { writeJSON(w, http.StatusOK, s.Config(r)) })
 			r.Get("/api/admin/summary", s.summary)
+			r.Get("/api/admin/analytics", s.analytics)
 		})
 	})
 	return r
@@ -169,6 +170,12 @@ func (s *Server) sessionAudit(w http.ResponseWriter, r *http.Request) {
 func (s *Server) summary(w http.ResponseWriter, r *http.Request) {
 	p, _ := auth.FromContext(r.Context())
 	out, err := s.Orch.Summary(r.Context(), p)
+	respond(w, r, out, err)
+}
+
+func (s *Server) analytics(w http.ResponseWriter, r *http.Request) {
+	p, _ := auth.FromContext(r.Context())
+	out, err := s.Orch.Analytics(r.Context(), p, r.URL.Query().Get("range"))
 	respond(w, r, out, err)
 }
 

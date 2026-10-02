@@ -137,6 +137,41 @@ export type PolicyDisputeType = {
   rules: { auto: string; ineligible: string };
 };
 
+export type AnalyticsRange = "24h" | "7d" | "30d" | "all";
+
+export type Analytics = {
+  range: AnalyticsRange;
+  from: string | null;
+  bucket: "hour" | "day";
+  kpis: {
+    conversations: number;
+    turns: number;
+    cases_opened: number;
+    cards_blocked: number;
+    explained: number;
+    escalated: number;
+    injections_blocked: number;
+    tech_failures: number;
+    p50_latency_ms: number;
+    p95_latency_ms: number;
+    handoffs_open: number;
+    handoffs_claimed: number;
+    handoffs_closed: number;
+    median_claim_seconds: number;
+    accepted: number;
+    rejected: number;
+    emails_sent: number;
+    emails_failed: number;
+  };
+  series: { bucket: string; mode: string; outcome: string; count: number }[];
+  by_mode: { mode: string; outcome: string; count: number }[];
+  by_lang: { label: string; count: number }[];
+  top_rules: { label: string; count: number }[];
+  handoffs: { reason: string; priority: string; count: number }[];
+  funnel: { step: string; sessions: number }[];
+  step_latency: { step: string; avg_ms: number; p95_ms: number; count: number }[];
+};
+
 export type AdminConfig = {
   policy_version: string;
   policy_origin: string;

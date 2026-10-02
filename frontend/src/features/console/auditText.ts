@@ -118,6 +118,13 @@ export const RULE_NAMES: Record<string, string> = {
   "DISP-ESC-05": "Monto alto",
   "DISP-ESC-06": "Monto alto",
   "DISP-ESC-07": "Monto alto",
+  "DISP-AUTO-03": "Monto incorrecto automático",
+  "DISP-AUTO-04": "No recibido automático",
+  "DISP-AUTO-05": "Cajero automático",
+  "EXPLAIN-REVERSED": "Explicado: ya revertido",
+  "EXPLAIN-DECLINED": "Explicado: compra rechazada",
+  "EXPLAIN-DECLINED-FRAUD": "Intento rechazado: bloqueo",
+  "EXPLAIN-PENDING": "Explicado: aún pendiente",
 };
 
 /** Numeric results (candidate counts) are already in the description. */

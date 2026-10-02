@@ -184,6 +184,80 @@ type Summary struct {
 	OpenHandoffs int            `json:"open_handoffs"`
 }
 
+// Analytics is the supervisor's "Resumen" for one time range. Everything is aggregated from the audit trail and
+// the handoff queue (the only tables staff can read): counts and latencies, never customer data.
+type Analytics struct {
+	Range       string        `json:"range"`  // 24h | 7d | 30d | all
+	From        *time.Time    `json:"from"`   // start of the range; null for "all"
+	Bucket      string        `json:"bucket"` // hour | day: granularity of Series
+	KPIs        AnalyticsKPIs `json:"kpis"`
+	Series      []SeriesPoint `json:"series"`       // answers per bucket, by mode and outcome
+	ByMode      []ModeOutcome `json:"by_mode"`      // assistant vs baseline: how answers ended
+	ByLang      []LabelCount  `json:"by_lang"`      // conversations per language (assistant)
+	TopRules    []LabelCount  `json:"top_rules"`    // policy rule that decided each answer (assistant)
+	Handoffs    []ReasonCount `json:"handoffs"`     // cases handed to a person, by reason and priority
+	Funnel      []FunnelStep  `json:"funnel"`       // conversations reaching each step (assistant)
+	StepLatency []StepLatency `json:"step_latency"` // where the time goes inside a turn
+}
+
+// AnalyticsKPIs counts the assistant (mode=system) only; the baseline is in ByMode and Series.
+type AnalyticsKPIs struct {
+	Conversations      int     `json:"conversations"`
+	Turns              int     `json:"turns"`
+	CasesOpened        int     `json:"cases_opened"`
+	CardsBlocked       int     `json:"cards_blocked"`
+	Explained          int     `json:"explained"` // charges explained instead of disputed (EXPLAIN-* rules)
+	Escalated          int     `json:"escalated"` // answers that handed the case to a person
+	InjectionsBlocked  int     `json:"injections_blocked"`
+	TechFailures       int     `json:"tech_failures"`
+	P50LatencyMS       float64 `json:"p50_latency_ms"`
+	P95LatencyMS       float64 `json:"p95_latency_ms"`
+	HandoffsOpen       int     `json:"handoffs_open"` // waiting now, whatever the range
+	HandoffsClaimed    int     `json:"handoffs_claimed"`
+	HandoffsClosed     int     `json:"handoffs_closed"`
+	MedianClaimSeconds float64 `json:"median_claim_seconds"`
+	Accepted           int     `json:"accepted"`
+	Rejected           int     `json:"rejected"`
+	EmailsSent         int     `json:"emails_sent"`
+	EmailsFailed       int     `json:"emails_failed"`
+}
+
+type SeriesPoint struct {
+	Bucket  time.Time `json:"bucket"`
+	Mode    string    `json:"mode"`
+	Outcome string    `json:"outcome"`
+	Count   int       `json:"count"`
+}
+
+type ModeOutcome struct {
+	Mode    string `json:"mode"`
+	Outcome string `json:"outcome"`
+	Count   int    `json:"count"`
+}
+
+type LabelCount struct {
+	Label string `json:"label"`
+	Count int    `json:"count"`
+}
+
+type ReasonCount struct {
+	Reason   string `json:"reason"`
+	Priority string `json:"priority"`
+	Count    int    `json:"count"`
+}
+
+type FunnelStep struct {
+	Step     string `json:"step"` // understood | found | proposed | confirmed | verified
+	Sessions int    `json:"sessions"`
+}
+
+type StepLatency struct {
+	Step  string  `json:"step"`
+	AvgMS float64 `json:"avg_ms"`
+	P95MS float64 `json:"p95_ms"`
+	Count int     `json:"count"`
+}
+
 type AdminConfig struct {
 	PolicyVersion   string `json:"policy_version"`
 	PolicyOrigin    string `json:"policy_origin"`

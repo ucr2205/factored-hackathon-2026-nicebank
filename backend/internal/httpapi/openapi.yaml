@@ -212,6 +212,24 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
 
+  /api/admin/analytics:
+    get:
+      tags: [supervisor]
+      summary: KPIs and chart data for the supervisor's "Resumen" over a time range
+      description: >
+        Aggregated from the audit trail and the handoff queue only (counts and latencies, never customer data).
+        KPIs cover the assistant (mode=system); `by_mode` and `series` also include the baseline for comparison.
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema: { type: string, enum: ["24h", "7d", "30d", "all"], default: "24h" }
+      responses:
+        "200": { description: Analytics, content: { application/json: { schema: { $ref: "#/components/schemas/Analytics" } } } }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
   /api/health:
     get:
       tags: [ops]
@@ -464,6 +482,53 @@ components:
               mode: { type: string }
               count: { type: integer }
         open_handoffs: { type: integer }
+    Analytics:
+      type: object
+      properties:
+        range: { type: string, enum: ["24h", "7d", "30d", "all"] }
+        from: { type: [string, "null"], format: date-time, description: Start of the range; null for all }
+        bucket: { type: string, enum: [hour, day] }
+        kpis:
+          type: object
+          properties:
+            conversations: { type: integer }
+            turns: { type: integer }
+            cases_opened: { type: integer }
+            cards_blocked: { type: integer }
+            explained: { type: integer, description: Charges explained instead of disputed (EXPLAIN-* rules) }
+            escalated: { type: integer }
+            injections_blocked: { type: integer }
+            tech_failures: { type: integer }
+            p50_latency_ms: { type: number }
+            p95_latency_ms: { type: number }
+            handoffs_open: { type: integer, description: Waiting now, whatever the range }
+            handoffs_claimed: { type: integer }
+            handoffs_closed: { type: integer }
+            median_claim_seconds: { type: number }
+            accepted: { type: integer }
+            rejected: { type: integer }
+            emails_sent: { type: integer }
+            emails_failed: { type: integer }
+        series:
+          type: array
+          items: { type: object, properties: { bucket: { type: string, format: date-time }, mode: { type: string }, outcome: { type: string }, count: { type: integer } } }
+        by_mode:
+          type: array
+          items: { type: object, properties: { mode: { type: string }, outcome: { type: string }, count: { type: integer } } }
+        by_lang: { type: array, items: { $ref: "#/components/schemas/LabelCount" } }
+        top_rules: { type: array, items: { $ref: "#/components/schemas/LabelCount" } }
+        handoffs:
+          type: array
+          items: { type: object, properties: { reason: { type: string }, priority: { type: string }, count: { type: integer } } }
+        funnel:
+          type: array
+          items: { type: object, properties: { step: { type: string, enum: [understood, found, proposed, confirmed, verified] }, sessions: { type: integer } } }
+        step_latency:
+          type: array
+          items: { type: object, properties: { step: { type: string }, avg_ms: { type: number }, p95_ms: { type: number }, count: { type: integer } } }
+    LabelCount:
+      type: object
+      properties: { label: { type: string }, count: { type: integer } }
     AdminConfig:
       type: object
       properties:
