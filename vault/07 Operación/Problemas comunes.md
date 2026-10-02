@@ -17,7 +17,7 @@ tags: [operacion, troubleshooting]
 | `poetry install` corta con error SSL | Red inestable | Repetir `poetry install` |
 | `curl` desde Git Bash rompe acentos en JSON | Codificación de Windows | Usar el script de Python o escapar (`ã`) |
 | `make` no existe en Windows | No viene instalado | `winget install ezwinports.make` o copiar el comando del `Makefile` |
-| El correo de recuperación no llega | Es un entorno local | Mirar http://localhost:8025 (Mailpit) |
+| El correo de recuperación no llega | Es un entorno local | Mirar http://localhost:8090/mail/ (Mailpit) |
 | DeepSeek responde **401** aunque la clave es correcta (en los logs del backend o en `llmcheck`) | La línea del `.env` tiene algo después de la clave (una nota, un comentario, espacios) y se envía como parte de la clave | Dejar la línea solo como `DEEPSEEK_API_KEY=<clave>`, sin nada más; luego `docker compose up -d backend` |
 | Un script de Python (smoke, arnés) tarda ~1 s extra en **cada** llamada en Windows | `localhost` primero intenta IPv6 (`::1`) y espera antes de caer a IPv4 | Usar `http://127.0.0.1:<puerto>` en vez de `http://localhost:<puerto>` en los clientes de Python |
 | opencode se queda "colgado" cuando otro asistente le pide un commit | La configuración global pide aprobación para cada comando y nadie la da | Correrlo con un `OPENCODE_CONFIG` de solo git (status/diff/log/add/commit, sin push ni edición). Ver [[Cómo trabajar con opencode o Claude Code]] |
@@ -28,5 +28,7 @@ tags: [operacion, troubleshooting]
 | Un usuario ve un error y no sabes qué pasó | Pídele el `request_id` (sale en el error) o toma el `X-Request-ID` de la respuesta, y busca `docker compose logs backend \| grep <id>` |
 | `make etl` se detiene con "free disk space below 3 GB" (típico en `digital_events`) | El ETL completo usa mucho disco temporal, y si se corta DuckDB deja archivos `*.tmp` de varios GB | Borrar los temporales de DuckDB que quedaron (en la corrida del 29 sep fueron 8,8 GB), dejar ≥ 15 GB libres y repetir `make etl`: la marca de agua salta lo ya hecho |
 | Docker Desktop no arranca en Windows ("sailor-ingest.sock" o "engine.sock" en uso) | Sockets viejos en `%LOCALAPPDATA%\Docker\run` y `docker-secrets-engine` que Windows no deja borrar | Renombrar esas carpetas (p. ej. `run.broken-FECHA`), abrir Docker de nuevo y borrarlas después de reiniciar el PC |
+| Docker falla con *"read-only file system"* o *"input/output error"* | El disco C: se llenó (el disco virtual de Docker crece con cada `make seed` y no se achica solo) | Liberar espacio en C: (≥ 20 GB), reiniciar Docker Desktop y correr `docker builder prune -af` y `docker image prune -f` |
+| `/jaeger`, `/prometheus` o `/mail` piden contraseña | Están detrás del gateway con el login de herramientas | Usuario y contraseña: `TOOLS_USER` y `TOOLS_PASSWORD` en tu `.env` (si no existen, `make env`) |
 
 Para reportar algo nuevo usa la plantilla [[Reporte de bug]].

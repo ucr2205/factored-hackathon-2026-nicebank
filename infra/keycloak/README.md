@@ -22,7 +22,7 @@ Imported on startup (`start-dev --import-realm`). **Test environment only**: all
   (10 min) -> **verify** the existing TOTP when the user has one -> new password (policy: 8+ chars, upper, lower,
   digit, not the username). Keycloak's default reset flow *resets* OTP instead, which would let someone with access
   to the mailbox enroll their own authenticator; the custom flow avoids that.
-- Emails go to Mailpit (http://localhost:8025) in local development; nothing is sent to real inboxes.
+- Emails go to Mailpit (http://localhost:8090/mail/) in local development; nothing is sent to real inboxes.
 
 ## Email (password reset)
 `smtpServer` in `latam-bank-realm.json` uses `${KC_SMTP_*}` placeholders that Keycloak resolves from its

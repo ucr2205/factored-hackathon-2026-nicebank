@@ -85,14 +85,28 @@ Después de cambiar el `.env`: `docker compose up -d backend` y, si tocaste el c
 
 | Servicio | URL |
 |---|---|
+| **Gateway (entrada única)** | http://localhost:8090 → la app en `/`, el API en `/api` y las herramientas abajo |
 | App (dev / contenedor) | http://localhost:5173 · http://localhost:8088 |
 | API | http://localhost:8081/api/health |
 | **Documentación del API (Swagger)** | http://localhost:8081/api/docs |
 | Keycloak | http://localhost:8080 |
-| Mailpit (correos) | http://localhost:8025 |
-| Jaeger | http://localhost:16686 |
-| Prometheus | http://localhost:9090 |
+| Mailpit (correos) | http://localhost:8090/mail/ |
+| Jaeger | http://localhost:8090/jaeger/ |
+| Prometheus | http://localhost:8090/prometheus/ |
 | Postgres | `localhost:5433`, base `bank` |
+
+> [!important] Jaeger, Prometheus y Mailpit piden usuario y contraseña
+> Desde el 2 oct viven bajo el **gateway** (`/jaeger`, `/prometheus`, `/mail`) y piden el *login de
+> herramientas*: `TOOLS_USER` y `TOOLS_PASSWORD` en tu `.env`. Si no los tienes, corre `make env` (los crea; la
+> contraseña solo queda en tu `.env`) y luego `docker compose up -d gateway`. Para cambiarla:
+> `poetry run python scripts/make_env.py --rotate-tools-password`.
+
+### En el servidor público
+
+El servidor real es **https://hackathon.evon.solutions** y lo arma el **nginx del host** con las mismas rutas
+(`/`, `/api/`, `/auth/` y, si se decide publicarlas, `/jaeger/` y `/prometheus/` con login). Todo está en
+`deploy/evon/` (guía en español: `deploy/evon/README.md`). El gateway Caddy es el espejo local de esas rutas; solo
+serviría en un servidor sin proxy propio (`SITE_ADDRESS=<dominio>`, puertos 80/443, HTTPS automático).
 
 ## 5. JMeter en Windows sin `make`
 

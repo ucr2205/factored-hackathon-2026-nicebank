@@ -30,11 +30,9 @@ Prioridad: **P0** imprescindible para entregar · **P1** importante · **P2** si
 
 | Prioridad | Tarea | Dueño | Fecha |
 |---|---|---|---|
-| P0 | URL pública para los enlaces de los correos (`MAIL_APP_URL`; hoy apunta a `localhost`) | Líder | sáb 3 oct |
-| P0 | Secretos en un gestor (no `.env`) para el despliegue: DeepSeek, SMTP, `PII_KEY` | Líder + empresa | sáb 3 oct |
-| P0 | URLs públicas: issuer de Keycloak y *redirect URIs* para el dominio de la empresa | Líder | sáb 3 oct |
-| P0 | HTTPS delante de web, API y Keycloak (proxy de la empresa o Caddy) | Líder + empresa | sáb 3 oct |
-| P0 | Guía de despliegue en `docs/deployment.md` | Líder | sáb 3 oct |
+| ✅ | Despliegue preparado por la empresa en `deploy/evon/` (**https://hackathon.evon.solutions**): un dominio con `/` app, `/api/` backend y `/auth/` Keycloak en modo producción, nginx del host con HTTPS, Postgres propio, `MAIL_APP_URL` público, secretos en `.env` del servidor fuera del repo. Alineado con `main` el 2 oct | Empresa + Líder | 2 oct |
+| P0 | Entregar al servidor: `pg_dump -Fc --data-only` de la BD `bank` tras `make seed`, la **`PII_KEY`** de ese momento (por un canal seguro, nunca por chat ni repo), `latam-bank-realm.json` y `etl/seeds/demo_customers.csv` | Líder | sáb 3 oct |
+| P1 | Decidir con la empresa si se publican `/jaeger/` y `/prometheus/` (con login en nginx, ya preparado) o quedan por túnel SSH | Líder + empresa | sáb 3 oct |
 | P1 | Volumen/imagen del modelo real de ml-service (no descargar en cada arranque) | P3 | mié 30 sep |
 | P1 | Carga de `kb_chunks` en el arranque o con `make rag` | P3 + Líder | jue 1 oct |
 | P1 | `make etl` y `make eval` en el Makefile | P2, P4 | 30 sep / 2 oct |

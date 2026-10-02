@@ -31,10 +31,13 @@ actualizado: 2026-10-01
 | Datos y ETL | ✅ Listo | **Pipeline raw → silver + loader**: el sistema ya carga el dataset completo saneado (150k clientes, 4,4M transacciones); falta solo el caso de negocio del pitch | [[ETL y calidad de datos]] |
 | **Evaluación (sistema vs baseline)** | 🔴 **Falta** | Sin arnés ni casos held-out: es entregable obligatorio | [[Evaluación]] |
 | Entregables (README, slides, video) | 🔴 Falta | Aún no empiezan | [[Persona 4 - Evaluación y pitch]] |
-| Despliegue | 🟡 Pendiente | Lo hace la empresa; falta URL pública y quitar lo de prueba | [[Infraestructura]] |
+| Despliegue | 🟡 Casi | Configuración lista para **https://hackathon.evon.solutions** (`deploy/evon/`); falta entregar el volcado de datos y la `PII_KEY` | [[Infraestructura]] |
 
 ## Lo que ya funciona
 
+- **Gateway con rutas (2 oct):** una sola entrada local (`http://localhost:8090`, el mismo
+  esquema de rutas que el nginx del servidor en `deploy/evon/`) con la app en `/`, el API en `/api` y **Jaeger, Prometheus y Mailpit en `/jaeger`, `/prometheus` y
+  `/mail` detrás de usuario y contraseña** (`make env` los crea). Probado el 2 oct: sin login dan 401, con login abren, y `/metrics` no queda expuesto. Guía de pruebas completa en Claude Docs ("Guía de pruebas NiceBank").
 - **Observabilidad que se entiende (1 oct).** Prometheus "no mostraba nada" porque no es un tablero y no tenía
   reglas, métricas HTTP ni datos guardados. Ahora tiene 13 reglas con nombre `nicebank:*`, 7 alertas, métricas por
   ruta, costo de DeepSeek y la cola de casos, guarda 15 días y trae [[Observabilidad#Prometheus en 5 enlaces|5 enlaces

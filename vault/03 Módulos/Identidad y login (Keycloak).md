@@ -22,7 +22,7 @@ dueño: Líder
 | Claim `customer_ref` | Referencia opaca del cliente (`cr_` + 24 caracteres); el token **no** trae el número de cliente del banco. Ver [[Seguridad]] |
 | Recuperación | Usuario → enlace por correo (10 min, un solo uso) → **verificar TOTP** → nueva contraseña |
 | Política de contraseña | 8+ caracteres, mayúscula, minúscula, número, distinta al usuario |
-| Correo | En desarrollo llega a **Mailpit** (http://localhost:8025). Con servidor real usa **la misma cuenta y servidor** que las notificaciones y el mismo diseño oscuro |
+| Correo | En desarrollo llega a **Mailpit** (http://localhost:8090/mail/). Con servidor real usa **la misma cuenta y servidor** que las notificaciones y el mismo diseño oscuro |
 
 ## El correo de recuperación
 

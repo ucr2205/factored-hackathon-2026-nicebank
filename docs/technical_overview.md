@@ -386,7 +386,7 @@ Everything needed to sign in and test the application end to end. These are **te
 
 - **Web application:** the deployed link provided by the team, or `http://localhost:8088` when run locally. The same login page serves customers, specialists and supervisors.
 - **Documented API (Swagger):** `/api/docs` on the backend (`http://localhost:8081/api/docs` locally), with an Authorize button.
-- **Locally as well:** Jaeger for traces (`http://localhost:16686`) and Mailpit for emails (`http://localhost:8025`).
+- **Locally as well:** Jaeger for traces (`http://localhost:8090/jaeger/`) and Mailpit for emails (`http://localhost:8090/mail/`), behind the gateway login.
 
 > **Demo date:** the system works with the fixed date **17 June 2026** (the dataset's last day). "Today" and "yesterday" are read relative to that date. The product speaks Spanish and Portuguese, so the test messages are in those languages.
 

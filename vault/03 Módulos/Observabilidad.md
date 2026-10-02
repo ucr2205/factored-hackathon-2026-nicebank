@@ -18,9 +18,9 @@ actualizado: 2026-10-01
 | Herramienta | Pregunta que responde | Dónde |
 |---|---|---|
 | Supervisión → **Resumen** | ¿Cómo le está yendo al asistente? ¿Cuántos casos pasan a una persona? | http://localhost:5173/supervisor (usuario `supervisor01`) |
-| Jaeger | ¿Qué pasó en *este* caso y dónde se demoró? | http://localhost:16686 (servicio `disputes-backend`) |
-| Jaeger → **Monitor** | ¿Qué operación es lenta o falla más? | http://localhost:16686/monitor |
-| Prometheus | ¿Cómo va el sistema en el tiempo? ¿Hay alertas? | http://localhost:9090 |
+| Jaeger | ¿Qué pasó en *este* caso y dónde se demoró? | http://localhost:8090/jaeger/ (servicio `disputes-backend`) |
+| Jaeger → **Monitor** | ¿Qué operación es lenta o falla más? | http://localhost:8090/jaeger/monitor |
+| Prometheus | ¿Cómo va el sistema en el tiempo? ¿Hay alertas? | http://localhost:8090/prometheus/ |
 | `audit_events` | ¿Qué regla justificó cada paso? | Consola del agente → Auditoría |
 
 ## Resumen del supervisor (la forma más fácil)
@@ -50,11 +50,11 @@ hace solo cada 15 s.
 
 | Enlace | Qué muestra |
 |---|---|
-| [El asistente](http://localhost:9090/graph?g0.expr=nicebank%3Aturns_by_outcome%3Arate5m&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Aescalation_ratio%3A5m&g1.tab=0&g1.range_input=6h&g2.expr=nicebank%3Aresolve_ratio%3A5m&g2.tab=0&g2.range_input=6h) | Respuestas por resultado, % que pasa a una persona y % resuelto (sistema vs baseline) |
-| [Tiempos](http://localhost:9090/graph?g0.expr=nicebank%3Aturn_latency_seconds%3Ap50_5m&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Aturn_latency_seconds%3Ap95_5m&g1.tab=0&g1.range_input=6h&g2.expr=nicebank%3Ahttp_latency_seconds%3Ap95_5m&g2.tab=0&g2.range_input=6h) | p50 y p95 del turno, p95 por ruta HTTP |
-| [La cola](http://localhost:9090/graph?g0.expr=handoffs_open&g0.tab=0&g0.range_input=6h&g1.expr=handoffs_oldest_wait_seconds&g1.tab=0&g1.range_input=6h&g2.expr=handoffs_by_status&g2.tab=0&g2.range_input=6h) | Casos abiertos por prioridad, el que más espera, casos por estado y resolución |
-| [La IA](http://localhost:9090/graph?g0.expr=nicebank%3Allm_calls%3Arate5m&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Allm_cost_usd%3Aincrease1h&g1.tab=0&g1.range_input=6h&g2.expr=nicebank%3Aml_classify_latency_seconds%3Ap95_5m&g2.tab=0&g2.range_input=6h) | Llamadas a DeepSeek por modelo y resultado, costo por hora, latencia del clasificador |
-| [Salud](http://localhost:9090/graph?g0.expr=up&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Ahttp_error_ratio%3A5m&g1.tab=0&g1.range_input=6h&g2.expr=sum+by+%28kind%2C+status%29+%28increase%28notifications_total%5B1h%5D%29%29&g2.tab=0&g2.range_input=6h) | Servicios arriba, % de errores 5xx, correos enviados o fallidos |
+| [El asistente](http://localhost:8090/prometheus/graph?g0.expr=nicebank%3Aturns_by_outcome%3Arate5m&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Aescalation_ratio%3A5m&g1.tab=0&g1.range_input=6h&g2.expr=nicebank%3Aresolve_ratio%3A5m&g2.tab=0&g2.range_input=6h) | Respuestas por resultado, % que pasa a una persona y % resuelto (sistema vs baseline) |
+| [Tiempos](http://localhost:8090/prometheus/graph?g0.expr=nicebank%3Aturn_latency_seconds%3Ap50_5m&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Aturn_latency_seconds%3Ap95_5m&g1.tab=0&g1.range_input=6h&g2.expr=nicebank%3Ahttp_latency_seconds%3Ap95_5m&g2.tab=0&g2.range_input=6h) | p50 y p95 del turno, p95 por ruta HTTP |
+| [La cola](http://localhost:8090/prometheus/graph?g0.expr=handoffs_open&g0.tab=0&g0.range_input=6h&g1.expr=handoffs_oldest_wait_seconds&g1.tab=0&g1.range_input=6h&g2.expr=handoffs_by_status&g2.tab=0&g2.range_input=6h) | Casos abiertos por prioridad, el que más espera, casos por estado y resolución |
+| [La IA](http://localhost:8090/prometheus/graph?g0.expr=nicebank%3Allm_calls%3Arate5m&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Allm_cost_usd%3Aincrease1h&g1.tab=0&g1.range_input=6h&g2.expr=nicebank%3Aml_classify_latency_seconds%3Ap95_5m&g2.tab=0&g2.range_input=6h) | Llamadas a DeepSeek por modelo y resultado, costo por hora, latencia del clasificador |
+| [Salud](http://localhost:8090/prometheus/graph?g0.expr=up&g0.tab=0&g0.range_input=6h&g1.expr=nicebank%3Ahttp_error_ratio%3A5m&g1.tab=0&g1.range_input=6h&g2.expr=sum+by+%28kind%2C+status%29+%28increase%28notifications_total%5B1h%5D%29%29&g2.tab=0&g2.range_input=6h) | Servicios arriba, % de errores 5xx, correos enviados o fallidos |
 
 - **Alertas** (menú *Alerts*): backend o clasificador caídos, más de 5% de errores, el 5% más lento sobre 4 s,
   DeepSeek fallando, correos sin entregar y un caso esperando más de 30 minutos. Solo se ven en Prometheus; no
@@ -107,9 +107,9 @@ Cada mensaje del chat es **una traza**. Desde el 1 de octubre se lee así:
 | Una conversación concreta | `chat.session_id=<id>` (está en la auditoría de la consola) |
 | Los que fallaron | `error=true` |
 
-Enlaces listos: [escalamientos de las últimas 24 h](http://localhost:16686/search?service=disputes-backend&lookback=24h&limit=50&tags=%7B%22chat.outcome%22%3A%22escalate%22%7D) ·
-[trazas con error](http://localhost:16686/search?service=disputes-backend&lookback=24h&limit=50&tags=%7B%22error%22%3A%22true%22%7D) ·
-[chats de más de 3 s](http://localhost:16686/search?service=disputes-backend&lookback=24h&limit=50&operation=POST%20/api/chat&minDuration=3s).
+Enlaces listos: [escalamientos de las últimas 24 h](http://localhost:8090/jaeger/search?service=disputes-backend&lookback=24h&limit=50&tags=%7B%22chat.outcome%22%3A%22escalate%22%7D) ·
+[trazas con error](http://localhost:8090/jaeger/search?service=disputes-backend&lookback=24h&limit=50&tags=%7B%22error%22%3A%22true%22%7D) ·
+[chats de más de 3 s](http://localhost:8090/jaeger/search?service=disputes-backend&lookback=24h&limit=50&operation=POST%20/api/chat&minDuration=3s).
 
 **Pestaña Monitor:** tasa de llamadas, % de errores y duración (p50/p75/p95) por operación, sin buscar trazas una
 por una. Elige el servicio `disputes-backend`. Los datos salen de las *span metrics* que el colector calcula y

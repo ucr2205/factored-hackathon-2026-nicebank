@@ -88,9 +88,14 @@ make smoke           # reseed + 24 end-to-end API checks in 10 scenarios (must s
 make test            # Go unit tests + frontend build
 make load            # JMeter smoke load test (needs jmeter on PATH)
 ```
-Web app http://localhost:5173 (dev) or :8088 (container) · API :8081 (Swagger UI at `/api/docs`, spec at
-`backend/internal/httpapi/openapi.yaml`) · Keycloak :8080 · Mailpit :8025 ·
-Jaeger :16686 · Prometheus :9090 · Postgres host port **5433**. Test users: `cliente01..20`, `agente01..02`,
+Gateway http://localhost:8090 (Caddy, `infra/gateway/Caddyfile`; the one public entry point): app at `/`, API at
+`/api`, and Jaeger `/jaeger/`, Prometheus `/prometheus/`, Mailpit `/mail/` behind the team login (`TOOLS_USER` /
+`TOOLS_PASSWORD` in `.env`, created by `make env`; the gateway only gets the bcrypt hash). It mirrors the public
+server **https://hackathon.evon.solutions**, which the host nginx routes the same way (`deploy/evon/`, guide in
+Spanish: dedicated Postgres, Keycloak in production mode under `/auth`, `/api/`, optional `/jaeger/` and
+`/prometheus/` with nginx basic auth); keep `deploy/evon/` in step when env vars or build args change. Direct ports also
+work: web app http://localhost:5173 (dev) or :8088 (container) · API :8081 (Swagger UI at `/api/docs`, spec at
+`backend/internal/httpapi/openapi.yaml`) · Keycloak :8080 · Postgres host port **5433**. Test users: `cliente01..20`, `agente01..02`,
 `supervisor01`, and `carga01..20` for load tests only (no TOTP, so they can never pass step-up). Local test realm
 only; the team lead has the handout.
 

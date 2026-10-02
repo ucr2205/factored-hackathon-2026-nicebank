@@ -31,7 +31,7 @@ Todas siguen el patrón `Test-Only-<usuario>` (por ejemplo, `Test-Only-cliente01
 | No soportado (PT) | cualquiera | "Quero um empréstimo" |
 | Recuperar contraseña | `cliente20` | "¿Olvidaste tu contraseña?" → correo (en Mailpit, o en tu `MAIL_REDIRECT_TO` con servidor real) → código → nueva contraseña |
 | Consola | `agente01` | Tomar el caso escalado, "Mostrar identidad", ver su auditoría y (con "Ver detalle técnico") la traza en Jaeger |
-| Correos al cliente | cualquiera | Abrir una disputa y mirar el correo en Mailpit (http://localhost:8025) |
+| Correos al cliente | cualquiera | Abrir una disputa y mirar el correo en Mailpit (http://localhost:8090/mail/) |
 
 ## Generar un código TOTP sin celular
 
