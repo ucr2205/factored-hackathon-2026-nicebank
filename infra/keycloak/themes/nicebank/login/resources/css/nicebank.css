@@ -319,3 +319,11 @@ body.nb-body {
 @media (prefers-reduced-motion: reduce) {
   .nb-orb, .nb-sheen, .nb-rise, .nb-card-enter, .nb-locale ul { animation: none !important; }
 }
+
+/* ---------- embedded in the app's step-up dialog (iframe): only the card ---------- */
+.nb-embedded .nb-brand,
+.nb-embedded .nb-locale { display: none; }
+.nb-embedded .nb-body { background: #fff; }
+.nb-embedded .nb-shell { min-height: 0; }
+.nb-embedded .nb-access { padding: 12px 8px; background: #fff; justify-content: flex-start; }
+.nb-embedded .nb-card { max-width: none; padding: 8px 12px; border-top: 0; box-shadow: none; }

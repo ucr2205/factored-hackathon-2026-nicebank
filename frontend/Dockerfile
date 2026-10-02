@@ -17,9 +17,11 @@ ARG VITE_API_URL
 ARG VITE_OIDC_AUTHORITY
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY security-headers.conf /etc/nginx/security-headers.conf
+COPY stepup-headers.conf /etc/nginx/stepup-headers.conf
 # The CSP may only connect to the origins the bundle was built against.
 RUN origin() { echo "$1" | sed -E 's#^(https?://[^/]+).*#\1#'; } \
  && sed -i "s#__CONNECT_SRC__#$(origin "$VITE_API_URL") $(origin "$VITE_OIDC_AUTHORITY")#" /etc/nginx/security-headers.conf \
- && ! grep -q __CONNECT_SRC__ /etc/nginx/security-headers.conf
+ && sed -i "s#__FRAME_SRC__#$(origin "$VITE_OIDC_AUTHORITY")#" /etc/nginx/security-headers.conf \
+ && ! grep -qE "__CONNECT_SRC__|__FRAME_SRC__" /etc/nginx/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

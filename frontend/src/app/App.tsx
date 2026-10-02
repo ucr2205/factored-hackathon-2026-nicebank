@@ -7,6 +7,7 @@ import { brand } from "./theme";
 import { useAuth, type Role } from "../auth/AuthProvider";
 import CustomerHome from "../features/chat/CustomerHome";
 import { useLang } from "./i18n";
+import { StepUpDialog } from "../auth/StepUpDialog";
 
 // Staff screens load on demand, so customers never download the console code.
 const HandoffQueuePage = lazy(() => import("../features/console/HandoffQueuePage"));
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        <StepUpDialog />
       </AppShell>
     </BrowserRouter>
   );

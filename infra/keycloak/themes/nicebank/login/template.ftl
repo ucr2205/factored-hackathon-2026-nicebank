@@ -11,6 +11,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <#-- Inside the app's step-up dialog (an iframe of NiceBank's own origins), show only the access card. -->
+    <script>if (window.self !== window.top) document.documentElement.classList.add("nb-embedded");</script>
     <title>${msg("loginTitle",(realm.displayName!''))}</title>
     <link rel="icon" type="image/png" href="${url.resourcesPath}/img/nicebank-mark.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">

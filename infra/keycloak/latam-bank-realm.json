@@ -1416,6 +1416,15 @@
     "acr.loa.map": "{\"1\": 1, \"2\": 2}"
   },
   "loginTheme": "nicebank",
+  "browserSecurityHeaders": {
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:5173 http://localhost:8088; object-src 'none';",
+    "contentSecurityPolicyReportOnly": "",
+    "xFrameOptions": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "referrerPolicy": "no-referrer",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
   "internationalizationEnabled": true,
   "supportedLocales": [
     "es",

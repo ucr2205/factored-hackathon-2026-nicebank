@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { User } from "oidc-client-ts";
 import { useLang } from "../app/i18n";
+import { STEP_UP_CANCELLED } from "./modalNavigator";
 import { decodeClaims, userManager, type Claims } from "./oidc";
 
 export type Role = "customer" | "agent" | "supervisor";
@@ -17,7 +18,9 @@ type AuthValue = {
   clearResume: () => void;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  stepUp: (resume: ResumeState) => Promise<void>;
+  /** Resolves with the level-2 user when the in-page step-up succeeds, or null if it was cancelled or the page
+   *  is leaving for the full-page fallback. */
+  stepUp: (resume: ResumeState) => Promise<User | null>;
 };
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -52,10 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(() => userManager.signinRedirect({ ui_locales: uiLocales }), [uiLocales]);
   const logout = useCallback(() => userManager.signoutRedirect({ extraQueryParams: { ui_locales: uiLocales } }), [uiLocales]);
-  // Step-up: ask Keycloak for level 2 (password + TOTP), then come back to the chat and resume.
+  // Step-up: ask Keycloak for level 2 (password + TOTP) in a dialog over the current page. If the dialog cannot
+  // be used (or the customer asks for it), fall back to the full-page redirect, which resumes the chat on return.
   const stepUp = useCallback(
-    (r: ResumeState) =>
-      userManager.signinRedirect({ acr_values: "2", ui_locales: uiLocales, state: { resume: r, returnTo: "/chat" } }),
+    async (r: ResumeState) => {
+      try {
+        const upgraded = await userManager.signinPopup({ acr_values: "2", ui_locales: uiLocales });
+        setUser(upgraded);
+        return upgraded;
+      } catch (e) {
+        if (e instanceof Error && e.message === STEP_UP_CANCELLED) return null;
+        await userManager.signinRedirect({ acr_values: "2", ui_locales: uiLocales, state: { resume: r, returnTo: "/chat" } });
+        return null;
+      }
+    },
     [uiLocales],
   );
   const clearResume = useCallback(() => setResume(null), []);

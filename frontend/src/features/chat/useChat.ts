@@ -82,7 +82,10 @@ export function useChat() {
         receive(turn);
       } catch (e) {
         if (e instanceof ApiError && e.code === "step_up_required") {
-          await stepUp({ sessionId: sid, actionId }); // leaves the page; the chat resumes after Keycloak
+          // In-page dialog first: with the level-2 token the same confirmation is sent again right away.
+          // (Full-page fallback: the page leaves and the resume effect below completes it on return.)
+          const upgraded = await stepUp({ sessionId: sid, actionId });
+          if (upgraded) await decide(actionId, true, sid, upgraded.access_token);
           return;
         }
         handleError(e);
