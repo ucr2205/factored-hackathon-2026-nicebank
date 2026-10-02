@@ -1,6 +1,9 @@
 // Package policy loads policies/disputes.yaml and makes the deterministic decisions for a dispute.
 // The language model never decides eligibility or actions; this package does, and returns the rule id
 // that justifies each decision so it can be audited.
+//
+// Pipeline role: Decide. After a transaction is identified, Evaluate returns one Decision (auto, explain,
+// ineligible or escalate); RequiresStepUp gates Act for sensitive actions such as block_card.
 package policy
 
 import (
@@ -11,6 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Rule is a documented global rule (clarify, scope, security) shown in the supervisor view.
 type Rule struct {
 	RuleID      string `yaml:"rule_id" json:"rule_id"`
 	When        string `yaml:"when" json:"when"`
@@ -18,6 +22,7 @@ type Rule struct {
 	Description string `yaml:"description" json:"description"`
 }
 
+// Escalation is a condition that hands a dispute to a human, with the reason and target queue.
 type Escalation struct {
 	RuleID        string `yaml:"rule_id" json:"rule_id"`
 	Condition     string `yaml:"condition" json:"condition"`
@@ -37,6 +42,8 @@ type StatusRule struct {
 	Description   string   `yaml:"description" json:"description"`
 }
 
+// DisputeType is the policy for one C6 dispute type: eligibility window, automatic action, the USD amount above
+// which a human decides, escalation rules and the rule ids recorded for each outcome.
 type DisputeType struct {
 	ID          string            `yaml:"id" json:"id"`
 	DisplayName map[string]string `yaml:"display_name" json:"display_name"`
@@ -54,6 +61,7 @@ type DisputeType struct {
 	} `yaml:"rules" json:"rules"`
 }
 
+// Policy is the parsed policies/disputes.yaml (contract C3). Amounts are in USD.
 type Policy struct {
 	Version  string `yaml:"version" json:"version"`
 	Origin   string `yaml:"origin" json:"origin"`
@@ -84,6 +92,8 @@ func Load(path string) (*Policy, error) {
 	return &p, p.validate()
 }
 
+// validate rejects a policy the engine cannot apply safely (unknown actions, missing limits or display names,
+// explain rules for unknown types), so a bad edit fails at startup instead of mid-conversation.
 func (p *Policy) validate() error {
 	if p.Version == "" || p.Currency != "USD" {
 		return fmt.Errorf("policy: version required and currency must be USD")
@@ -123,6 +133,7 @@ func (p *Policy) validate() error {
 	return nil
 }
 
+// Type returns the policy for dispute type id; false for unknown or out-of-scope labels.
 func (p *Policy) Type(id string) (DisputeType, bool) {
 	for _, d := range p.DisputeTypes {
 		if d.ID == id {
@@ -132,6 +143,7 @@ func (p *Policy) Type(id string) (DisputeType, bool) {
 	return DisputeType{}, false
 }
 
+// RequiresStepUp reports whether action needs a TOTP-verified session (acr >= 2) before it may run.
 func (p *Policy) RequiresStepUp(action string) bool {
 	return slices.Contains(p.Globals.StepUpActions, action)
 }
@@ -146,6 +158,7 @@ const (
 	Explain    Kind = "explain"    // not a final debit: explain it with the record (optionally proposing a card block)
 )
 
+// Decision is the policy's verdict and the rule id that justifies it, recorded in the audit trail.
 type Decision struct {
 	Kind          Kind
 	RuleID        string
@@ -154,6 +167,7 @@ type Decision struct {
 	Queue         string
 }
 
+// Facts are the verified inputs of a decision, read from the transaction record (never from the model).
 type Facts struct {
 	DisputeType string
 	AgeDays     int
@@ -161,6 +175,9 @@ type Facts struct {
 	AmountUSD   float64
 }
 
+// Evaluate decides what happens to one identified transaction, in order: always-escalate types, then charges that
+// are not a final debit (explain), then the age/status window (ineligible), then amount limits (escalate), and
+// otherwise auto (open the case after confirmation).
 func (p *Policy) Evaluate(f Facts) (Decision, error) {
 	d, ok := p.Type(f.DisputeType)
 	if !ok {

@@ -1,9 +1,15 @@
 // Package contract holds the JSON shapes of the public API (docs/api/contracts.md).
 // Keep in sync with frontend/src/api/types.ts.
+//
+// Pipeline role: ChatTurn is what every turn returns (reply, outcome, candidates, pending action, verified actions,
+// rule ids); Handoff (C5) is what Escalate hands to a human. The remaining types serve the agent console and the
+// supervisor view.
 package contract
 
 import "time"
 
+// ChatRequest is the body of POST /api/chat: a new message, or the transaction the customer picked from the
+// candidates of the previous turn (SelectTransactionID). A nil SessionID starts a new conversation.
 type ChatRequest struct {
 	SessionID           *string `json:"session_id"`
 	Message             string  `json:"message"`
@@ -11,12 +17,14 @@ type ChatRequest struct {
 	SelectTransactionID *string `json:"select_transaction_id"`
 }
 
+// ConfirmRequest is the body of POST /api/chat/confirm: the customer's explicit yes/no on a pending action.
 type ConfirmRequest struct {
 	SessionID string `json:"session_id"`
 	ActionID  string `json:"action_id"`
 	Confirm   bool   `json:"confirm"`
 }
 
+// Candidate is a card transaction from the customer's own history, shown so the customer can pick the charge.
 type Candidate struct {
 	TransactionID string    `json:"transaction_id"`
 	Date          time.Time `json:"date"`
@@ -28,6 +36,8 @@ type Candidate struct {
 	CardLast4     string    `json:"card_last4"`
 }
 
+// PendingAction is an action the system proposed and will only execute after explicit confirmation.
+// RequiresStepUp tells the client to ask for a TOTP login (acr >= 2) before confirming.
 type PendingAction struct {
 	ID             string `json:"id"`
 	Type           string `json:"type"`
@@ -35,12 +45,14 @@ type PendingAction struct {
 	RequiresStepUp bool   `json:"requires_step_up"`
 }
 
+// VerifiedAction is an executed action whose result was read back from the database.
 type VerifiedAction struct {
 	Type       string    `json:"type"`
 	Reference  string    `json:"reference"`
 	VerifiedAt time.Time `json:"verified_at"`
 }
 
+// ChatTurn is the response to POST /api/chat and POST /api/chat/confirm: one completed turn of the pipeline.
 type ChatTurn struct {
 	SessionID       string           `json:"session_id"`
 	Reply           string           `json:"reply"`
@@ -57,12 +69,14 @@ type ChatTurn struct {
 	Mode            string           `json:"mode"`
 }
 
+// Message is one stored chat message (role customer or assistant).
 type Message struct {
 	Role string    `json:"role"`
 	Text string    `json:"text"`
 	At   time.Time `json:"at"`
 }
 
+// SessionView is the response to GET /api/sessions/{id}: the transcript and any pending action, to resume a chat.
 type SessionView struct {
 	SessionID     string         `json:"session_id"`
 	Lang          string         `json:"lang"`
@@ -70,11 +84,13 @@ type SessionView struct {
 	PendingAction *PendingAction `json:"pending_action,omitempty"`
 }
 
+// Fact is a verified statement in a handoff and the table it was read from (transactions, exchange_rates, ...).
 type Fact struct {
 	Fact   string `json:"fact"`
 	Source string `json:"source"`
 }
 
+// ActionTaken is an action the assistant already executed and verified before handing off.
 type ActionTaken struct {
 	Action    string    `json:"action"`
 	Status    string    `json:"status"`
@@ -82,11 +98,13 @@ type ActionTaken struct {
 	At        time.Time `json:"at"`
 }
 
+// Evidence points to a record that supports a handoff, e.g. a policy rule id or a transaction id.
 type Evidence struct {
 	Type string `json:"type"`
 	ID   string `json:"id"`
 }
 
+// SuggestedAgent is an active agent who speaks the customer's language, ranked by the queue's specialty.
 type SuggestedAgent struct {
 	AgentID   string `json:"agent_id"`
 	Name      string `json:"name"`
@@ -124,6 +142,7 @@ type Resolution struct {
 	ClosedAt time.Time `json:"closed_at"`
 }
 
+// CloseRequest is the body of POST /api/handoffs/{id}/close; Outcome is "accepted" or "rejected".
 type CloseRequest struct {
 	Outcome string `json:"outcome"`
 	Note    string `json:"note"`
@@ -145,6 +164,7 @@ type MyDispute struct {
 	Resolution  *Resolution `json:"resolution,omitempty"`
 }
 
+// HandoffSummary is one row of the agent queue (GET /api/handoffs).
 type HandoffSummary struct {
 	HandoffID   string     `json:"handoff_id"`
 	CreatedAt   time.Time  `json:"created_at"`
@@ -158,6 +178,7 @@ type HandoffSummary struct {
 	ClaimedAt   *time.Time `json:"claimed_at,omitempty"`
 }
 
+// AuditEvent is one step of a session's audit trail (GET /api/sessions/{id}/audit).
 type AuditEvent struct {
 	TS        time.Time `json:"ts"`
 	Step      string    `json:"step"`
@@ -169,6 +190,7 @@ type AuditEvent struct {
 	LatencyMS int       `json:"latency_ms"`
 }
 
+// OutcomeCount counts completed turns per outcome, language and mode (system or baseline).
 type OutcomeCount struct {
 	Outcome string `json:"outcome"`
 	Lang    string `json:"lang"`
@@ -176,6 +198,7 @@ type OutcomeCount struct {
 	Count   int    `json:"count"`
 }
 
+// Summary is the response to GET /api/admin/summary: turn counts and latency percentiles from the audit trail.
 type Summary struct {
 	Turns        int            `json:"turns"`
 	P50LatencyMS float64        `json:"p50_latency_ms"`
@@ -222,6 +245,7 @@ type AnalyticsKPIs struct {
 	EmailsFailed       int     `json:"emails_failed"`
 }
 
+// SeriesPoint is the number of answers with a given mode and outcome in one time bucket.
 type SeriesPoint struct {
 	Bucket  time.Time `json:"bucket"`
 	Mode    string    `json:"mode"`
@@ -229,28 +253,33 @@ type SeriesPoint struct {
 	Count   int       `json:"count"`
 }
 
+// ModeOutcome counts answers per mode (system or baseline) and outcome.
 type ModeOutcome struct {
 	Mode    string `json:"mode"`
 	Outcome string `json:"outcome"`
 	Count   int    `json:"count"`
 }
 
+// LabelCount is a generic label/count pair (language, policy rule id).
 type LabelCount struct {
 	Label string `json:"label"`
 	Count int    `json:"count"`
 }
 
+// ReasonCount counts handoffs per escalation reason and priority.
 type ReasonCount struct {
 	Reason   string `json:"reason"`
 	Priority string `json:"priority"`
 	Count    int    `json:"count"`
 }
 
+// FunnelStep is how many conversations reached one step of the dispute flow.
 type FunnelStep struct {
 	Step     string `json:"step"` // understood | found | proposed | confirmed | verified
 	Sessions int    `json:"sessions"`
 }
 
+// StepLatency is the average and p95 duration of one audited pipeline step.
 type StepLatency struct {
 	Step  string  `json:"step"`
 	AvgMS float64 `json:"avg_ms"`
@@ -258,6 +287,7 @@ type StepLatency struct {
 	Count int     `json:"count"`
 }
 
+// AdminConfig is the response to GET /api/admin/config: the active policy, model provider and versions.
 type AdminConfig struct {
 	PolicyVersion   string `json:"policy_version"`
 	PolicyOrigin    string `json:"policy_origin"`
@@ -268,6 +298,7 @@ type AdminConfig struct {
 	DemoToday       string `json:"demo_today"`
 }
 
+// Card is one of the customer's cards as shown on the home screen (last four digits only).
 type Card struct {
 	Last4  string `json:"last4"`
 	Type   string `json:"type"`

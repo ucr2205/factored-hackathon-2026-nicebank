@@ -27,6 +27,7 @@ var openQuestions = map[string][]string{
 
 var priorities = map[string]string{"possible_fraud_high_amount": "high", "card_lost_or_stolen": "high", "declined_unrecognized_attempt": "high"}
 
+// escalate hands the conversation to a human with a structured handoff; see escalateWithFacts.
 func (t *turn) escalate(reason, ruleID, intent string, txn *tools.Transaction, queue string, taken []contract.ActionTaken) error {
 	return t.escalateWithFacts(reason, ruleID, intent, txn, queue, taken, nil)
 }
@@ -101,6 +102,7 @@ func (t *turn) escalateWithFacts(reason, ruleID, intent string, txn *tools.Trans
 	return nil
 }
 
+// txnFacts are the verified transaction values a customer reply may show (amount, merchant, date, card, type).
 func (t *turn) txnFacts(txn tools.Transaction) map[string]string {
 	name := t.s.State.DisputeType
 	if d, ok := t.o.Policy.Type(name); ok {
@@ -165,6 +167,7 @@ var monthNames = map[string][]string{
 	"pt": {"janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"},
 }
 
+// date formats "12 de junio" / "12 de junho" without the year.
 func date(d time.Time, lang string) string {
 	return fmt.Sprintf("%d de %s", d.Day(), monthNames[lang][d.Month()-1])
 }

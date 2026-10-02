@@ -1,4 +1,7 @@
 // Package mlclient calls ml-service (contract C2) with a timeout and bounded retries.
+//
+// Pipeline role: Understand. The orchestrator classifies every masked customer message into the C6 taxonomy;
+// an abstention makes it ask the customer, and a failure after the retries escalates to a human (ESC-TECH-01).
 package mlclient
 
 import (
@@ -16,6 +19,7 @@ import (
 
 const maxResponseBytes = 64 << 10
 
+// Classification is the C2 response of POST /classify. Abstain is true below the service's confidence threshold.
 type Classification struct {
 	Label        string  `json:"label"`
 	Confidence   float64 `json:"confidence"`
@@ -23,12 +27,14 @@ type Classification struct {
 	ModelVersion string  `json:"model_version"`
 }
 
+// Client calls ml-service over HTTP with tracing, a per-attempt timeout and bounded retries.
 type Client struct {
 	baseURL string
 	http    *http.Client
 	retries int
 }
 
+// New returns a Client for the ml-service at baseURL (e.g. http://ml-service:8000).
 func New(baseURL string) *Client {
 	// 3 s per attempt: a warm classification takes ~20-50 ms, but a cold one took ~1.4 s and must not fail the turn.
 	// The otelhttp transport adds an "ml.classify" client span per attempt and propagates the trace context.

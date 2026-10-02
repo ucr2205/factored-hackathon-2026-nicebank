@@ -31,6 +31,7 @@ type Worker struct {
 	Concurrency int    // parallel SMTP sends per batch (default 1)
 }
 
+// Run polls the outbox every Interval until ctx is cancelled. Errors are logged and retried on the next tick.
 func (w *Worker) Run(ctx context.Context) {
 	t := time.NewTicker(w.Interval)
 	defer t.Stop()
@@ -86,6 +87,8 @@ func (w *Worker) RunOnce(ctx context.Context) (int, error) {
 
 var errNoAddress = errors.New("customer has no contact address")
 
+// deliver sends one notification and records the result with finish_notification: sent, retry with quadratic
+// backoff while attempts remain, or failed (also immediately when the customer has no address).
 func (w *Worker) deliver(ctx context.Context, n claimed) {
 	ctx, span := otel.Tracer("disputes/notify").Start(ctx, "notify.send_email")
 	defer span.End()
@@ -117,6 +120,7 @@ func (w *Worker) deliver(ctx context.Context, n claimed) {
 	}
 }
 
+// send decrypts the address and first name in memory only, renders the email and hands it to the Mailer.
 func (w *Worker) send(ctx context.Context, n claimed) error {
 	if len(n.EmailCT) == 0 || n.KeyVersion == nil {
 		return errNoAddress

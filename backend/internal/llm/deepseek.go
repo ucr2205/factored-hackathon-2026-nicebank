@@ -35,12 +35,16 @@ type DeepSeek struct {
 	local         Fake
 }
 
+// NewDeepSeek builds a provider with an 8-second HTTP timeout per call.
 func NewDeepSeek(baseURL, apiKey, model, fallback string, composeWithAI bool) *DeepSeek {
 	return &DeepSeek{BaseURL: strings.TrimRight(baseURL, "/"), APIKey: apiKey, Model: model, FallbackModel: fallback,
 		ComposeWithAI: composeWithAI, HTTP: &http.Client{Timeout: 8 * time.Second}}
 }
 
-func (d *DeepSeek) Name() string    { return "deepseek" }
+// Name identifies the provider in logs, metrics and audit rows.
+func (d *DeepSeek) Name() string { return "deepseek" }
+
+// Version is the primary model plus the prompt version, recorded so evaluations are comparable.
 func (d *DeepSeek) Version() string { return d.Model + "/" + PromptVersion }
 
 // USD per 1M tokens at peak rates (off-peak is half), from api-docs.deepseek.com, September 2026.
@@ -144,6 +148,8 @@ func (d *DeepSeek) complete(ctx context.Context, op, system, user string, maxTok
 	return total, lastErr
 }
 
+// call performs one chat-completions request on model, records span, metrics, tokens and cost, and decodes the
+// JSON answer into out. Empty or invalid JSON counts as a failure so complete can try the fallback model.
 func (d *DeepSeek) call(ctx context.Context, op, model, system, user string, maxTokens int, out any) (Usage, error) {
 	ctx, span := otel.Tracer("llm").Start(ctx, "llm."+op)
 	defer span.End()
@@ -211,6 +217,9 @@ func (d *DeepSeek) call(ctx context.Context, op, model, system, user string, max
 	return u, nil
 }
 
+// Extract asks the model for amount, date range, merchant hint, dispute type and refusal reason, then validates
+// every field: non-positive amounts, unknown labels and dates outside the last 13 months are dropped. If both
+// models fail, the deterministic Fake extracts instead.
 func (d *DeepSeek) Extract(ctx context.Context, maskedText, lang, country string, today time.Time) (Extraction, Usage, error) {
 	var raw struct {
 		Amount       *float64 `json:"amount"`
@@ -273,6 +282,8 @@ func (d *DeepSeek) Extract(ctx context.Context, maskedText, lang, country string
 	return ex, u, nil
 }
 
+// PickCandidate resolves exact merchant names and ordinals locally first; only a free-form reply goes to the
+// model. An out-of-range or missing index returns -1 (the orchestrator then asks again).
 func (d *DeepSeek) PickCandidate(ctx context.Context, maskedText string, merchants []string) (int, Usage, error) {
 	// Exact merchant names and ordinals are resolved locally: free, instant and deterministic.
 	if i, _, _ := d.local.PickCandidate(ctx, maskedText, merchants); i >= 0 {
@@ -329,6 +340,7 @@ func usedFacts(in ComposeInput) map[string]string {
 	return out
 }
 
+// keepsFacts reports whether a rewritten reply is non-empty and still contains every verified value verbatim.
 func keepsFacts(reply string, facts map[string]string) bool {
 	if strings.TrimSpace(reply) == "" {
 		return false

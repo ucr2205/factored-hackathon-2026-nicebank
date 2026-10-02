@@ -3,6 +3,8 @@
 // DEEPSEEK_API_KEY is set (a full run costs well under one US cent); otherwise only the fake provider runs.
 //
 // Usage (from backend/): go run ./cmd/llmcheck [-models deepseek-flash,deepseek-v4-pro]
+//
+// Pipeline role: offline measurement of the Understand step's fact extraction (llm.Provider.Extract).
 package main
 
 import (

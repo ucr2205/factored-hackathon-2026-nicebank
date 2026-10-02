@@ -1,6 +1,9 @@
 // Package guard masks personal data before text leaves the service and flags prompt-injection attempts.
 // Injection detection is defense in depth: even undetected, a message cannot trigger tools, because only
 // the orchestrator executes actions and only after policy checks and customer confirmation.
+//
+// Pipeline role: the first step of Understand. Mask runs before any text reaches the classifier or the model;
+// LooksLikeInjection ends the turn with an abstention (SEC-INJ-01) before any tool is called.
 package guard
 
 import (

@@ -5,6 +5,8 @@
 //	cd backend && DEEPSEEK_API_KEY=... go run ./cmd/screencheck -file ../eval/screen/dev.jsonl [-v]
 //
 // Input lines: {"id": "...", "lang": "es"|"pt", "label": "refuse"|"allow", "kind": "...", "text": "..."}.
+//
+// Pipeline role: offline measurement of the Understand step's refusal screen; it never runs in the API.
 package main
 
 import (

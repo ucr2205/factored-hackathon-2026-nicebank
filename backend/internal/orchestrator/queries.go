@@ -81,6 +81,8 @@ func (o *Orchestrator) Session(ctx context.Context, p auth.Principal, id string)
 	return v, err
 }
 
+// ListHandoffs returns up to 100 handoffs for the agent queue, optionally filtered by status: open ones by
+// priority and waiting time, claimed ones most recent first.
 func (o *Orchestrator) ListHandoffs(ctx context.Context, p auth.Principal, status string) ([]contract.HandoffSummary, error) {
 	out := []contract.HandoffSummary{}
 	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {
@@ -104,6 +106,7 @@ func (o *Orchestrator) ListHandoffs(ctx context.Context, p auth.Principal, statu
 	return out, err
 }
 
+// GetHandoff returns one handoff (C5) for staff. It never includes the customer's name; see RevealIdentity.
 func (o *Orchestrator) GetHandoff(ctx context.Context, p auth.Principal, id string) (contract.Handoff, error) {
 	var h contract.Handoff
 	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error { return loadHandoff(ctx, tx, id, &h) })
@@ -197,6 +200,7 @@ func (o *Orchestrator) MyDisputes(ctx context.Context, p auth.Principal) ([]cont
 	return out, err
 }
 
+// loadHandoff reads the stored C5 payload and overlays the live columns (id, creation time, status, claimant).
 func loadHandoff(ctx context.Context, tx pgx.Tx, id string, h *contract.Handoff) error {
 	var raw []byte
 	var status string
@@ -216,6 +220,7 @@ func loadHandoff(ctx context.Context, tx pgx.Tx, id string, h *contract.Handoff)
 	return nil
 }
 
+// SessionAudit returns a session's audit trail in order, for the agent console's "what the assistant did" view.
 func (o *Orchestrator) SessionAudit(ctx context.Context, p auth.Principal, sessionID string) ([]contract.AuditEvent, error) {
 	out := []contract.AuditEvent{}
 	err := o.Store.WithStaff(ctx, p.StaffRole(), p.Username, func(tx pgx.Tx) error {

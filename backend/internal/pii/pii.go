@@ -1,6 +1,10 @@
 // Package pii decrypts customer identity fields. Values are AES-256-GCM (nonce || ciphertext || tag) with
 // associated data "<customer_id>|<column>|v<key_version>", written by the loader (etl/seed_demo.py). Binding
 // the row and column means a ciphertext copied to another customer or column fails authentication.
+//
+// Pipeline role: Understand (names are decrypted in memory to mask them before text reaches any model),
+// notifications (the worker decrypts the email address) and the audited identity reveal for the agent who
+// claimed a handoff. Plaintext names never reach logs, traces, the model or the handoff payload.
 package pii
 
 import (
@@ -12,6 +16,7 @@ import (
 	"fmt"
 )
 
+// Cipher holds the AES-256-GCM key for one key version.
 type Cipher struct {
 	aead    cipher.AEAD
 	version int
@@ -34,12 +39,15 @@ func New(b64Key string, version int) (*Cipher, error) {
 	return &Cipher{aead: aead, version: version}, nil
 }
 
+// aad is the associated data that binds a ciphertext to its row, column and key version.
 func aad(customerID, column string, version int) []byte {
 	return fmt.Appendf(nil, "%s|%s|v%d", customerID, column, version)
 }
 
+// ErrDecrypt hides why decryption failed (wrong key, tampering, wrong row): callers only need to know it did.
 var ErrDecrypt = errors.New("pii: cannot decrypt")
 
+// Decrypt opens a value written for customerID and column with the given key version.
 func (c *Cipher) Decrypt(customerID, column string, version int, blob []byte) (string, error) {
 	if version != c.version {
 		return "", fmt.Errorf("pii: no key for version %d", version)

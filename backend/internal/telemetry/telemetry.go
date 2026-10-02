@@ -1,5 +1,8 @@
 // Package telemetry sets up OpenTelemetry tracing (OTLP/HTTP to the collector) and Prometheus metrics.
 // No personal data goes into span attributes or metric labels.
+//
+// Pipeline role: cross-cutting. Each turn is one "chat.turn" span with a child span per audited step, and the
+// counters below measure outcomes, tool verification, model usage and cost per turn.
 package telemetry
 
 import (
@@ -28,6 +31,7 @@ func InitTracing(ctx context.Context, service string) (func(context.Context) err
 	return tp.Shutdown, nil
 }
 
+// Prometheus metrics. Labels are bounded enums (language, outcome, mode, tool, status, route pattern), never ids.
 var (
 	ChatTurns = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "chat_turns_total", Help: "Chat turns by final outcome.",

@@ -1,5 +1,8 @@
 // Package audit writes execution records. These rows — not model reasoning — are the audit evidence:
 // which step ran, which tool, what it returned and which policy rule justified it.
+//
+// Pipeline role: every step of a turn (Understand, Decide, Act, Verify, Escalate, Respond) calls Write inside
+// the same customer-scoped transaction as the work it records, so an action and its audit row commit together.
 package audit
 
 import (
@@ -9,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// Event is one audit_events row. Fields hold ids, types, amounts and rule ids only, never customer text.
 type Event struct {
 	SessionID string
 	Step      string // understand | extract | find_transactions | policy | propose | confirm | act | verify | handoff | respond
@@ -32,6 +36,7 @@ func Write(ctx context.Context, tx pgx.Tx, e Event) error {
 	return err
 }
 
+// nullUUID stores an empty session id as NULL (events written before a session exists).
 func nullUUID(s string) any {
 	if s == "" {
 		return nil

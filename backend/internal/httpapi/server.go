@@ -1,4 +1,8 @@
 // Package httpapi exposes the orchestrator over HTTP (docs/api/contracts.md).
+//
+// Pipeline role: the entry point of every turn. It authenticates the caller (auth.Verifier), enforces the role
+// of each route, decodes size-limited bodies and passes them to the orchestrator; it never decides anything
+// itself. respond maps the orchestrator's sentinel errors to HTTP status codes.
 package httpapi
 
 import (
@@ -19,6 +23,7 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/store"
 )
 
+// Server holds the dependencies of the HTTP API. cmd/api builds it once at startup.
 type Server struct {
 	Orch      *orchestrator.Orchestrator
 	Verifier  *auth.Verifier
@@ -31,6 +36,8 @@ type Server struct {
 	DocsEnabled bool
 }
 
+// Routes returns the full handler: public probes and metrics, then the authenticated routes grouped by role
+// (customer, agent, supervisor), all wrapped in OpenTelemetry tracing.
 func (s *Server) Routes() http.Handler {
 	return otelhttp.NewHandler(s.router(), "http", otelhttp.WithFilter(func(r *http.Request) bool {
 		return r.URL.Path != "/metrics" && r.URL.Path != "/api/health"
@@ -179,6 +186,8 @@ func (s *Server) analytics(w http.ResponseWriter, r *http.Request) {
 	respond(w, r, out, err)
 }
 
+// respond writes body as JSON, or maps a known orchestrator/store error to its status code and error code.
+// Unknown errors are logged and answered with a generic 503 so internal details never reach the client.
 func respond(w http.ResponseWriter, r *http.Request, body any, err error) {
 	switch {
 	case err == nil:
@@ -200,6 +209,7 @@ func respond(w http.ResponseWriter, r *http.Request, body any, err error) {
 	}
 }
 
+// cors allows only the configured origins (dev server, container build, gateway) and answers preflights.
 func (s *Server) cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if origin := r.Header.Get("Origin"); slices.Contains(s.Origins, origin) {

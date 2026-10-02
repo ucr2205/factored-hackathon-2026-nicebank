@@ -1,6 +1,9 @@
 // Package auth verifies Keycloak access tokens and exposes the caller as a Principal.
 // The customer identity comes only from the verified token, never from request bodies or model output. The
 // token carries an opaque customer_ref, not the bank's customer_id; Postgres resolves it per transaction.
+//
+// Pipeline role: runs before every turn. The Principal it produces decides which customer's rows a turn can see
+// (via store.WithCustomer) and whether an action that needs step-up (acr >= 2) may run.
 package auth
 
 import (
@@ -14,14 +17,16 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 )
 
+// Principal is the authenticated caller, built only from verified token claims.
 type Principal struct {
-	Subject    string
-	Username   string
+	Subject     string
+	Username    string
 	CustomerRef string // opaque pseudonym from the token; see store.WithCustomer
-	Roles      []string
-	ACR        int // level of authentication: 1 = password, 2 = password + TOTP
+	Roles       []string
+	ACR         int // level of authentication: 1 = password, 2 = password + TOTP
 }
 
+// HasRole reports whether the token's realm roles include role.
 func (p Principal) HasRole(role string) bool { return slices.Contains(p.Roles, role) }
 
 // StaffRole returns the highest staff role, or "" for customers.
@@ -37,15 +42,18 @@ func (p Principal) StaffRole() string {
 
 type ctxKey struct{}
 
+// FromContext returns the Principal stored by Middleware, if any.
 func FromContext(ctx context.Context) (Principal, bool) {
 	p, ok := ctx.Value(ctxKey{}).(Principal)
 	return p, ok
 }
 
+// WithPrincipal returns ctx carrying p (used by Middleware and tests).
 func WithPrincipal(ctx context.Context, p Principal) context.Context {
 	return context.WithValue(ctx, ctxKey{}, p)
 }
 
+// Verifier validates bearer tokens against the Keycloak realm's signing keys.
 type Verifier struct{ v *oidc.IDTokenVerifier }
 
 // NewVerifier checks signature (keys from jwksURL), issuer, audience and expiry.
@@ -54,8 +62,11 @@ func NewVerifier(ctx context.Context, issuer, jwksURL, audience string) *Verifie
 	return &Verifier{v: oidc.NewVerifier(issuer, keys, &oidc.Config{ClientID: audience})}
 }
 
+// ErrUnauthorized is returned for any invalid, expired or unparsable token; the cause is not exposed.
 var ErrUnauthorized = errors.New("unauthorized")
 
+// Verify checks a raw access token and maps its claims (preferred_username, customer_ref, acr, realm roles)
+// to a Principal. A missing or non-numeric acr becomes 0.
 func (v *Verifier) Verify(ctx context.Context, raw string) (Principal, error) {
 	tok, err := v.v.Verify(ctx, raw)
 	if err != nil {

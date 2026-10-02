@@ -4,6 +4,9 @@
 // trace_id/span_id, so a log line leads to its trace in Jaeger and to the X-Request-ID the client saw. Attributes
 // whose key looks like personal data or a secret are redacted, as a safety net: callers must still never log
 // message text, names, emails, tokens or card data.
+//
+// Pipeline role: cross-cutting. The orchestrator writes one "chat turn" line per turn (outcome, rule ids,
+// latency, cost); the audit trail, not the log, is the record of what each step did.
 package logging
 
 import (
@@ -74,6 +77,7 @@ func redact(_ []string, a slog.Attr) slog.Attr {
 // contextHandler adds request_id, trace_id and span_id from the record's context.
 type contextHandler struct{ slog.Handler }
 
+// Handle adds the request and trace ids to the record, then delegates.
 func (h contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	if id := RequestID(ctx); id != "" {
 		r.AddAttrs(slog.String("request_id", id))
@@ -84,9 +88,12 @@ func (h contextHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.Handler.Handle(ctx, r)
 }
 
+// WithAttrs keeps the wrapper so derived loggers still get request and trace ids.
 func (h contextHandler) WithAttrs(as []slog.Attr) slog.Handler {
 	return contextHandler{h.Handler.WithAttrs(as)}
 }
+
+// WithGroup keeps the wrapper so derived loggers still get request and trace ids.
 func (h contextHandler) WithGroup(n string) slog.Handler {
 	return contextHandler{h.Handler.WithGroup(n)}
 }

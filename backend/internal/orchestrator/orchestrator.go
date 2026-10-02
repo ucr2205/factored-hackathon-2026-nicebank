@@ -33,6 +33,7 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/tools"
 )
 
+// Sentinel errors returned to the HTTP layer, which maps each one to a status code (httpapi.respond).
 var (
 	ErrSessionExpired = errors.New("session expired")
 	ErrStepUpRequired = errors.New("step-up authentication required")
@@ -50,6 +51,8 @@ const (
 	maxMessageBytes        = 2000
 )
 
+// Orchestrator holds the turn pipeline's dependencies: the RLS-scoped store, the policy engine, the classifier
+// client, the language model and the demo "today" used for relative dates and the eligibility window.
 type Orchestrator struct {
 	Store  *store.Store
 	Policy *policy.Policy
@@ -61,6 +64,7 @@ type Orchestrator struct {
 	tracer trace.Tracer
 }
 
+// New builds an Orchestrator. cmd/api sets the PII cipher afterwards.
 func New(s *store.Store, p *policy.Policy, ml *mlclient.Client, model llm.Provider, today time.Time, idle time.Duration) *Orchestrator {
 	return &Orchestrator{Store: s, Policy: p, ML: ml, LLM: model, Today: today, Idle: idle,
 		tracer: otel.Tracer("disputes/orchestrator")}
@@ -201,6 +205,8 @@ func (o *Orchestrator) Confirm(ctx context.Context, p auth.Principal, req contra
 	return out, err
 }
 
+// newTurn prepares a turn: empty response, trace id, and the customer's decrypted names (kept in memory only, to
+// mask them) and country (wording only). If names cannot be decrypted the turn continues with pattern masking.
 func (o *Orchestrator) newTurn(ctx context.Context, tx pgx.Tx, p auth.Principal, s *session, lang, mode string, span trace.Span) *turn {
 	t := &turn{o: o, ctx: ctx, tx: tx, p: p, s: s, lang: lang, mode: mode, traceID: span.SpanContext().TraceID().String()}
 	t.out = contract.ChatTurn{SessionID: s.ID, ActionsVerified: []contract.VerifiedAction{}, RuleIDs: []string{}, Mode: mode}
@@ -241,6 +247,8 @@ func (o *Orchestrator) record(ctx context.Context, span trace.Span, out contract
 	telemetry.TurnDuration.WithLabelValues(mode).Observe(time.Since(start).Seconds())
 }
 
+// loadOrCreate starts a session when id is empty, or loads one the caller owns (RLS hides others, which then
+// look not found). Closed or idle sessions return ErrSessionExpired; a finished dispute resets the state.
 func (o *Orchestrator) loadOrCreate(ctx context.Context, tx pgx.Tx, id *string, lang string) (*session, error) {
 	s := &session{}
 	if id == nil || *id == "" {
@@ -276,6 +284,10 @@ func (o *Orchestrator) loadOrCreate(ctx context.Context, tx pgx.Tx, id *string, 
 
 // ---------- the system path ----------
 
+// system is the assistant path of one customer message. Understand: guard, mask, classify (ml-service) while the
+// model extracts facts in parallel; refuse or ask when unsure. Decide: find the customer's matching transactions
+// and, once exactly one is identified, evaluate the policy (evaluate). A candidate pick or a pending confirmation
+// short-circuits to the matching stage.
 func (t *turn) system(msg string, selected *string) error {
 	st := &t.s.State
 	if selected != nil && *selected != "" {
@@ -405,6 +417,9 @@ func (t *turn) system(msg string, selected *string) error {
 	}
 }
 
+// findCandidates searches the customer's card transactions with the extracted facts. The date window is the
+// extracted range, else the whole history when an amount or merchant was given, else the last 30 days.
+// Duplicate-charge disputes search for pairs instead; ATM disputes only look at withdrawals.
 func (t *turn) findCandidates() ([]tools.Transaction, error) {
 	st := &t.s.State
 	to := t.o.Today
@@ -532,6 +547,8 @@ func (t *turn) propose(actionType string, pl actionPayload, intent string, facts
 	return nil
 }
 
+// repeatPending re-asks for the pending confirmation when the customer writes instead of pressing confirm or
+// cancel. A pending action that no longer exists resets the conversation.
 func (t *turn) repeatPending() error {
 	var actionType string
 	var raw []byte
@@ -614,6 +631,8 @@ func (t *turn) decide(actionID, actionType string, pl actionPayload, confirm boo
 	return ErrBadRequest
 }
 
+// actionFailed marks the action failed, audits the failed verification and escalates (ESC-TECH-01): the customer
+// is never told an action happened unless it was read back.
 func (t *turn) actionFailed(actionID, actionType string, pl actionPayload, txn *tools.Transaction, err error) error {
 	_, _ = t.tx.Exec(t.ctx, `UPDATE pending_actions SET status = 'failed', decided_at = now() WHERE action_id = $1`, actionID)
 	telemetry.ToolCalls.WithLabelValues(actionType, "not_verified").Inc()
@@ -621,10 +640,12 @@ func (t *turn) actionFailed(actionID, actionType string, pl actionPayload, txn *
 	return t.escalate("action_not_verified", "ESC-TECH-01", "action_failed", txn, "disputes", nil)
 }
 
+// markExecuted closes a pending action once it ran, so a second confirm finds nothing to execute.
 func (t *turn) markExecuted(actionID string) {
 	_, _ = t.tx.Exec(t.ctx, `UPDATE pending_actions SET status = 'executed', decided_at = now() WHERE action_id = $1`, actionID)
 }
 
+// verified records a read-back action: Act and Verify audit rows, the tool metric and the response's verified list.
 func (t *turn) verified(actionType string, v tools.Verified, ruleID string, took time.Duration) {
 	telemetry.ToolCalls.WithLabelValues(actionType, "verified").Inc()
 	t.audit("act", actionType, "executed "+actionType+" -> "+v.Reference, "executed", ruleID, took)
@@ -649,6 +670,8 @@ func (t *turn) searchedFacts() string {
 	return " " + strings.Join(parts, " ")
 }
 
+// clarifyWith asks the customer for more information, up to the policy's max_clarifications; beyond that the
+// conversation is handed to a human (ESC-CLARIFY-LIMIT).
 func (t *turn) clarifyWith(intent, ruleID string, facts map[string]string) error {
 	st := &t.s.State
 	st.Clarifications++
@@ -673,12 +696,14 @@ func (t *turn) reply(outcome, intent string, facts map[string]string, ruleID str
 	return nil
 }
 
+// addUsage accumulates model tokens and cost for the turn's response and metrics.
 func (t *turn) addUsage(u llm.Usage) {
 	t.usage.InputTokens += u.InputTokens
 	t.usage.OutputTokens += u.OutputTokens
 	t.usage.CostUSD += u.CostUSD
 }
 
+// audit writes one audit row and a matching trace span for a pipeline step, inside the turn's transaction.
 func (t *turn) audit(step, tool, summary, result, ruleID string, took time.Duration) {
 	// Steps are audited after they ran; the span is back-dated by the measured duration so Jaeger shows how long
 	// each step really took instead of a zero-width marker.
@@ -694,12 +719,15 @@ func (t *turn) audit(step, tool, summary, result, ruleID string, took time.Durat
 		Result: result, RuleID: ruleID, TraceID: t.traceID, Latency: took, Lang: t.lang, Mode: t.mode})
 }
 
+// saveMessage stores one transcript message in the session (customer text is stored as written, RLS-scoped).
 func (t *turn) saveMessage(role, text string) error {
 	_, err := t.tx.Exec(t.ctx, `INSERT INTO messages (session_id, role, text, lang, mode) VALUES ($1, $2, $3, $4, $5)`,
 		t.s.ID, role, text, t.lang, t.mode)
 	return err
 }
 
+// finish persists the conversation state and the assistant reply, audits the "respond" step with the whole
+// turn's latency and fills the response's trace id, latency and cost.
 func (t *turn) finish(start time.Time) (contract.ChatTurn, error) {
 	t.out.TraceID = t.traceID
 	t.out.LatencyMS = time.Since(start).Milliseconds()
@@ -725,6 +753,7 @@ func (t *turn) finish(start time.Time) (contract.ChatTurn, error) {
 	return t.out, nil
 }
 
+// normLang accepts "pt"; anything else is served in Spanish.
 func normLang(l string) string {
 	if l == "pt" {
 		return "pt"
@@ -732,6 +761,8 @@ func normLang(l string) string {
 	return "es"
 }
 
+// describeExtraction summarizes extracted facts for the audit trail without personal data (the merchant hint is
+// reported only as present).
 func describeExtraction(e llm.Extraction) string {
 	parts := []string{}
 	if e.Amount != nil {

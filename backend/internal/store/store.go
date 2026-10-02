@@ -1,6 +1,10 @@
 // Package store wraps the Postgres pool. Every query on customer data runs inside WithCustomer, which pins
 // the transaction to one customer via `SET LOCAL app.customer_id`, so row-level security applies. The pin is
 // computed inside Postgres from the token's opaque customer_ref, so the backend never handles the bank id.
+//
+// Pipeline role: every turn runs in one WithCustomer transaction, so Understand, Decide, Act, Verify and the
+// audit rows commit or roll back together. Staff routes use WithStaff, which pins the staff role and username
+// for the staff row-level security policies instead of a customer.
 package store
 
 import (
@@ -12,8 +16,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Store is the shared Postgres pool used by the API and the notification worker.
 type Store struct{ Pool *pgxpool.Pool }
 
+// Open connects the pool for url (DATABASE_URL).
 func Open(ctx context.Context, url string) (*Store, error) {
 	pool, err := pgxpool.New(ctx, url)
 	if err != nil {
@@ -22,8 +28,10 @@ func Open(ctx context.Context, url string) (*Store, error) {
 	return &Store{Pool: pool}, nil
 }
 
+// Close releases the pool.
 func (s *Store) Close() { s.Pool.Close() }
 
+// ErrNoCustomer means the token's customer_ref is empty or resolves to no customer.
 var ErrNoCustomer = errors.New("token has no known customer_ref")
 
 type clientIPKey struct{}

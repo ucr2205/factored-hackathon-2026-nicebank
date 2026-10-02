@@ -28,12 +28,14 @@ func (o *Orchestrator) QueueCollector() prometheus.Collector {
 	}
 }
 
+// Describe implements prometheus.Collector.
 func (c *queueCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.open
 	ch <- c.oldest
 	ch <- c.byOutcome
 }
 
+// Collect implements prometheus.Collector with one short read-only transaction; on error it logs and emits nothing.
 func (c *queueCollector) Collect(ch chan<- prometheus.Metric) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()

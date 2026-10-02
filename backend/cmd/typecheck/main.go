@@ -11,6 +11,8 @@
 //	cd backend && DEEPSEEK_API_KEY=... go run ./cmd/typecheck -file ../eval/typecheck/holdout.jsonl [-v]
 //
 // Input lines: {"id": "...", "lang": "es"|"pt", "label": "<taxonomy C6 label>", "text": "..."}.
+//
+// Pipeline role: offline measurement of how Understand sets the dispute type, which then drives Decide (policy).
 package main
 
 import (

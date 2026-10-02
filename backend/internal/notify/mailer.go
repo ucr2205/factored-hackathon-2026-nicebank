@@ -4,6 +4,9 @@
 // Safety: the demo dataset contains realistic-looking addresses, so when the transport is a real SMTP server
 // every message is redirected to RedirectTo (required by config). Mailpit, the local default, captures mail
 // without delivering it.
+//
+// Pipeline role: after Verify. The orchestrator queues an email only for a verified result (case opened, card
+// blocked, handoff created); delivery happens later, outside the turn, so a mail outage never slows or fails a chat.
 package notify
 
 import (
@@ -41,6 +44,7 @@ type Inline struct {
 	Data        []byte
 }
 
+// Mailer delivers one rendered message. SMTPMailer is the real transport; tests use fakes.
 type Mailer interface {
 	Send(ctx context.Context, m Message) error
 }
@@ -60,6 +64,7 @@ type SMTPMailer struct {
 	Timeout    time.Duration
 }
 
+// Send validates the recipient (after applying RedirectTo), builds the MIME message and delivers it within Timeout.
 func (s *SMTPMailer) Send(ctx context.Context, m Message) error {
 	to := m.To
 	if s.RedirectTo != "" {

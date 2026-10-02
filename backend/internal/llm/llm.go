@@ -1,5 +1,9 @@
 // Package llm defines the language-model boundary. The model only extracts facts from free text and drafts
 // customer-facing wording from verified facts; it never decides or executes actions.
+//
+// Pipeline role: Understand (Extract reads amount, date and merchant from masked text; PickCandidate reads which
+// listed charge the customer chose) and Respond (Compose words the reply from verified facts). Two
+// implementations: DeepSeek (production) and Fake (deterministic, used in tests and as the last-resort fallback).
 package llm
 
 import (
@@ -44,6 +48,7 @@ func (e Extraction) Merge(next Extraction) Extraction {
 	return e
 }
 
+// Usage is the token count and list-price cost of one or more model calls, reported per turn.
 type Usage struct {
 	InputTokens  int
 	OutputTokens int
@@ -58,6 +63,8 @@ type ComposeInput struct {
 	Facts   map[string]string // verified values only (amounts, dates, references)
 }
 
+// Provider is what the orchestrator needs from a language model. Implementations receive masked text only and
+// should degrade to a deterministic answer rather than fail a turn.
 type Provider interface {
 	Name() string
 	Version() string
@@ -66,5 +73,6 @@ type Provider interface {
 	Extract(ctx context.Context, maskedText, lang, country string, today time.Time) (Extraction, Usage, error)
 	// PickCandidate returns the index chosen by the customer's reply ("la segunda", "2"), or -1.
 	PickCandidate(ctx context.Context, maskedText string, merchants []string) (int, Usage, error)
+	// Compose words the customer reply for in.Intent using only in.Facts.
 	Compose(ctx context.Context, in ComposeInput) (string, Usage, error)
 }

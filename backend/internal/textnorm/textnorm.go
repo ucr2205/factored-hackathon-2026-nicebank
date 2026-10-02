@@ -1,4 +1,5 @@
 // Package textnorm normalizes customer text for matching: lowercase, accents removed.
+// Shared by the guard, the tools, the fake model and the baseline router so matching behaves the same everywhere.
 package textnorm
 
 import (

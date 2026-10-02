@@ -1,5 +1,9 @@
 // Package tools implements the simulated bank tools. Every write is verified by reading it back; callers
 // report an action to the customer only when Verified is true.
+//
+// Pipeline role: Decide (FindTransactions, FindDuplicates, GetTransaction, ConvertUSD read the customer's own
+// records) and Act + Verify (OpenDisputeCase, BlockCard write and read back). All run inside the turn's
+// customer-scoped transaction, so row-level security limits them to the caller's rows. No tool moves money.
 package tools
 
 import (
@@ -15,6 +19,7 @@ import (
 	"github.com/factored-hackathon-2026/disputes/backend/internal/textnorm"
 )
 
+// Transaction is a card transaction joined with its card's last four digits and brand.
 type Transaction struct {
 	ID        string    `json:"transaction_id"`
 	ProductID string    `json:"-"`
@@ -31,6 +36,7 @@ type Transaction struct {
 	CardBrand string    `json:"card_brand"`
 }
 
+// Filter narrows FindTransactions: a date window plus optional amount and merchant hint.
 type Filter struct {
 	From, To     time.Time
 	Amount       *float64
@@ -42,6 +48,7 @@ const txnColumns = `t.transaction_id, t.product_id, t.transaction_date, t.transa
 	t.currency, t.amount_usd::float8, coalesce(t.merchant_name, ''), coalesce(t.transaction_city, ''),
 	coalesce(t.transaction_country, ''), t.transaction_status, coalesce(p.card_last4, ''), coalesce(p.card_brand, '')`
 
+// scanTxn reads one row selected with txnColumns.
 func scanTxn(row pgx.Row) (Transaction, error) {
 	var t Transaction
 	err := row.Scan(&t.ID, &t.ProductID, &t.Date, &t.Type, &t.Amount, &t.Currency, &t.AmountUSD,
@@ -97,6 +104,7 @@ func FindDuplicates(ctx context.Context, tx pgx.Tx, from, to time.Time, limit in
 	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (Transaction, error) { return scanTxn(r) })
 }
 
+// GetTransaction reads one transaction by id; RLS returns no rows for another customer's transaction.
 func GetTransaction(ctx context.Context, tx pgx.Tx, id string) (Transaction, error) {
 	return scanTxn(tx.QueryRow(ctx, `SELECT `+txnColumns+`
 		FROM transactions t JOIN products p USING (product_id) WHERE t.transaction_id = $1`, id))
@@ -143,6 +151,7 @@ func AmountUSD(ctx context.Context, tx pgx.Tx, t Transaction) (float64, string, 
 	return c.USD, fmt.Sprintf("%s->USD %.6f (%s)", t.Currency, c.Rate, c.RateDate.Format(time.DateOnly)), nil
 }
 
+// Card is one of the customer's credit or debit cards.
 type Card struct {
 	ProductID string
 	Last4     string
@@ -164,11 +173,13 @@ func ActiveCards(ctx context.Context, tx pgx.Tx) ([]Card, error) {
 	})
 }
 
+// Verified is the proof of an executed action: the reference read back from the database and when it was written.
 type Verified struct {
 	Reference  string
 	VerifiedAt time.Time
 }
 
+// ErrNotVerified means a write could not be confirmed by reading it back; the orchestrator then escalates.
 var ErrNotVerified = errors.New("action could not be verified")
 
 // OpenDisputeCase inserts the case (idempotent on key) and verifies it by reading it back.
@@ -220,6 +231,7 @@ func BlockCard(ctx context.Context, tx pgx.Tx, productID, reason string) (Verifi
 	return v, nil
 }
 
+// Agent is a service agent suggested in a handoff (name, languages, specialty).
 type Agent struct {
 	AgentID   string `json:"agent_id"`
 	Name      string `json:"name"`

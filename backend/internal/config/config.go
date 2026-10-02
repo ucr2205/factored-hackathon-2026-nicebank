@@ -1,4 +1,8 @@
 // Package config reads the backend configuration from environment variables.
+//
+// Pipeline role: none at turn time. cmd/api calls Load once at startup and wires the values into the store,
+// policy, model provider, notifier and HTTP server. Secrets (API keys, PII_KEY, SMTP password) come only from
+// the environment and are never logged.
 package config
 
 import (
@@ -8,6 +12,7 @@ import (
 	"time"
 )
 
+// Config is the complete backend configuration. Defaults target the local docker compose stack.
 type Config struct {
 	HTTPAddr       string
 	DatabaseURL    string
@@ -51,6 +56,7 @@ type Config struct {
 	DocsEnabled    bool   // serve /api/docs and /api/openapi.yaml
 }
 
+// Load reads Config from the environment, applying local-development defaults for unset variables.
 func Load() Config {
 	today, err := time.Parse("2006-01-02", envOr("DEMO_TODAY", "2026-06-17"))
 	if err != nil {
@@ -59,18 +65,18 @@ func Load() Config {
 	idle, _ := strconv.Atoi(envOr("SESSION_IDLE_MINUTES", "15"))
 	smtpPort, _ := strconv.Atoi(envOr("SMTP_PORT", "1025"))
 	return Config{
-		HTTPAddr:       envOr("HTTP_ADDR", ":8081"),
-		DatabaseURL:    envOr("DATABASE_URL", "postgres://app_user:change-me-app@localhost:5433/bank"),
-		MLServiceURL:   envOr("ML_SERVICE_URL", "http://localhost:8000"),
-		OIDCIssuer:     envOr("OIDC_ISSUER", "http://localhost:8080/realms/latam-bank"),
-		OIDCJWKSURL:    envOr("OIDC_JWKS_URL", "http://localhost:8080/realms/latam-bank/protocol/openid-connect/certs"),
-		OIDCAudience:   envOr("OIDC_AUDIENCE", "disputes-api"),
-		PolicyFile:     envOr("POLICY_FILE", "../policies/disputes.yaml"),
+		HTTPAddr:     envOr("HTTP_ADDR", ":8081"),
+		DatabaseURL:  envOr("DATABASE_URL", "postgres://app_user:change-me-app@localhost:5433/bank"),
+		MLServiceURL: envOr("ML_SERVICE_URL", "http://localhost:8000"),
+		OIDCIssuer:   envOr("OIDC_ISSUER", "http://localhost:8080/realms/latam-bank"),
+		OIDCJWKSURL:  envOr("OIDC_JWKS_URL", "http://localhost:8080/realms/latam-bank/protocol/openid-connect/certs"),
+		OIDCAudience: envOr("OIDC_AUDIENCE", "disputes-api"),
+		PolicyFile:   envOr("POLICY_FILE", "../policies/disputes.yaml"),
 		// The dev server, the container build and the gateway (PUBLIC_URL, the public entry point).
 		AllowedOrigins: []string{envOr("ALLOWED_ORIGIN", "http://localhost:5173"), "http://localhost:8088",
 			envOr("PUBLIC_URL", "http://localhost:8090")},
-		DemoToday:      today.Add(23*time.Hour + 59*time.Minute),
-		SessionIdle:    time.Duration(idle) * time.Minute,
+		DemoToday:   today.Add(23*time.Hour + 59*time.Minute),
+		SessionIdle: time.Duration(idle) * time.Minute,
 
 		LLMProvider:      envOr("LLM_PROVIDER", "fake"),
 		LLMBaseURL:       envOr("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
@@ -102,6 +108,7 @@ func Load() Config {
 	}
 }
 
+// splitList parses a comma-separated list, dropping empty entries.
 func splitList(s string) []string {
 	var out []string
 	for _, v := range strings.Split(s, ",") {
@@ -112,6 +119,7 @@ func splitList(s string) []string {
 	return out
 }
 
+// envOr returns the environment variable key, or fallback when it is unset or empty.
 func envOr(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v

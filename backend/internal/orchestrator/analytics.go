@@ -156,6 +156,7 @@ func (o *Orchestrator) Analytics(ctx context.Context, p auth.Principal, rangePar
 	return a, err
 }
 
+// collect runs a query and scans every row with scan, returning an empty (not nil) slice so JSON shows [].
 func collect[T any](ctx context.Context, tx pgx.Tx, sql string, scan pgx.RowToFunc[T], args ...any) ([]T, error) {
 	rows, err := tx.Query(ctx, sql, args...)
 	if err != nil {

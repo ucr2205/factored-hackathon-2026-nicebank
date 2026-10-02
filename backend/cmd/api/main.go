@@ -1,4 +1,8 @@
 // Command api is the disputes backend: identity, sessions, orchestration, policy engine, tools and audit.
+//
+// It loads the configuration and the policy (an invalid policy or PII_KEY stops startup), wires Postgres, the
+// ml-service client and the language model into the orchestrator (the turn pipeline), starts the notification
+// worker when enabled, and serves the HTTP API until SIGINT or SIGTERM.
 package main
 
 import (
