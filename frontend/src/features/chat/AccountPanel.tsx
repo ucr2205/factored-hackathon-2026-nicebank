@@ -62,7 +62,7 @@ export default function AccountPanel({ overview, onDispute }: { overview: Overvi
               </Box>
               <Chip
                 size="small"
-                label={c.status === "Active" ? t.cardActive : c.status === "Blocked" ? t.cardBlocked : c.status}
+                label={{ Active: t.cardActive, Blocked: t.cardBlocked, Suspended: t.cardSuspended, Closed: t.cardClosed }[c.status] ?? c.status}
                 sx={{
                   bgcolor: c.status === "Active" ? "rgba(255,255,255,0.18)" : brand.rose,
                   color: c.status === "Active" ? "#fff" : brand.burgundyDeep,
