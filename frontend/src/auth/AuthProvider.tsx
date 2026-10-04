@@ -2,7 +2,7 @@
 // callback, roles from the access token and the TOTP step-up (acr 2). Talks only to Keycloak, never to the API.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { User } from "oidc-client-ts";
-import { useLang } from "../app/i18n";
+import { langFromLocale, useLang } from "../app/i18n";
 import { STEP_UP_CANCELLED } from "./modalNavigator";
 import { decodeClaims, userManager, type Claims } from "./oidc";
 
@@ -35,8 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
   const [resume, setResume] = useState<ResumeState | null>(null);
-  const { lang } = useLang();
+  const { lang, setLang } = useLang();
   const uiLocales = lang === "pt" ? "pt-BR" : "es";
+  // ui_locales alone loses to the language a known user saved earlier (Keycloak's profile attribute), so the OTP
+  // and reset pages could show the other language; kc_locale wins over it and updates that attribute.
+  const localeParams = useMemo(() => ({ ui_locales: uiLocales, extraQueryParams: { kc_locale: uiLocales } }), [uiLocales]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,31 +51,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     callbackOnce
       .then((u) => {
         setUser(u);
+        // The customer may have switched language on Keycloak's own page: follow it (ID token "locale" claim).
+        const chosen = langFromLocale((u.profile as { locale?: string }).locale);
+        if (chosen) setLang(chosen);
         const state = u.state as { resume?: ResumeState; returnTo?: string } | undefined;
         if (state?.resume) setResume(state.resume);
         window.history.replaceState({}, "", state?.returnTo ?? "/");
       })
       .catch(() => window.history.replaceState({}, "", "/"))
       .finally(() => setReady(true));
-  }, []);
+  }, [setLang]);
 
-  const login = useCallback(() => userManager.signinRedirect({ ui_locales: uiLocales }), [uiLocales]);
-  const logout = useCallback(() => userManager.signoutRedirect({ extraQueryParams: { ui_locales: uiLocales } }), [uiLocales]);
+  const login = useCallback(() => userManager.signinRedirect(localeParams), [localeParams]);
+  const logout = useCallback(() => userManager.signoutRedirect({ extraQueryParams: { ui_locales: uiLocales, kc_locale: uiLocales } }), [uiLocales]);
   // Step-up: ask Keycloak for level 2 (password + TOTP) in a dialog over the current page. If the dialog cannot
   // be used (or the customer asks for it), fall back to the full-page redirect, which resumes the chat on return.
   const stepUp = useCallback(
     async (r: ResumeState) => {
       try {
-        const upgraded = await userManager.signinPopup({ acr_values: "2", ui_locales: uiLocales });
+        const upgraded = await userManager.signinPopup({ acr_values: "2", ...localeParams });
         setUser(upgraded);
         return upgraded;
       } catch (e) {
         if (e instanceof Error && e.message === STEP_UP_CANCELLED) return null;
-        await userManager.signinRedirect({ acr_values: "2", ui_locales: uiLocales, state: { resume: r, returnTo: "/chat" } });
+        await userManager.signinRedirect({ acr_values: "2", ...localeParams, state: { resume: r, returnTo: "/chat" } });
         return null;
       }
     },
-    [uiLocales],
+    [localeParams],
   );
   const clearResume = useCallback(() => setResume(null), []);
 

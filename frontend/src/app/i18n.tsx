@@ -1,6 +1,6 @@
-// UI language (es/pt: browser locale by default, switchable in the navbar), every customer-facing string and
-// locale-safe money/date formatters. Staff screens are Spanish-only and keep their text inline.
-import { createContext, useContext, useState, type ReactNode } from "react";
+// UI language (es/pt: the last choice, kept in localStorage, else the browser locale; switchable in the navbar),
+// every customer-facing string and locale-safe money/date formatters. Staff screens keep their own es/pt text next to each component.
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 
 export type Lang = "es" | "pt";
 
@@ -117,9 +117,37 @@ type Strings = (typeof STRINGS)["es"];
 
 const LangContext = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: Strings } | null>(null);
 
-/** Holds the current language: Portuguese when the browser locale is pt-*, otherwise Spanish. */
+const LANG_KEY = "nb-lang";
+
+// The choice must survive the full-page round trips to Keycloak (login, logout, step-up fallback). Storage can be
+// blocked (private mode), so every access is guarded and the app falls back to the browser locale.
+function storedLang(): Lang | null {
+  try {
+    const v = localStorage.getItem(LANG_KEY);
+    return v === "es" || v === "pt" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Language of a Keycloak locale tag ("pt-BR" → pt, "es" → es); null for anything else (e.g. "en"). */
+export function langFromLocale(tag: string | undefined): Lang | null {
+  if (tag?.startsWith("pt")) return "pt";
+  if (tag?.startsWith("es")) return "es";
+  return null;
+}
+
+/** Holds the current language: the last one chosen (here or on the Keycloak pages), else the browser locale. */
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>(() => (navigator.language.startsWith("pt") ? "pt" : "es"));
+  const [lang, setLangState] = useState<Lang>(() => storedLang() ?? (navigator.language.startsWith("pt") ? "pt" : "es"));
+  const setLang = useCallback((l: Lang) => {
+    setLangState(l);
+    try {
+      localStorage.setItem(LANG_KEY, l);
+    } catch {
+      // not persisted; the choice still holds until the next full page load
+    }
+  }, []);
   return <LangContext value={{ lang, setLang, t: STRINGS[lang] as Strings }}>{children}</LangContext>;
 }
 
@@ -130,7 +158,8 @@ export function useLang() {
   return ctx;
 }
 
-const LOCALES: Record<Lang, string> = { es: "es-MX", pt: "pt-BR" };
+/** Intl locale for each UI language. */
+export const LOCALES: Record<Lang, string> = { es: "es-MX", pt: "pt-BR" };
 
 // Intl throws on a non-ISO currency or an unparseable date; one bad dataset row must not blank the page.
 /** Amount in the UI locale's currency format (es-MX / pt-BR); "12.34 XYZ" when Intl rejects the currency. */
