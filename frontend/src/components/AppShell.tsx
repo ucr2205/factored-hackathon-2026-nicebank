@@ -100,7 +100,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
             size="small"
             value={lang}
             onChange={(e) => setLang(e.target.value as Lang)}
-            aria-label="Language"
+            aria-label="Idioma"
             variant="standard"
             disableUnderline
             renderValue={(v) => (
