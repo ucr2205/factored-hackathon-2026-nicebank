@@ -1,0 +1,46 @@
+<html data-composition-variables='[{"id":"cues","type":"string","label":"Sentence start times (s, JSON)","default":"[0.4,1.9,4.3]"}]'>
+<head><link rel="stylesheet" href="assets/brand.css" /></head>
+<body>
+<template>
+  <div id="root" data-composition-id="close" data-width="1920" data-height="1080">
+   <div class="nb-scene">
+    <div class="close-bg"></div>
+    <div class="nb-center">
+      <img id="close-logo" class="close-logo" src="assets/img/nicebank-mark-512.png" alt="" />
+      <div id="close-word" class="close-word"><span>Nice</span><span class="rose">Bank</span></div>
+      <div id="close-tag" class="close-tag">Disputes, settled in a minute.</div>
+      <div id="close-url" class="close-url">hackathon.evon.solutions</div>
+      <div id="close-foot" class="close-foot">Factored AI &amp; Data Hackathon 2026 · a fictitious bank, built on the challenge dataset</div>
+    </div>
+   </div>
+  </div>
+
+  <style>
+    #root { position: absolute; inset: 0; }
+    .close-bg { position: absolute; inset: 0; background: var(--gradient); }
+    .close-logo { width: 180px; height: 180px; border-radius: 44px; background: #fff; padding: 18px; box-shadow: 0 40px 120px rgba(0, 0, 0, 0.4); }
+    .close-word { margin-top: 36px; font-weight: 900; font-size: 128px; letter-spacing: -0.05em; line-height: 1; }
+    .close-word .rose { color: var(--rose); }
+    .close-tag { margin-top: 22px; font-weight: 600; font-size: 46px; color: rgba(255, 255, 255, 0.88); }
+    .close-url { margin-top: 56px; padding: 22px 48px; border-radius: 999px; background: #fff; color: var(--burgundy-dark); font: 700 44px Inter, sans-serif; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35); }
+    .close-foot { position: absolute; bottom: 70px; font: 500 24px Inter, sans-serif; color: rgba(255, 255, 255, 0.6); }
+  </style>
+
+  <script>
+    (function () {
+      const cues = JSON.parse(window.__hyperframes.getVariables().cues);
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "none" }, 0);
+      const ease = "power3.out";
+      tl.fromTo("#close-logo", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.9, ease: "back.out(1.6)" }, cues[0] - 0.2);
+      tl.fromTo("#close-word", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease }, cues[0] + 0.1);
+      tl.fromTo("#close-tag", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.7, ease }, cues[1]);
+      tl.fromTo("#close-url", { opacity: 0, y: 30, scale: 0.92 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "back.out(1.5)" }, cues[2]);
+      tl.fromTo("#close-foot", { opacity: 0 }, { opacity: 1, duration: 0.8 }, cues[2] + 0.8);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["close"] = tl;
+    })();
+  </script>
+</template>
+</body>
+</html>

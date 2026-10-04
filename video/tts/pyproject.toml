@@ -1,0 +1,13 @@
+[project]
+name = "nicebank-video-tts"
+version = "0.1.0"
+description = "Python environment for the HyperFrames local voice-over (Kokoro); point HYPERFRAMES_PYTHON at its interpreter."
+requires-python = ">=3.11,<3.14"
+dependencies = ["kokoro-onnx (>=0.4,<1)", "soundfile (>=0.12,<1)", "numpy (>=1.26)", "scipy (>=1.13)"]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"

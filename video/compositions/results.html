@@ -1,0 +1,82 @@
+<html data-composition-variables='[{"id":"cues","type":"string","label":"Sentence start times (s, JSON)","default":"[0.4,6.2,8.4,10.7,13.4]"}]'>
+<head><link rel="stylesheet" href="assets/brand.css" /></head>
+<body>
+<template>
+  <div id="root" data-composition-id="results" data-width="1920" data-height="1080">
+   <div class="nb-scene">
+    <div class="nb-glow" id="res-glow" style="left: 260px; top: -320px"></div>
+    <div class="res-head" id="res-head">
+      <div class="nb-kicker">Results</div>
+      <div class="res-sub">120 held-out cases it had never seen · Spanish and Portuguese</div>
+    </div>
+
+    <div class="res-main" id="res-main">
+      <div class="res-row">
+        <div class="res-label">NiceBank</div>
+        <div class="res-bar"><div class="res-fill nb" id="res-fill-a"></div></div>
+        <div class="res-val nb-grad-text"><span id="res-a">0</span>%</div>
+      </div>
+      <div class="res-row" id="res-row-b">
+        <div class="res-label dim">Today's process</div>
+        <div class="res-bar"><div class="res-fill base" id="res-fill-b"></div></div>
+        <div class="res-val dim"><span id="res-b">0</span>%</div>
+      </div>
+      <div class="res-cap">correct outcome: the right action, under the right policy rule</div>
+    </div>
+
+    <div class="res-tiles">
+      <div class="tile" id="res-t1"><b>0</b><span>unsafe outcomes</span></div>
+      <div class="tile" id="res-t2"><b>26/26</b><span>manipulation attempts blocked</span></div>
+      <div class="tile" id="res-t3"><b>&lt; 1 s</b><span>per reply (median 0.9 s)</span></div>
+    </div>
+   </div>
+  </div>
+
+  <style>
+    #root { position: absolute; inset: 0; }
+    .res-head { position: absolute; left: 0; right: 0; top: 110px; text-align: center; }
+    .res-sub { margin-top: 18px; font: 500 30px Inter, sans-serif; color: rgba(255, 255, 255, 0.7); }
+    .res-main { position: absolute; left: 220px; right: 220px; top: 300px; display: flex; flex-direction: column; gap: 34px; }
+    .res-row { display: flex; align-items: center; gap: 36px; }
+    .res-label { width: 440px; font-weight: 800; font-size: 42px; white-space: nowrap; text-align: right; }
+    .res-label.dim, .res-val.dim { color: rgba(255, 255, 255, 0.5); }
+    .res-bar { flex: 1; height: 64px; border-radius: 32px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+    .res-fill { height: 100%; border-radius: 32px; transform-origin: left center; }
+    .res-fill.nb { width: 86.7%; background: linear-gradient(90deg, #7a1f3d, #e5769a); }
+    .res-fill.base { width: 5.8%; background: rgba(255, 255, 255, 0.45); }
+    .res-val { width: 260px; font-weight: 900; font-size: 84px; letter-spacing: -0.04em; }
+    .res-cap { margin-left: 476px; font: 500 26px Inter, sans-serif; color: rgba(255, 255, 255, 0.55); }
+    .res-tiles { position: absolute; left: 220px; right: 220px; bottom: 120px; display: flex; gap: 32px; }
+    .tile { flex: 1; padding: 34px 40px; border-radius: 32px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.14); display: flex; flex-direction: column; gap: 8px; }
+    .tile b { font-weight: 900; font-size: 88px; letter-spacing: -0.04em; color: #fff; }
+    .tile span { font: 500 28px Inter, sans-serif; color: rgba(255, 255, 255, 0.7); }
+  </style>
+
+  <script>
+    (function () {
+      const cues = JSON.parse(window.__hyperframes.getVariables().cues);
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "none" }, 0);
+      const ease = "power3.out";
+      const count = (id, to, decimals, at, dur) => {
+        const o = { v: 0 };
+        tl.to(o, { v: to, duration: dur, ease: "power2.out", onUpdate: () => (document.getElementById(id).textContent = o.v.toFixed(decimals)) }, at);
+      };
+      tl.fromTo("#res-glow", { opacity: 0 }, { opacity: 1, duration: 2 }, 0);
+      tl.fromTo("#res-head", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease }, cues[0]);
+      tl.fromTo("#res-main", { opacity: 0 }, { opacity: 1, duration: 0.4 }, cues[0] + 0.6);
+      tl.fromTo("#res-fill-a", { scaleX: 0 }, { scaleX: 1, duration: 2.2, ease: "power3.out" }, cues[0] + 2.4);
+      count("res-a", 86.7, 1, cues[0] + 2.4, 2.2);
+      tl.fromTo("#res-row-b", { opacity: 0 }, { opacity: 1, duration: 0.4 }, cues[1] - 0.2);
+      tl.fromTo("#res-fill-b", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease }, cues[1]);
+      count("res-b", 5.8, 1, cues[1], 0.8);
+      [["#res-t1", 2], ["#res-t2", 3], ["#res-t3", 4]].forEach(([sel, i]) =>
+        tl.fromTo(sel, { opacity: 0, y: 50, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, cues[i])
+      );
+      window.__timelines = window.__timelines || {};
+      window.__timelines["results"] = tl;
+    })();
+  </script>
+</template>
+</body>
+</html>

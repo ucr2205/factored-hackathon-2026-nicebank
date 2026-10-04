@@ -1,0 +1,72 @@
+<html data-composition-variables='[{"id":"cues","type":"string","label":"Sentence start times (s, JSON)","default":"[0.4,2.5,5.3,9.7,16.1]"}]'>
+<head><link rel="stylesheet" href="assets/brand.css" /></head>
+<body>
+<template>
+  <div id="root" data-composition-id="how" data-width="1920" data-height="1080">
+   <div class="nb-scene light">
+    <div class="nb-center" id="how-rule">
+      <div class="nb-kicker" id="how-kick">Under the hood</div>
+      <div class="nb-big how-head"><span id="how-a">AI proposes.</span> <span id="how-b" class="burg">Code decides.</span></div>
+    </div>
+
+    <div id="how-flow" class="how-flow">
+      <div class="how-line"><div id="how-line-fill" class="how-line-fill"></div></div>
+      <div class="how-step" id="how-s0"><div class="dot">1</div><b>Understand</b><span>classifier + language model, masked text</span></div>
+      <div class="how-step" id="how-s1"><div class="dot">2</div><b>Decide</b><span>versioned policy, a rule id for every decision</span></div>
+      <div class="how-step" id="how-s2"><div class="dot">3</div><b>Act</b><span>only after the customer confirms</span></div>
+      <div class="how-step" id="how-s3"><div class="dot">4</div><b>Verify</b><span>every write read back, every step audited</span></div>
+      <div class="how-step" id="how-s4"><div class="dot">5</div><b>Escalate</b><span>the whole case to a specialist</span></div>
+    </div>
+
+    <div id="how-stack" class="how-stack">
+      <div class="chip"><b>Go</b><span>fast, typed backend</span></div>
+      <div class="chip"><b>React</b><span>customer, agent, supervisor</span></div>
+      <div class="chip"><b>Keycloak</b><span>login + TOTP step-up</span></div>
+      <div class="chip"><b>PostgreSQL</b><span>row-level security, pgvector</span></div>
+      <div class="chip"><b>DeepSeek</b><span>words the reply, never decides</span></div>
+      <div class="chip"><b>OpenTelemetry</b><span>every turn traced</span></div>
+    </div>
+   </div>
+  </div>
+
+  <style>
+    #root { position: absolute; inset: 0; }
+    .how-head { margin-top: 24px; }
+    .burg { color: var(--burgundy); }
+    #how-rule { justify-content: flex-start; padding-top: 120px; }
+    .how-flow { position: absolute; left: 140px; right: 140px; top: 400px; display: flex; justify-content: space-between; }
+    .how-line { position: absolute; left: 110px; right: 110px; top: 44px; height: 6px; border-radius: 3px; background: #ead9df; }
+    .how-line-fill { width: 100%; height: 100%; border-radius: 3px; background: var(--gradient); transform-origin: left center; }
+    .how-step { position: relative; width: 300px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+    .how-step .dot { width: 94px; height: 94px; border-radius: 50%; background: var(--gradient); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 40px; box-shadow: 0 18px 40px rgba(122, 31, 61, 0.35); }
+    .how-step b { font-weight: 800; font-size: 40px; letter-spacing: -0.02em; margin-top: 8px; }
+    .how-step span { font: 500 24px/1.35 Inter, sans-serif; color: #6b5961; }
+    .how-stack { position: absolute; left: 160px; right: 160px; bottom: 80px; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+    .chip { display: flex; flex-direction: column; gap: 4px; padding: 20px 30px; border-radius: 22px; background: #fff; border: 1px solid #ecd9e0; box-shadow: 0 14px 36px rgba(74, 16, 38, 0.10); min-width: 250px; }
+    .chip b { font-weight: 800; font-size: 32px; color: var(--burgundy-dark); }
+    .chip span { font: 500 21px Inter, sans-serif; color: #7d6870; }
+  </style>
+
+  <script>
+    (function () {
+      const cues = JSON.parse(window.__hyperframes.getVariables().cues);
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "none" }, 0);
+      const ease = "power3.out";
+      tl.fromTo("#how-kick", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease }, cues[0]);
+      tl.fromTo("#how-a", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease }, cues[1]);
+      tl.fromTo("#how-b", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.6, ease }, cues[1] + 1.0);
+      // the pipeline draws itself across "understand" and "decides… audits"
+      tl.fromTo("#how-line-fill", { scaleX: 0 }, { scaleX: 1, duration: cues[4] - cues[2] - 0.4, ease: "none" }, cues[2]);
+      const span = (cues[4] - cues[2] - 0.4) / 5;
+      for (let i = 0; i < 5; i++) {
+        tl.fromTo(`#how-s${i}`, { opacity: 0, y: 40, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "back.out(1.5)" }, cues[2] + i * span);
+      }
+      tl.fromTo("#how-stack .chip", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease, stagger: 0.55 }, cues[4] + 0.1);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["how"] = tl;
+    })();
+  </script>
+</template>
+</body>
+</html>

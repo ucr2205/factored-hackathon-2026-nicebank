@@ -1,0 +1,44 @@
+/* NiceBank video: fonts and brand tokens shared by every composition (linked, so the assembler hoists it). */
+@font-face { font-family: "Montserrat"; font-weight: 400; src: url("fonts/montserrat-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-weight: 500; src: url("fonts/montserrat-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-weight: 600; src: url("fonts/montserrat-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-weight: 700; src: url("fonts/montserrat-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-weight: 800; src: url("fonts/montserrat-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "Montserrat"; font-weight: 900; src: url("fonts/montserrat-latin-900-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 400; src: url("fonts/inter-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 500; src: url("fonts/inter-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 600; src: url("fonts/inter-latin-600-normal.woff2") format("woff2"); }
+
+:root {
+  --burgundy: #7a1f3d;
+  --burgundy-dark: #4a1026;
+  --burgundy-deep: #2e0a18;
+  --rose: #e5769a;
+  --blush: #f8eef1;
+  --ink: #0b0709;
+  --paper: #fbf7f8;
+  --muted: #8f7d85;
+  --gradient: linear-gradient(120deg, #7a1f3d 0%, #4a1026 55%, #2e0a18 100%);
+}
+
+.nb-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: "Montserrat", sans-serif;
+  color: #fff;
+  background: var(--ink);
+}
+.nb-scene.light { background: var(--paper); color: var(--ink); }
+.nb-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.nb-kicker { font-weight: 700; font-size: 28px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--rose); }
+.nb-huge { font-weight: 900; font-size: 168px; line-height: 0.95; letter-spacing: -0.045em; }
+.nb-big { font-weight: 800; font-size: 104px; line-height: 1.02; letter-spacing: -0.035em; }
+.nb-mid { font-weight: 700; font-size: 60px; line-height: 1.1; letter-spacing: -0.02em; }
+.nb-small { font-weight: 500; font-size: 32px; line-height: 1.35; color: var(--muted); }
+.nb-grad-text { background: linear-gradient(100deg, #ffffff 0%, #f6c6d6 45%, #e5769a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.nb-glow {
+  position: absolute; width: 1400px; height: 1400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(122, 31, 61, 0.55) 0%, rgba(122, 31, 61, 0) 65%);
+  pointer-events: none;
+}

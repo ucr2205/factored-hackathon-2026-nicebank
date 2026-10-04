@@ -1,0 +1,282 @@
+{
+  "voice": "af_sky",
+  "speed": 0.92,
+  "scenes": [
+    {
+      "id": "why",
+      "lead": 0.6,
+      "tail": 0.6,
+      "captions": false,
+      "clips": [
+        {
+          "text": "It starts with a notification.",
+          "file": "audio/vo/why-0-d584b5b389.wav",
+          "dur": 2.048
+        },
+        {
+          "text": "A charge you don't recognize.",
+          "file": "audio/vo/why-1-5961af496d.wav",
+          "dur": 2.048
+        },
+        {
+          "text": "In three years of this bank's data, forty percent of all complaints were card disputes.",
+          "file": "audio/vo/why-2-17cfe65753.wav",
+          "dur": 5.12
+        },
+        {
+          "text": "Each one took fifteen days.",
+          "file": "audio/vo/why-3-9598b7069f.wav",
+          "dur": 1.963
+        },
+        {
+          "text": "One in five missed its deadline.",
+          "file": "audio/vo/why-4-e4750982c9.wav",
+          "dur": 2.368
+        }
+      ]
+    },
+    {
+      "id": "title",
+      "lead": 0.4,
+      "tail": 1.6,
+      "captions": false,
+      "clips": [
+        {
+          "text": "What if it took a minute?",
+          "file": "audio/vo/title-0-50379ba11c.wav",
+          "dur": 1.685
+        },
+        {
+          "text": "Meet NiceBank.",
+          "file": "audio/vo/title-1-ea90be9695.wav",
+          "dur": 1.365
+        }
+      ]
+    },
+    {
+      "id": "dispute",
+      "lead": 0.3,
+      "tail": 0.8,
+      "captions": true,
+      "clips": [
+        {
+          "text": "Just say it the way you would say it.",
+          "file": "audio/vo/dispute-0-8f5f18f4b7.wav",
+          "dur": 2.133
+        },
+        {
+          "text": "NiceBank finds the exact transaction in your own history, and shows it in your currency, in dollars, and at that day's rate.",
+          "file": "audio/vo/dispute-1-4e474f29b5.wav",
+          "dur": 7.68
+        },
+        {
+          "text": "It acts only when you confirm.",
+          "file": "audio/vo/dispute-2-91d9f9d9e9.wav",
+          "dur": 2.219
+        },
+        {
+          "text": "Then it checks that the case really exists, before it tells you it's done.",
+          "file": "audio/vo/dispute-3-963d31d57e.wav",
+          "dur": 3.989
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "lead": 0.3,
+      "tail": 0.8,
+      "captions": true,
+      "clips": [
+        {
+          "text": "Not every scary charge is a dispute.",
+          "file": "audio/vo/explain-0-54bf04f694.wav",
+          "dur": 2.56
+        },
+        {
+          "text": "Reversed, pending or declined: NiceBank explains it from your own record, instead of opening a case nobody needs.",
+          "file": "audio/vo/explain-1-41e9f8e124.wav",
+          "dur": 7.381
+        },
+        {
+          "text": "And when something is sensitive, like blocking a card, it asks for a second factor, right inside the conversation.",
+          "file": "audio/vo/explain-2-410510dd6a.wav",
+          "dur": 6.72
+        }
+      ]
+    },
+    {
+      "id": "portuguese",
+      "lead": 0.3,
+      "tail": 0.8,
+      "captions": true,
+      "clips": [
+        {
+          "text": "Spanish or Portuguese, it understands.",
+          "file": "audio/vo/portuguese-0-0e4d6655b8.wav",
+          "dur": 2.752
+        },
+        {
+          "text": "And no one can talk it into moving money.",
+          "file": "audio/vo/portuguese-1-9ead897be3.wav",
+          "dur": 2.539
+        },
+        {
+          "text": "It simply can't.",
+          "file": "audio/vo/portuguese-2-22e0bafcbc.wav",
+          "dur": 1.387
+        }
+      ]
+    },
+    {
+      "id": "specialist",
+      "lead": 8,
+      "tail": 0.8,
+      "captions": true,
+      "clips": [
+        {
+          "text": "When a person should decide, a specialist gets the whole case: verified facts, actions taken, open questions.",
+          "file": "audio/vo/specialist-0-b482d90604.wav",
+          "dur": 7.04
+        },
+        {
+          "text": "Nobody asks the customer twice.",
+          "file": "audio/vo/specialist-1-648423192e.wav",
+          "dur": 2.347
+        },
+        {
+          "text": "And their name stays encrypted until the specialist takes the case.",
+          "file": "audio/vo/specialist-2-886a639ee4.wav",
+          "dur": 4.181
+        }
+      ]
+    },
+    {
+      "id": "mail",
+      "lead": 0.3,
+      "tail": 0.6,
+      "captions": true,
+      "clips": [
+        {
+          "text": "And the customer hears back by email, in their own language, the moment anything changes.",
+          "file": "audio/vo/mail-0-448da3f9dd.wav",
+          "dur": 5.589
+        }
+      ]
+    },
+    {
+      "id": "supervisor",
+      "lead": 1.2,
+      "tail": 0.8,
+      "captions": true,
+      "clips": [
+        {
+          "text": "And the bank sees all of it, live: what was resolved, what was escalated, and why.",
+          "file": "audio/vo/supervisor-0-261526ca71.wav",
+          "dur": 4.928
+        }
+      ]
+    },
+    {
+      "id": "how",
+      "lead": 0.4,
+      "tail": 0.8,
+      "captions": false,
+      "clips": [
+        {
+          "text": "Under the hood, one rule.",
+          "file": "audio/vo/how-0-47f731b1cd.wav",
+          "dur": 1.792
+        },
+        {
+          "text": "AI proposes. Code decides.",
+          "file": "audio/vo/how-1-b48d98f599.wav",
+          "dur": 2.453
+        },
+        {
+          "text": "A trained classifier and a language model understand the message.",
+          "file": "audio/vo/how-2-d990ba3c30.wav",
+          "dur": 4.053
+        },
+        {
+          "text": "Deterministic code decides with a versioned policy, acts, verifies, and audits every step.",
+          "file": "audio/vo/how-3-a60c865716.wav",
+          "dur": 5.995
+        },
+        {
+          "text": "Go, React, Keycloak, Postgres with row-level security, and OpenTelemetry: built for production, not just for a demo.",
+          "file": "audio/vo/how-4-3e39164b65.wav",
+          "dur": 8.021
+        }
+      ]
+    },
+    {
+      "id": "trace",
+      "lead": 0.3,
+      "tail": 0.6,
+      "captions": true,
+      "clips": [
+        {
+          "text": "And every turn is traced, end to end: each step, each rule, each millisecond.",
+          "file": "audio/vo/trace-0-87e27fdade.wav",
+          "dur": 5.077
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "lead": 0.4,
+      "tail": 0.8,
+      "captions": false,
+      "clips": [
+        {
+          "text": "On a hundred and twenty cases it had never seen, NiceBank got eighty-seven percent right.",
+          "file": "audio/vo/results-0-7d2a6fe9e7.wav",
+          "dur": 5.397
+        },
+        {
+          "text": "Today's process: six.",
+          "file": "audio/vo/results-1-8db301ab3e.wav",
+          "dur": 1.899
+        },
+        {
+          "text": "Zero unsafe outcomes.",
+          "file": "audio/vo/results-2-f883a27cfe.wav",
+          "dur": 1.963
+        },
+        {
+          "text": "Every manipulation attempt, blocked.",
+          "file": "audio/vo/results-3-41decdfe0a.wav",
+          "dur": 2.325
+        },
+        {
+          "text": "And under a second per reply.",
+          "file": "audio/vo/results-4-004b37017e.wav",
+          "dur": 2.133
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "lead": 0.4,
+      "tail": 2.4,
+      "captions": false,
+      "clips": [
+        {
+          "text": "NiceBank.",
+          "file": "audio/vo/close-0-72321170b6.wav",
+          "dur": 1.173
+        },
+        {
+          "text": "Disputes, settled in a minute.",
+          "file": "audio/vo/close-1-74eeb7e8e8.wav",
+          "dur": 2.027
+        },
+        {
+          "text": "Try it now at hackathon dot evon dot solutions.",
+          "file": "audio/vo/close-2-b4ac652b19.wav",
+          "dur": 3.328
+        }
+      ]
+    }
+  ]
+}

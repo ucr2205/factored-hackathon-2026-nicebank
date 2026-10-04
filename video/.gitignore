@@ -1,0 +1,10 @@
+node_modules/
+clips/
+audio/
+renders/
+snapshots/
+tts/.venv/
+*.mp4
+*.webm
+*.wav
+*.mp3

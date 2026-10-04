@@ -1,0 +1,91 @@
+<html data-composition-variables='[{"id":"cues","type":"string","label":"Sentence start times (s, JSON)","default":"[0,2.2,4.6,9.2,11.6]"}]'>
+<head><link rel="stylesheet" href="assets/brand.css" /></head>
+<body>
+<template>
+  <div id="root" data-composition-id="why" data-width="1920" data-height="1080">
+   <div class="nb-scene">
+    <div class="nb-glow" id="why-glow" style="left: 260px; top: -160px"></div>
+
+    <!-- 1. the notification -->
+    <div class="nb-center" id="why-notif-wrap">
+      <div id="why-notif" class="why-notif">
+        <div class="why-notif-icon"><img src="assets/img/nicebank-mark-512.png" alt="" /></div>
+        <div class="why-notif-body">
+          <div class="why-notif-top"><span>NiceBank</span><span class="why-now">now</span></div>
+          <div class="why-notif-title">Compra aprobada · Super Ahorro</div>
+          <div class="why-notif-amount">612.607,59 COP</div>
+        </div>
+      </div>
+      <div id="why-q" class="why-q">I don't recognize this.</div>
+    </div>
+
+    <!-- 2-4. the problem in numbers -->
+    <div class="nb-center why-stat" id="why-s1">
+      <div class="nb-huge nb-grad-text"><span id="why-n1">0</span>%</div>
+      <div class="nb-mid why-cap">of all complaints are card disputes</div>
+      <div class="nb-small">three years of the bank's own data · 27,133 cases</div>
+    </div>
+    <div class="nb-center why-stat" id="why-s2">
+      <div class="nb-huge nb-grad-text"><span id="why-n2">0</span> days</div>
+      <div class="nb-mid why-cap">to settle each one</div>
+    </div>
+    <div class="nb-center why-stat" id="why-s3">
+      <div class="nb-huge nb-grad-text">1 in 5</div>
+      <div class="nb-mid why-cap">missed its deadline</div>
+    </div>
+   </div>
+  </div>
+
+  <style>
+    #root { position: absolute; inset: 0; }
+    .why-notif {
+      width: 900px; display: flex; gap: 28px; align-items: center; padding: 30px 36px;
+      border-radius: 36px; background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 40px 120px rgba(0, 0, 0, 0.55); backdrop-filter: blur(24px); text-align: left;
+    }
+    .why-notif-icon { width: 96px; height: 96px; border-radius: 24px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .why-notif-icon img { width: 72px; height: 72px; }
+    .why-notif-body { flex: 1; }
+    .why-notif-top { display: flex; justify-content: space-between; font: 600 26px Inter, sans-serif; color: rgba(255, 255, 255, 0.7); }
+    .why-notif-title { font: 700 36px Montserrat, sans-serif; margin-top: 6px; }
+    .why-notif-amount { font: 800 52px Montserrat, sans-serif; margin-top: 4px; letter-spacing: -0.02em; }
+    .why-q { opacity: 0; margin-top: 64px; font-weight: 800; font-size: 72px; letter-spacing: -0.03em; color: var(--rose); }
+    .why-stat { gap: 18px; opacity: 0; }
+    .why-cap { color: #fff; }
+  </style>
+
+  <script>
+    (function () {
+      const cues = JSON.parse(window.__hyperframes.getVariables().cues);
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "none" }, 0);
+      const ease = "power3.out";
+
+      tl.fromTo("#why-glow", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 3, ease: "sine.out" }, 0);
+      // notification drops in, then is questioned
+      tl.fromTo("#why-notif", { y: -420, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 1.1, ease: "back.out(1.4)" }, cues[0] + 0.15);
+      tl.fromTo("#why-q", { opacity: 0, y: 40, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease }, cues[1] + 0.2);
+      tl.fromTo("#why-notif", { borderColor: "rgba(255, 255, 255, 0.18)", boxShadow: "0 0 0 0px rgba(229,118,154,0), 0 40px 120px rgba(0,0,0,0.55)" }, { borderColor: "rgba(229, 118, 154, 0.9)", boxShadow: "0 0 0 6px rgba(229,118,154,0.35), 0 40px 120px rgba(0,0,0,0.55)", duration: 0.4, immediateRender: false }, cues[1] + 0.2);
+      tl.fromTo("#why-notif", { x: 0 }, { x: -10, duration: 0.06, repeat: 5, yoyo: true, ease: "none", immediateRender: false }, cues[1] + 0.3);
+      tl.fromTo("#why-notif-wrap", { opacity: 1, scale: 1, filter: "blur(0px)" }, { opacity: 0, scale: 0.9, filter: "blur(16px)", duration: 0.6, ease: "power2.in", immediateRender: false }, cues[2] - 0.15);
+
+      // numbers
+      const stat = (sel, at, until) => {
+        tl.fromTo(sel, { opacity: 0, y: 60, filter: "blur(18px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease, immediateRender: false }, at);
+        if (until) tl.fromTo(sel, { opacity: 1, y: 0, filter: "blur(0px)" }, { opacity: 0, y: -50, filter: "blur(18px)", duration: 0.5, ease: "power2.in", immediateRender: false }, until - 0.25);
+      };
+      stat("#why-s1", cues[2], cues[3]);
+      const n1 = { v: 0 };
+      tl.to(n1, { v: 40, duration: 1.4, ease: "power2.out", onUpdate: () => (document.getElementById("why-n1").textContent = Math.round(n1.v)) }, cues[2] + 0.1);
+      stat("#why-s2", cues[3], cues[4]);
+      const n2 = { v: 0 };
+      tl.to(n2, { v: 15, duration: 1.0, ease: "power2.out", onUpdate: () => (document.getElementById("why-n2").textContent = Math.round(n2.v)) }, cues[3] + 0.1);
+      stat("#why-s3", cues[4]);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["why"] = tl;
+    })();
+  </script>
+</template>
+</body>
+</html>

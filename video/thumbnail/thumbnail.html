@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>NiceBank thumbnail</title>
+<link rel="stylesheet" href="../assets/brand.css" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; }
+  body { position: relative; font-family: "Montserrat", sans-serif; color: #fff; background: radial-gradient(900px 700px at 78% 45%, #7a1f3d 0%, #3a0f20 45%, #12070b 100%); }
+  .glow { position: absolute; width: 900px; height: 900px; right: -260px; top: -200px; border-radius: 50%; background: radial-gradient(circle, rgba(229, 118, 154, 0.35), rgba(229, 118, 154, 0) 65%); }
+  .left { position: absolute; left: 64px; top: 64px; width: 600px; }
+  .brand { display: flex; align-items: center; gap: 16px; font-weight: 900; font-size: 40px; letter-spacing: -0.04em; }
+  .brand img { width: 62px; height: 62px; border-radius: 16px; background: #fff; padding: 7px; }
+  .brand .rose { color: var(--rose); }
+  .days { margin-top: 54px; font-weight: 900; font-size: 92px; line-height: 0.9; letter-spacing: -0.05em; color: rgba(255, 255, 255, 0.45); text-decoration: line-through; text-decoration-thickness: 9px; text-decoration-color: var(--rose); }
+  .minute { margin-top: 12px; font-weight: 900; font-size: 128px; line-height: 0.9; letter-spacing: -0.055em; background: linear-gradient(100deg, #ffffff 0%, #f6c6d6 50%, #e5769a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { margin-top: 30px; font-weight: 700; font-size: 34px; line-height: 1.2; letter-spacing: -0.01em; }
+  .badge { position: absolute; left: 64px; bottom: 56px; display: flex; gap: 12px; }
+  .badge span { padding: 10px 18px; border-radius: 999px; font: 700 20px Inter, sans-serif; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); }
+  .shot { position: absolute; right: -70px; top: 120px; width: 720px; border-radius: 18px; overflow: hidden; background: #fff; transform: perspective(1600px) rotateY(-16deg) rotateX(6deg); box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6); }
+  .shot .bar { height: 30px; background: #f1e9ec; display: flex; align-items: center; gap: 7px; padding: 0 12px; }
+  .shot .bar i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+  .shot img { display: block; width: 100%; }
+  .check { position: absolute; right: 120px; bottom: 96px; display: flex; align-items: center; gap: 14px; padding: 18px 28px; border-radius: 22px; background: #fff; color: #1e7a3c; font-weight: 800; font-size: 34px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); transform: rotate(-3deg); }
+  .check b { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #1e7a3c; color: #fff; font-size: 30px; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="shot">
+    <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+    <img src="../clips/dispute-verified.png" alt="" />
+  </div>
+  <div class="check"><b>✓</b> Dispute verified</div>
+  <div class="left">
+    <div class="brand"><img src="../assets/img/nicebank-mark-512.png" alt="" /><span>Nice<span class="rose">Bank</span></span></div>
+    <div class="days">15 days</div>
+    <div class="minute">1 minute</div>
+    <div class="sub">AI that settles card disputes,<br />and knows when to call a human</div>
+  </div>
+  <div class="badge"><span>AI-first banking</span><span>ES · PT</span><span>Factored Hackathon 2026</span></div>
+</body>
+</html>

@@ -1,0 +1,139 @@
+{
+  "voice": "af_sky",
+  "speed": 0.92,
+  "gap": 0.35,
+  "scenes": [
+    {
+      "id": "why",
+      "lead": 0.6,
+      "tail": 0.6,
+      "captions": false,
+      "sentences": [
+        "It starts with a notification.",
+        "A charge you don't recognize.",
+        "In three years of this bank's data, forty percent of all complaints were card disputes.",
+        "Each one took fifteen days.",
+        "One in five missed its deadline."
+      ]
+    },
+    {
+      "id": "title",
+      "lead": 0.4,
+      "tail": 1.6,
+      "captions": false,
+      "sentences": [
+        "What if it took a minute?",
+        "Meet NiceBank."
+      ]
+    },
+    {
+      "id": "dispute",
+      "lead": 0.3,
+      "tail": 0.8,
+      "captions": true,
+      "sentences": [
+        "Just say it the way you would say it.",
+        "NiceBank finds the exact transaction in your own history, and shows it in your currency, in dollars, and at that day's rate.",
+        "It acts only when you confirm.",
+        "Then it checks that the case really exists, before it tells you it's done."
+      ]
+    },
+    {
+      "id": "explain",
+      "lead": 0.3,
+      "tail": 0.8,
+      "captions": true,
+      "sentences": [
+        "Not every scary charge is a dispute.",
+        "Reversed, pending or declined: NiceBank explains it from your own record, instead of opening a case nobody needs.",
+        "And when something is sensitive, like blocking a card, it asks for a second factor, right inside the conversation."
+      ]
+    },
+    {
+      "id": "portuguese",
+      "lead": 0.3,
+      "tail": 0.8,
+      "captions": true,
+      "sentences": [
+        "Spanish or Portuguese, it understands.",
+        "And no one can talk it into moving money.",
+        "It simply can't."
+      ]
+    },
+    {
+      "id": "specialist",
+      "lead": 8.0,
+      "tail": 0.8,
+      "captions": true,
+      "sentences": [
+        "When a person should decide, a specialist gets the whole case: verified facts, actions taken, open questions.",
+        "Nobody asks the customer twice.",
+        "And their name stays encrypted until the specialist takes the case."
+      ]
+    },
+    {
+      "id": "mail",
+      "lead": 0.3,
+      "tail": 0.6,
+      "captions": true,
+      "sentences": [
+        "And the customer hears back by email, in their own language, the moment anything changes."
+      ]
+    },
+    {
+      "id": "supervisor",
+      "lead": 1.2,
+      "tail": 0.8,
+      "captions": true,
+      "sentences": [
+        "And the bank sees all of it, live: what was resolved, what was escalated, and why."
+      ]
+    },
+    {
+      "id": "how",
+      "lead": 0.4,
+      "tail": 0.8,
+      "captions": false,
+      "sentences": [
+        "Under the hood, one rule.",
+        "AI proposes. Code decides.",
+        "A trained classifier and a language model understand the message.",
+        "Deterministic code decides with a versioned policy, acts, verifies, and audits every step.",
+        "Go, React, Keycloak, Postgres with row-level security, and OpenTelemetry: built for production, not just for a demo."
+      ]
+    },
+    {
+      "id": "trace",
+      "lead": 0.3,
+      "tail": 0.6,
+      "captions": true,
+      "sentences": [
+        "And every turn is traced, end to end: each step, each rule, each millisecond."
+      ]
+    },
+    {
+      "id": "results",
+      "lead": 0.4,
+      "tail": 0.8,
+      "captions": false,
+      "sentences": [
+        "On a hundred and twenty cases it had never seen, NiceBank got eighty-seven percent right.",
+        "Today's process: six.",
+        "Zero unsafe outcomes.",
+        "Every manipulation attempt, blocked.",
+        "And under a second per reply."
+      ]
+    },
+    {
+      "id": "close",
+      "lead": 0.4,
+      "tail": 2.4,
+      "captions": false,
+      "sentences": [
+        "NiceBank.",
+        "Disputes, settled in a minute.",
+        "Try it now at hackathon dot evon dot solutions."
+      ]
+    }
+  ]
+}

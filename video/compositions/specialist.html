@@ -1,0 +1,93 @@
+<html>
+<head><link rel="stylesheet" href="assets/brand.css" /></head>
+<body>
+<template>
+  <div id="root" data-composition-id="specialist" data-width="1920" data-height="1080">
+   <div class="nb-scene">
+    <div class="bg"></div>
+    <div class="stage">
+      <div class="win" id="specialist-win">
+        <div class="bar"><span class="d r"></span><span class="d y"></span><span class="d g"></span>
+          <div class="url"><span class="lock"></span><span id="specialist-url">hackathon.evon.solutions/chat</span></div></div>
+        <div class="screen">
+          <video id="specialist-v0" class="seg" src="clips/stolen.mp4" muted playsinline data-start="0.000" data-duration="5.73" data-media-start="137.35" data-url="hackathon.evon.solutions/chat"></video>
+          <video id="specialist-v1" class="seg" src="clips/stolen.mp4" muted playsinline data-start="5.730" data-duration="4.41" data-media-start="144.87" data-url="hackathon.evon.solutions/chat"></video>
+          <video id="specialist-v2" class="seg" src="clips/agent.mp4" muted playsinline data-start="10.140" data-duration="2.2" data-media-start="22.23" data-url="hackathon.evon.solutions/console"></video>
+          <video id="specialist-v3" class="seg" src="clips/agent.mp4" muted playsinline data-start="12.340" data-duration="2.2" data-media-start="26.04" data-url="hackathon.evon.solutions/console"></video>
+          <video id="specialist-v4" class="seg" src="clips/agent.mp4" muted playsinline data-start="14.540" data-duration="4" data-media-start="32.46" data-url="hackathon.evon.solutions/console/case"></video>
+          <video id="specialist-v5" class="seg" src="clips/agent.mp4" muted playsinline data-start="18.540" data-duration="5.33" data-media-start="35.47" data-url="hackathon.evon.solutions/console/case"></video>
+          <video id="specialist-v6" class="seg" src="clips/agent.mp4" muted playsinline data-start="23.870" data-duration="2.6" data-media-start="43.61" data-url="hackathon.evon.solutions/console/case"></video>
+          <img class="seg hold" id="specialist-hold" src="clips/specialist-hold.png" alt="" />
+        </div>
+      </div>
+    </div>
+    
+    <div class="note right" id="specialist-n0"><span class="tag">EN</span>“My card was stolen.”</div>
+      <div class="note left good" id="specialist-n1"><span class="tag">EN</span>A specialist now has your case and will contact you.</div>
+      <div class="note right" id="specialist-n2"><span class="tag">EN</span>The agent's queue, by priority. In Spanish or Portuguese.</div>
+      <div class="note right" id="specialist-n3"><span class="tag">EN</span>Verified facts, actions taken, open questions</div>
+      <div class="note right good" id="specialist-n4"><span class="tag">EN</span>The name stays encrypted until the case is claimed</div>
+   </div>
+  </div>
+  <style>
+    #root { position: absolute; inset: 0; }
+    .bg { position: absolute; inset: 0; background: radial-gradient(1200px 800px at 50% 40%, #3a0f20 0%, #12070b 60%, #0b0709 100%); }
+    .stage { position: absolute; inset: 0; perspective: 2400px; display: flex; align-items: center; justify-content: center; }
+    .win { width: 1600px; border-radius: 22px; overflow: hidden; background: #fff; box-shadow: 0 60px 160px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08); transform-style: preserve-3d; }
+    .bar { height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 20px; background: #f1e9ec; border-bottom: 1px solid #e3d3d9; }
+    .d { width: 14px; height: 14px; border-radius: 50%; }
+    .d.r { background: #ff5f57; } .d.y { background: #febc2e; } .d.g { background: #28c840; }
+    .url { margin-left: 22px; flex: 1; max-width: 760px; height: 34px; border-radius: 10px; background: #fff; display: flex; align-items: center; gap: 10px; padding: 0 16px; font: 500 19px Inter, sans-serif; color: #4a3a41; }
+    .lock { width: 11px; height: 13px; border-radius: 3px; background: #8f7d85; flex-shrink: 0; }
+    .screen { position: relative; width: 1600px; height: 900px; background: #f6eef1; }
+    .seg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hold { opacity: 0; }
+    .note { position: absolute; max-width: 620px; padding: 18px 26px; border-radius: 22px; font: 600 27px/1.35 Inter, sans-serif; color: #fff; background: rgba(20, 8, 13, 0.82); border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); opacity: 0; }
+    .note.right { right: 70px; top: 120px; }
+    .note.left { left: 70px; bottom: 120px; }
+    .note.good { background: rgba(122, 31, 61, 0.92); }
+    .tag { display: inline-block; margin-right: 12px; padding: 2px 9px; border-radius: 8px; background: rgba(255, 255, 255, 0.18); font-size: 17px; font-weight: 700; letter-spacing: 0.08em; vertical-align: 3px; }
+    .callout { position: absolute; right: 70px; bottom: 110px; width: 560px; padding: 30px 36px; border-radius: 28px; background: #fff; color: var(--ink); box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5); border-top: 6px solid var(--burgundy); opacity: 0; }
+    .callout .k { font-weight: 700; font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--burgundy); }
+    .callout .amt { margin-top: 10px; font-weight: 900; font-size: 54px; letter-spacing: -0.03em; }
+    .callout .eq { font-weight: 800; font-size: 40px; color: var(--burgundy); }
+    .callout .rate { margin-top: 8px; font: 500 22px Inter, sans-serif; color: #7d6870; }
+  </style>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const win = "#specialist-win";
+      const cam = [{"t":0,"s":1,"x":0,"y":0,"rx":10,"ry":-12},{"t":1.4,"s":1.18,"x":-110,"y":52,"rx":0,"ry":0},{"t":9.940000000000015,"s":1.18,"x":-110,"y":20},{"t":10.740000000000014,"s":1,"x":0,"y":0}];
+      tl.fromTo("#root", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "none" }, 0);
+      // Explicit from/to values for every move: render workers seek in any order, and a relative tween would
+      // record a different start value in each worker (frames alternating zoomed and not zoomed).
+      const pose = [];
+      cam.forEach((k, i) => {
+        const prev = pose[i - 1] ?? { scale: 1, x: 0, y: 0, rotationX: 0, rotationY: 0 };
+        pose.push({ scale: k.s, x: k.x, y: k.y, rotationX: k.rx ?? prev.rotationX, rotationY: k.ry ?? prev.rotationY });
+      });
+      tl.set(win, { ...pose[0] }, 0);
+      for (let i = 1; i < cam.length; i++) {
+        const dur = Math.max(0.3, cam[i].t - cam[i - 1].t);
+        tl.fromTo(win, { ...pose[i - 1] }, { ...pose[i], duration: dur, ease: "power2.inOut", immediateRender: false }, cam[i - 1].t);
+      }
+      // the address bar follows the segment on screen
+      document.querySelectorAll("#specialist-win video").forEach((v) => {
+        tl.call(() => (document.getElementById("specialist-url").textContent = v.dataset.url), null, Number(v.dataset.start) + 0.01);
+      });
+      tl.set("#specialist-hold", { opacity: 1 }, 26.470);
+      const notes = [{"clip":"stolen","m":"stolen_sent","off":-1,"d":3,"text":"“My card was stolen.”","side":"right","t":1.4},{"clip":"stolen","m":"handoff","off":0.5,"d":3.4,"text":"A specialist now has your case and will contact you.","side":"left","good":true,"t":6.84},{"t":10.740000000000014,"d":4.4,"text":"The agent's queue, by priority. In Spanish or Portuguese.","side":"right"},{"t":16.540000000000013,"d":3.6,"text":"Verified facts, actions taken, open questions","side":"right"},{"t":20.740000000000016,"d":3.4,"text":"The name stays encrypted until the case is claimed","side":"right","good":true}];
+      notes.forEach((n, i) => {
+        const sel = "#specialist-n" + i;
+        tl.fromTo(sel, { opacity: 0, y: 24, scale: 0.96 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.6)", immediateRender: false }, n.t);
+        tl.fromTo(sel, { opacity: 1, y: 0, scale: 1 }, { opacity: 0, y: -12, scale: 1, duration: 0.35, ease: "power2.in", immediateRender: false }, n.t + n.d);
+      });
+      
+      tl.to({}, { duration: 26.47 }, 0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["specialist"] = tl;
+    })();
+  </script>
+</template>
+</body>
+</html>
