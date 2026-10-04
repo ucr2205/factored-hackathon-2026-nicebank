@@ -23,7 +23,7 @@ actualizado: 2026-10-01
 | Inteligencia artificial (LLM) | ✅ Listo | DeepSeek Flash real, Pro de respaldo y reglas como último recurso | [[LLM]] |
 | Identidad y seguridad | ✅ Listo | Referencia opaca, nombres cifrados, TOTP (ahora en una ventana sobre el chat), RLS, endurecimiento | [[Seguridad]] |
 | Correos al cliente | ✅ Listo | 3 correos con diseño NiceBank + recuperación de contraseña, mismo servidor | [[Notificaciones por correo]] |
-| Consola del agente y supervisión | ✅ Listo | En español claro; **Resumen con 8 KPIs y 7 gráficas**; barra burdeos y menos blanco | [[Frontend]] |
+| Consola del agente y supervisión | ✅ Listo | En español y portugués (4 oct); **Resumen con 8 KPIs y 7 gráficas**; barra burdeos y menos blanco | [[Frontend]] |
 | Logs, trazas y métricas | ✅ Listo | Prometheus con reglas, alertas y datos persistentes; Jaeger legible, filtrable y con pestaña Monitor | [[Observabilidad]] |
 | Documentación del API | ✅ Listo | Swagger UI en http://localhost:8081/api/docs | [[Backend (Go)]] |
 | Pruebas | 🟡 Parcial | 50 pruebas en Go, smoke 24/24, JMeter sin errores; faltan pruebas de integración | [[Estrategia de pruebas]] |
@@ -34,6 +34,13 @@ actualizado: 2026-10-01
 | Despliegue | 🟡 Casi | Configuración lista para **https://hackathon.evon.solutions** (`deploy/evon/`); falta entregar el volcado de datos y la `PII_KEY` | [[Infraestructura]] |
 
 ## Lo que ya funciona
+
+- **Todo en portugués cuando se elige PT (4 oct):** la consola de casos y la supervisión ya cambian de idioma
+  completas (antes solo el chat). En un caso, las preguntas abiertas y los hechos verificados se muestran en
+  portugués con los valores intactos; el pedido del cliente queda como lo escribió. El idioma elegido **se recuerda**
+  entre idas y vueltas a Keycloak, y Keycloak lo respeta aunque el usuario tenga otro guardado en su perfil
+  (`kc_locale`); si se cambia en la página de login, la app lo adopta al volver. Se quitó la línea "¿Problemas para
+  entrar?…" del login y el aviso del buzón de prueba ya no apunta a `localhost:8025`. Detalle en [[Frontend#Idioma]].
 
 - **Paquete para cargar la base en el servidor (2 oct):** `make db-bundle` deja en Descargas un zip (~290 MB) con
   `load_db.py` (Poetry + loguru), el SQL de tablas y seguridad, un CSV por tabla y el realm. En el servidor, con la

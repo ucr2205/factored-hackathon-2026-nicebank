@@ -18,9 +18,9 @@ dueño: Líder
 | Inicio del cliente | cliente | Tarjeta burgundy con "Hola, {nombre}", sus tarjetas y estado; movimientos recientes (tocar uno inicia la disputa) |
 | Chat | cliente | Conversación, candidatas para elegir, confirmación, aviso de código, chips "✅ Verificado" y "especialista". El **código 2FA se pide en una ventana sobre el chat** (ver abajo) |
 | Casos (cola) | agente | Handoffs por prioridad, motivo, idioma y cola con nombre legible ("Fraudes · español") |
-| Detalle del caso | agente | Pedido del cliente (enmascarado), hechos verificados, acciones, preguntas abiertas, reglas, agentes sugeridos, botón "Mostrar identidad" (solo tras tomar el caso) y auditoría en español |
+| Detalle del caso | agente | Pedido del cliente (enmascarado), hechos verificados, acciones, preguntas abiertas, reglas, agentes sugeridos, botón "Mostrar identidad" (solo tras tomar el caso) y auditoría, en el idioma elegido |
 | Supervisión → **Resumen** | supervisor | 8 KPIs y 7 gráficas por periodo (24 h, 7 días, 30 días, todo): resueltas sin una persona, escalamientos, tiempos, cola, asistente vs baseline, reglas, embudo y tiempo por paso. Detalle en [[Observabilidad#Resumen del supervisor (la forma más fácil)]] |
-| Supervisión → **Configuración y reglas** | supervisor | Configuración activa y la política explicada en español |
+| Supervisión → **Configuración y reglas** | supervisor | Configuración activa y la política explicada en el idioma elegido |
 
 ## Barra de navegación
 
@@ -54,6 +54,22 @@ burdeos** e ícono en círculo, KPIs con borde superior burdeos (el principal co
 chat en burdeos. Los componentes compartidos están en `src/components/Panels.tsx` (`Section`, `Stat`,
 `IconBadge`). Las gráficas usan `@mui/x-charts` y solo se descargan al abrir el Resumen; sus colores están
 validados para daltonismo.
+
+## Idioma
+
+- **Todas las pantallas** siguen el selector ES/PT de la barra, también la consola de casos y la supervisión (desde
+  el 4 oct). Los textos de cada pantalla viven junto a su componente (`TEXT = { es, pt }`); los del cliente, en
+  `app/i18n.tsx`.
+- **Se recuerda** en el navegador (`localStorage`, clave `nb-lang`), así que no se pierde al ir y volver de Keycloak
+  (entrar, salir, 2FA). Si no hay nada guardado se usa el idioma del navegador.
+- **Keycloak sigue a la app:** se le manda `ui_locales` y `kc_locale`. El segundo gana sobre el idioma guardado en
+  el perfil del usuario, que antes hacía que el código 2FA o la recuperación salieran en el otro idioma.
+- **La app sigue a Keycloak:** si el usuario cambia el idioma en la página de login, al volver la app lo adopta
+  (claim `locale` del token).
+- **Lo que genera el backend para el agente** (preguntas abiertas y hechos verificados del caso) se escribe en
+  español; en PT la consola lo muestra en portugués con plantillas conocidas y los valores intactos
+  (`features/console/handoffText.ts`). Si cambian esas frases en `handoff.go`, hay que actualizar ese archivo. El
+  pedido del cliente nunca se traduce.
 
 ## Consola del agente en español claro
 
