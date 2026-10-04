@@ -93,7 +93,6 @@ body.nb-body {
 }
 .nb-attempted a { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--nb-burgundy); text-decoration: none; }
 
-.nb-help { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 20px 0 0; max-width: 420px; text-align: center; font-size: 12px; color: var(--nb-muted); }
 
 /* locale switcher */
 .nb-locale { position: absolute; top: 20px; right: 24px; z-index: 5; }

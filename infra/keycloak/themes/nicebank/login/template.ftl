@@ -131,8 +131,6 @@
                 <div id="kc-info" class="nb-info"><#nested "info"></div>
             </#if>
         </section>
-
-        <p class="nb-help"><@ic.i name="life-buoy" size=14/> ${msg("nbHelp")}</p>
     </main>
 </div>
 </body>

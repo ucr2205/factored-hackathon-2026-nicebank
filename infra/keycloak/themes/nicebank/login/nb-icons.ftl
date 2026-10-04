@@ -8,7 +8,6 @@
     <#case "globe"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/><#break>
     <#case "chevron-down"><path d="m6 9 6 6 6-6"/><#break>
     <#case "check"><path d="M20 6 9 17l-5-5"/><#break>
-    <#case "life-buoy"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/><circle cx="12" cy="12" r="4"/><#break>
     <#case "circle-alert"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/><#break>
     <#case "circle-check"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/><#break>
     <#case "info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/><#break>
