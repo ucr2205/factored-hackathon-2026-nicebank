@@ -35,6 +35,10 @@ actualizado: 2026-10-01
 
 ## Lo que ya funciona
 
+- **Video del pitch (4 oct):** tráiler de 2:50 en inglés hecho con HyperFrames, con tomas reales de la app (incluye correo y traza), voz
+  generada en local y música propia. Evaluación v2 repetida el mismo día: 86,7 % vs 5,8 %, 0 inseguros. Ver
+  [[Video del pitch]].
+
 - **Todo en portugués cuando se elige PT (4 oct):** la consola de casos y la supervisión ya cambian de idioma
   completas (antes solo el chat). En un caso, las preguntas abiertas y los hechos verificados se muestran en
   portugués con los valores intactos; el pedido del cliente queda como lo escribió. El idioma elegido **se recuerda**
