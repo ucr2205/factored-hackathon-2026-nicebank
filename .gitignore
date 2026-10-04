@@ -56,7 +56,3 @@ qa/jmeter/results/
 # Local AI tooling registry (machine-specific paths)
 .atl/
 
-# Obsidian: per-user layout and cache (the vault itself is shared)
-vault/.obsidian/workspace*.json
-vault/.obsidian/cache
-vault/.trash/

@@ -1,5 +1,5 @@
 # Prometheus stores the metrics; rules.yml turns them into readable series (nicebank:*) and alerts.
-# Ready-made graphs: vault/03 Módulos/Observabilidad.md ("Prometheus en 5 enlaces").
+# Recording rules and alerts: rules.yml next to this file; how to read them: docs/technical_overview.md.
 global:
   scrape_interval: 10s
   evaluation_interval: 15s
