@@ -14,6 +14,7 @@ data/
 # --- Organizer documents (they contain credentials) ---
 *.pdf
 !docs/pitch/*.pdf
+!docs/pitch/deck/*.pdf
 
 # --- ML ---
 # ml/data/ holds the corpus generator (code, committed); its build/ output includes masked transcript text.
@@ -56,3 +57,5 @@ qa/jmeter/results/
 # Local AI tooling registry (machine-specific paths)
 .atl/
 
+docs/pitch/deck/preview-*.png
+docs/pitch/deck/_*.jpg
