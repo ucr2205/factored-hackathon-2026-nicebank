@@ -33,14 +33,25 @@ def totp(secret: str, period: int = 30) -> str:
 
 
 def token(user: str) -> str:
-    """Access token for a test user via the eval-harness direct grant (with the demo TOTP for cliente* users)."""
-    form = {"grant_type": "password", "client_id": EVAL_CLIENT[0], "client_secret": EVAL_CLIENT[1],
-            "username": user, "password": f"Test-Only-{user}"}
-    if user.startswith("cliente"):  # demo customers have a TOTP credential, which the direct grant flow requires
-        form["totp"] = totp(f"nicebank-demo-otp-{user}")
-    body = urllib.parse.urlencode(form).encode()
-    with urllib.request.urlopen(urllib.request.Request(KEYCLOAK, data=body), timeout=HTTP_TIMEOUT) as r:
-        return json.load(r)["access_token"]
+    """Access token for a test user via the eval-harness direct grant (with the demo TOTP for cliente* users).
+
+    Keycloak rejects a TOTP code it has already accepted, and a code generated at the very end of its 30 s window
+    can expire in flight; on a 401 the login is retried once per new window (as eval/run_eval.py does).
+    """
+    for attempt in range(3):
+        form = {"grant_type": "password", "client_id": EVAL_CLIENT[0], "client_secret": EVAL_CLIENT[1],
+                "username": user, "password": f"Test-Only-{user}"}
+        if user.startswith("cliente"):  # demo customers have a TOTP credential, which the direct grant flow requires
+            form["totp"] = totp(f"nicebank-demo-otp-{user}")
+        body = urllib.parse.urlencode(form).encode()
+        try:
+            with urllib.request.urlopen(urllib.request.Request(KEYCLOAK, data=body), timeout=HTTP_TIMEOUT) as r:
+                return json.load(r)["access_token"]
+        except urllib.error.HTTPError as e:
+            if e.code != 401 or not user.startswith("cliente") or attempt == 2:
+                raise
+            time.sleep(31 - time.time() % 30)  # wait for the next TOTP window
+    raise RuntimeError(f"could not log in as {user}")
 
 
 def call(tok: str, path: str, payload: dict | None = None) -> tuple[int, dict]:
