@@ -20,7 +20,7 @@ so a real SMTP server must never deliver to them.
   (`html/template`, auto-escaped, text/plain alternative; design follows the team's viaticos emails: dark card, NiceBank burgundy palette only (#7A1F3D line and button, logo rose #E5769A titles), inline logo, facts table with the card brand, "Important" note, call-to-action to `MAIL_APP_URL`) and sends it. `finish_notification()` records the
   result and writes an audit event without the address. Up to 4 attempts with growing back-off.
 - **Transport.** `SMTP_SECURITY=ssl|starttls|none`. Default: local Mailpit (`none`). Real server:
-  `mail.netnovation.com:465` (`ssl`, the server the blueprint project uses for `blue@evon.solutions`), login `EMAIL_USERNAME` / `EMAIL_PASSWORD` (local `.env` only), visible sender
+  an SMTP server over implicit TLS on port 465 (`ssl`), login `EMAIL_USERNAME` / `EMAIL_PASSWORD` (local `.env` only), visible sender
   `NiceBank <nicebank@evon.solutions>` (`MAIL_FROM`), envelope sender = the login.
 - **Guard.** With a real server the backend refuses to start unless `MAIL_REDIRECT_TO` (a test inbox) is set,
   or `MAIL_ALLOW_REAL_RECIPIENTS=true` is set explicitly for a real deployment.
