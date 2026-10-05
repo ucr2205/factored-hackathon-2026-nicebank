@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>NiceBank — Factored AI &amp; Data Hackathon 2026</title>
+<!-- Final pitch deck (6 slides, 1920x1080). Rendered to PDF by video/tools/deck-pdf.mjs. Figures: eval/reports/test-v2-20261004T213856Z.md, docs/eda_findings.md, docs/ml_report.md. -->
+<link rel="stylesheet" href="../../../video/assets/brand.css" />
+<style>
+  @page { size: 1920px 1080px; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: #0b0709; }
+  body { font-family: "Montserrat", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide { position: relative; width: 1920px; height: 1080px; overflow: hidden; page-break-after: always; break-after: page; padding: 96px 120px; }
+  .dark { background: radial-gradient(1400px 900px at 75% 30%, #4a1026 0%, #1a0910 55%, #0b0709 100%); color: #fff; }
+  .light { background: #fbf7f8; color: #1b1015; }
+  .kicker { font-weight: 700; font-size: 24px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rose); }
+  .light .kicker { color: var(--burgundy); }
+  h1 { font-weight: 900; letter-spacing: -0.045em; line-height: 0.98; }
+  h2 { font-weight: 900; font-size: 76px; letter-spacing: -0.04em; line-height: 1.02; margin-top: 18px; }
+  .lead { font: 500 30px/1.45 Inter, sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .light .lead { color: #5d4a52; }
+  .grad { background: linear-gradient(100deg, #ffffff 0%, #f6c6d6 45%, #e5769a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .burg { color: var(--burgundy); }
+  .rose { color: var(--rose); }
+  .foot { position: absolute; left: 120px; right: 120px; bottom: 44px; display: flex; justify-content: space-between; font: 500 20px Inter, sans-serif; color: rgba(255, 255, 255, 0.45); }
+  .light .foot { color: #a08f96; }
+  .shot { border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 40px 110px rgba(0, 0, 0, 0.45); }
+  .shot img { display: block; width: 100%; }
+  .bar { height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: #f1e9ec; border-bottom: 1px solid #e3d3d9; font: 500 16px Inter, sans-serif; color: #6b5961; }
+  .bar i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .bar .url { margin-left: 14px; padding: 3px 14px; border-radius: 8px; background: #fff; }
+
+  /* 1 cover */
+  .cover .brand { display: flex; align-items: center; gap: 20px; font-weight: 900; font-size: 48px; letter-spacing: -0.04em; }
+  .cover .brand img { width: 76px; height: 76px; border-radius: 20px; background: #fff; padding: 9px; }
+  .cover h1 { margin-top: 70px; font-size: 104px; width: 980px; }
+  .cover .lead { margin-top: 34px; width: 900px; }
+  .cover .links { position: absolute; left: 120px; bottom: 110px; display: flex; gap: 16px; }
+  .pill { padding: 12px 22px; border-radius: 999px; font: 600 21px Inter, sans-serif; white-space: nowrap; background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.22); color: #fff; }
+  .pill.solid { background: #fff; color: var(--burgundy-dark); border: none; font-weight: 700; }
+  .cover .shot { position: absolute; right: -60px; top: 150px; width: 860px; transform: perspective(1800px) rotateY(-14deg) rotateX(5deg); }
+  .cover .check { position: absolute; right: 120px; top: 760px; display: flex; align-items: center; gap: 16px; padding: 20px 30px; border-radius: 24px; background: #fff; color: #1e7a3c; font-weight: 800; font-size: 34px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); transform: rotate(-3deg); }
+  .cover .check b { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: #1e7a3c; color: #fff; font-size: 30px; }
+
+  /* 2 problem */
+  .stats { margin-top: 64px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .stat { padding: 36px 34px; border-radius: 30px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.13); }
+  .stat b { display: block; font-weight: 900; font-size: 92px; letter-spacing: -0.05em; line-height: 1; }
+  .stat .t { margin-top: 18px; font-weight: 700; font-size: 28px; line-height: 1.2; }
+  .stat .s { margin-top: 12px; font: 500 21px/1.4 Inter, sans-serif; color: rgba(255, 255, 255, 0.6); }
+  .datastrip { margin-top: 44px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .note { padding: 28px 34px; border-radius: 24px; border-left: 6px solid var(--rose); background: rgba(255, 255, 255, 0.04); font: 500 23px/1.45 Inter, sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .note b { color: #fff; font-family: Montserrat, sans-serif; }
+
+  /* 3 product */
+  .cards { margin-top: 40px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; }
+  .card { border-radius: 26px; background: #fff; border: 1px solid #ecd9e0; box-shadow: 0 18px 44px rgba(74, 16, 38, 0.10); overflow: hidden; display: flex; flex-direction: column; }
+  .card .img { height: 290px; overflow: hidden; background: #f6eef1; border-bottom: 1px solid #ecd9e0; }
+  .card .img img { width: 100%; display: block; }
+  .card .body { padding: 24px 26px 28px; }
+  .card .n { font-weight: 800; font-size: 20px; color: var(--burgundy); letter-spacing: 0.12em; }
+  .card h3 { margin-top: 8px; font-weight: 800; font-size: 32px; letter-spacing: -0.02em; line-height: 1.12; }
+  .card p { margin-top: 12px; font: 500 21px/1.42 Inter, sans-serif; color: #5d4a52; }
+  .chips { margin-top: 24px; display: flex; gap: 10px; flex-wrap: nowrap; }
+  .chip { padding: 10px 18px; border-radius: 999px; background: var(--blush); border: 1px solid #ecd2db; font: 600 18px Inter, sans-serif; white-space: nowrap; color: var(--burgundy-dark); }
+
+  /* 4 architecture */
+  .arch { margin-top: 38px; display: grid; grid-template-columns: 1fr 0.85fr; gap: 48px; }
+  .diagram { position: relative; height: 700px; transform: scale(0.86); transform-origin: top left; }
+  .box { position: absolute; padding: 16px 20px; border-radius: 18px; background: #fff; border: 1px solid #e6d3da; box-shadow: 0 10px 28px rgba(74, 16, 38, 0.08); font: 500 18px/1.35 Inter, sans-serif; color: #5d4a52; }
+  .box b { display: block; font: 800 23px Montserrat, sans-serif; color: #1b1015; margin-bottom: 4px; }
+  .box.core { background: var(--gradient); color: rgba(255, 255, 255, 0.8); border: none; }
+  .box.core b { color: #fff; }
+  .steps { display: flex; gap: 8px; margin-top: 12px; }
+  .steps span { flex: 1; text-align: center; padding: 10px 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.14); font: 700 16px Montserrat, sans-serif; color: #fff; }
+  .line { position: absolute; background: #d9bcc7; }
+  .decisions { position: relative; z-index: 2; display: flex; flex-direction: column; gap: 18px; }
+  .dec { display: flex; gap: 18px; align-items: flex-start; }
+  .dec .k { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: var(--gradient); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 20px; }
+  .dec b { font-weight: 800; font-size: 25px; letter-spacing: -0.01em; }
+  .dec p { margin-top: 4px; font: 500 20px/1.4 Inter, sans-serif; color: #5d4a52; }
+
+  /* 5 data / ml / eval */
+  .cols { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+  .col { padding: 36px 36px 30px; border-radius: 30px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.13); }
+  .col .tag { font-weight: 800; font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rose); }
+  .col h3 { margin-top: 10px; font-weight: 800; font-size: 36px; letter-spacing: -0.02em; line-height: 1.1; }
+  .col ul { margin-top: 20px; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .col li { position: relative; padding-left: 26px; font: 500 21px/1.42 Inter, sans-serif; color: rgba(255, 255, 255, 0.8); }
+  .col li::before { content: ""; position: absolute; left: 0; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--rose); }
+  .col li b { color: #fff; }
+  .honest { margin-top: 30px; font: 500 22px/1.45 Inter, sans-serif; color: rgba(255, 255, 255, 0.62); }
+  .honest b { color: #fff; }
+
+  /* 6 results */
+  .res { margin-top: 30px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; }
+  .hero { padding: 30px 40px; border-radius: 34px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.13); }
+  .hero .row { display: flex; align-items: center; gap: 24px; margin-top: 16px; }
+  .hero .lbl { width: 250px; font-weight: 800; font-size: 30px; }
+  .hero .lbl.dim, .hero .val.dim { color: rgba(255, 255, 255, 0.5); }
+  .hero .track { flex: 1; height: 44px; border-radius: 22px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+  .hero .fill { height: 100%; border-radius: 27px; }
+  .hero .val { width: 200px; font-weight: 900; font-size: 62px; letter-spacing: -0.04em; text-align: right; }
+  .hero .cap { margin-top: 14px; font: 500 21px/1.4 Inter, sans-serif; color: rgba(255, 255, 255, 0.55); }
+  .tiles { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .tile { padding: 16px 20px; border-radius: 24px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); }
+  .tile b { display: block; font-weight: 900; font-size: 42px; letter-spacing: -0.04em; }
+  .tile span { display: block; margin-top: 4px; font: 500 18px/1.3 Inter, sans-serif; color: rgba(255, 255, 255, 0.65); }
+  .next h3 { font-weight: 800; font-size: 34px; letter-spacing: -0.02em; }
+  .next ul { margin-top: 18px; list-style: none; display: flex; flex-direction: column; gap: 16px; }
+  .next li { padding: 18px 24px; border-radius: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10); font: 500 21px/1.4 Inter, sans-serif; color: rgba(255, 255, 255, 0.78); }
+  .next li b { color: #fff; font-family: Montserrat, sans-serif; }
+  .close { margin-top: 30px; display: flex; gap: 14px; }
+</style>
+</head>
+<body>
+
+<!-- 1. Cover -->
+<section class="slide dark cover">
+  <div class="brand"><img src="../../../video/assets/img/nicebank-mark-512.png" alt="" /><span>Nice<span class="rose">Bank</span></span></div>
+  <h1>Card disputes, settled in a <span class="grad">minute.</span><br />Not in 15 days.</h1>
+  <p class="lead">An AI-first assistant for card-dispute intake, in Spanish and Portuguese. It finds the exact charge, explains it or opens a verified dispute, and hands a complete case to a human when it should.</p>
+  <div class="shot"><div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="url">hackathon.evon.solutions/chat</span></div><img src="img/app-full.jpg" alt="NiceBank chat with a verified dispute" /></div>
+  <div class="check"><b>✓</b> Dispute verified</div>
+  <div class="links"><span class="pill solid">Live demo · hackathon.evon.solutions</span><span class="pill">Repo · factored-hackathon-2026-nicebank</span></div>
+  <div class="foot"><span>Factored AI &amp; Data Hackathon 2026</span><span>NiceBank is a fictitious bank · all customer data is synthetic</span></div>
+</section>
+
+<!-- 2. Why -->
+<section class="slide dark">
+  <div class="kicker">Why · the problem, in the bank's own data</div>
+  <h2>A charge you don't recognize<br />becomes a <span class="grad">two-week wait.</span></h2>
+  <div class="stats">
+    <div class="stat"><b class="grad">40%</b><div class="t">of all complaints are card-charge disputes</div><div class="s">27,133 in three years, the same share in every country, segment and channel</div></div>
+    <div class="stat"><b class="grad">~15</b><div class="t">days to settle each one</div><div class="s">a slow manual intake that asks the customer the same things again</div></div>
+    <div class="stat"><b class="grad">1 in 5</b><div class="t">misses its deadline</div><div class="s">20% break the SLA, and 75% were still open</div></div>
+    <div class="stat"><b class="grad">8%</b><div class="t">of card purchases aren't a final debit</div><div class="s">pending, declined or reversed: those customers need an explanation, not a case</div></div>
+  </div>
+  <div class="datastrip">
+    <div class="note"><b>23.5 M rows, 13 tables, 3 years</b> of the organizers' data: profiled, cleaned by a reproducible raw → silver ETL and loaded in full (150k customers, 4.4 M card transactions).</div>
+    <div class="note"><b>What the data couldn't give us:</b> no dispute text anywhere (171k transcripts are balance inquiries). So every evaluation case is anchored on a real customer and transaction; only the sentence is team-written, in Spanish or Portuguese.</div>
+  </div>
+  <div class="foot"><span>Sources: docs/eda_findings.md · docs/data_quality_report.md</span><span>2 / 6</span></div>
+</section>
+
+<!-- 3. What -->
+<section class="slide light">
+  <div class="kicker">What · the product</div>
+  <h2>Four things, done <span class="burg">right.</span></h2>
+  <div class="cards">
+    <div class="card"><div class="img"><img src="img/chat-found.jpg" alt="" /></div><div class="body"><div class="n">01 · FIND</div><h3>The exact charge, from a vague sentence</h3><p>Searches only the customer's own cards. Shows the amount in their currency, in USD and the day's rate.</p></div></div>
+    <div class="card"><div class="img"><img src="img/chat-reversed.jpg" alt="" /></div><div class="body"><div class="n">02 · EXPLAIN</div><h3>Not every scary charge is a dispute</h3><p>Reversed, pending or declined: it explains from the record instead of opening a case nobody needs.</p></div></div>
+    <div class="card"><div class="img"><img src="img/chat-verified.jpg" alt="" /></div><div class="body"><div class="n">03 · ACT &amp; VERIFY</div><h3>A dispute that really exists</h3><p>Acts only after the customer confirms, then reads the case back before saying it's done. Card blocks need a second factor.</p></div></div>
+    <div class="card"><div class="img"><img src="img/agent-case.jpg" alt="" /></div><div class="body"><div class="n">04 · ESCALATE</div><h3>A specialist gets the whole case</h3><p>Verified facts, actions taken and open questions. The name stays encrypted until the case is claimed.</p></div></div>
+  </div>
+  <div class="chips"><span class="chip">Spanish &amp; Portuguese</span><span class="chip">2FA step-up inside the chat</span><span class="chip">Email in the customer's language</span><span class="chip">Agent console by priority</span><span class="chip">Supervisor dashboard, live</span><span class="chip">Never moves money</span></div>
+  <div class="foot"><span>Real screens of the app, same build as the live demo</span><span>3 / 6</span></div>
+</section>
+
+<!-- 4. How -->
+<section class="slide light">
+  <div class="kicker">How · architecture and the decisions behind it</div>
+  <h2>AI proposes. <span class="burg">Code decides.</span></h2>
+  <div class="arch">
+    <div class="diagram">
+      <div class="line" style="left: 300px; top: 92px; width: 4px; height: 70px"></div>
+      <div class="line" style="left: 520px; top: 438px; width: 4px; height: 56px"></div>
+      <div class="line" style="left: 170px; top: 438px; width: 4px; height: 56px"></div>
+      <div class="line" style="left: 860px; top: 438px; width: 4px; height: 56px"></div>
+      <div class="box" style="left: 0; top: 0; width: 600px"><b>React app</b>Customer chat · agent console · supervisor (ES/PT)</div>
+      <div class="box" style="left: 640px; top: 0; width: 360px"><b>Keycloak</b>OIDC + PKCE · TOTP step-up</div>
+      <div class="box core" style="left: 0; top: 160px; width: 1000px; height: 280px">
+        <b>Go orchestrator — the same pipeline on every turn</b>
+        <div class="steps"><span>Understand</span><span>Decide</span><span>Act</span><span>Verify</span><span>Escalate</span></div>
+        <div style="margin-top: 16px; font-size: 19px; line-height: 1.45">Masks names, emails and numbers · calls the classifier and the LLM · searches the customer's transactions · applies the versioned policy (a rule id for every decision) · writes only after confirmation, then reads it back · builds the handoff.</div>
+      </div>
+      <div class="box" style="left: 0; top: 494px; width: 320px"><b>ml-service</b>e5 + TF-IDF classifier; abstains when unsure</div>
+      <div class="box" style="left: 345px; top: 494px; width: 320px"><b>DeepSeek</b>masked text only: extracts and second opinion</div>
+      <div class="box" style="left: 690px; top: 494px; width: 310px"><b>PostgreSQL</b>row-level security · encrypted names · pgvector</div>
+      <div class="box" style="left: 0; top: 618px; width: 490px"><b>Policy YAML + email outbox</b>versioned rules · notifications in ES/PT</div>
+      <div class="box" style="left: 510px; top: 618px; width: 490px"><b>OpenTelemetry</b>Jaeger traces · Prometheus metrics and alerts</div>
+    </div>
+    <div class="decisions">
+      <div class="dec"><span class="k">1</span><div><b>The LLM never executes</b><p>It understands and words; deterministic code decides with a policy the bank can read and audit.</p></div></div>
+      <div class="dec"><span class="k">2</span><div><b>Explicit consent, verified writes</b><p>Only two actions exist, each needs a confirmation; blocking a card also needs TOTP. Nothing is "done" until read back.</p></div></div>
+      <div class="dec"><span class="k">3</span><div><b>Privacy by construction</b><p>Opaque customer reference, RLS per customer, AES-GCM names revealed only to the claiming agent and audited.</p></div></div>
+      <div class="dec"><span class="k">4</span><div><b>No invented facts</b><p>Replies come from reviewed templates filled with verified data; the model sees masked text only.</p></div></div>
+      <div class="dec"><span class="k">5</span><div><b>Observable and measurable</b><p>Every turn traced, every decision tagged with its rule; a built-in baseline mode runs today's process on the same input.</p></div></div>
+    </div>
+  </div>
+  <div class="foot"><span>Details: docs/architecture.md · docs/adr/</span><span>4 / 6</span></div>
+</section>
+
+<!-- 5. Data, ML, evaluation -->
+<section class="slide dark">
+  <div class="kicker">Data · models · evaluation</div>
+  <h2>Built on the data, <span class="grad">measured honestly.</span></h2>
+  <div class="cols">
+    <div class="col"><div class="tag">Data engineering</div><h3>Reproducible raw → silver</h3>
+      <ul>
+        <li><b>Declarative specs</b> drive DuckDB stages and Pandera contracts</li>
+        <li>Bad rows go to <b>quarantine with a rule id</b>, never silently dropped</li>
+        <li><b>Lineage, watermarks</b> and late-arrival rebuilds; idempotent re-runs</li>
+        <li>Business dates from event timestamps; USD recomputed at the day's rate</li>
+      </ul></div>
+    <div class="col"><div class="tag">Machine learning</div><h3>Small models that know when to stop</h3>
+      <ul>
+        <li><b>Classifier:</b> multilingual-e5 + TF-IDF ensemble for 8 dispute types</li>
+        <li><b>Abstains when unsure</b> (≥ 0.95 precision when it acts); the assistant asks instead</li>
+        <li><b>DeepSeek Flash</b> extracts amount, date and merchant and screens manipulation</li>
+        <li>No leakage: fraud and resolution labels are never inputs</li>
+      </ul></div>
+    <div class="col"><div class="tag">Evaluation</div><h3>Same input, two systems</h3>
+      <ul>
+        <li><b>120 held-out cases</b> (ES/PT), frozen by hash, each tied to a real transaction</li>
+        <li>Normal, ambiguous, human-required, non-final and <b>adversarial</b></li>
+        <li>Baseline = <b>today's process</b>: every dispute goes to a human</li>
+        <li>Wilson 95% intervals, p50/p95 latency and cost per case</li>
+      </ul></div>
+  </div>
+  <p class="honest"><b>Honest by design:</b> our first case set was written by the same team that wrote the training phrases and overstated accuracy. We wrote and froze a second set afterwards, and that is the number we report.</p>
+  <div class="foot"><span>docs/etl_rules.md · docs/ml_report.md · eval/</span><span>5 / 6</span></div>
+</section>
+
+<!-- 6. Results & next -->
+<section class="slide dark">
+  <div class="kicker">Results · 120 held-out cases it had never seen</div>
+  <h2>Right <span class="grad">15× more often</span> than today's process.</h2>
+  <div class="res">
+    <div>
+      <div class="hero">
+        <div style="font: 700 24px Montserrat; color: rgba(255,255,255,0.7)">Correct outcome: the right action, under the right policy rule</div>
+        <div class="row"><div class="lbl">NiceBank</div><div class="track"><div class="fill" style="width: 86.7%; background: linear-gradient(90deg, #7a1f3d, #e5769a)"></div></div><div class="val grad">86.7%</div></div>
+        <div class="row"><div class="lbl dim">Today</div><div class="track"><div class="fill" style="width: 5.8%; background: rgba(255,255,255,0.45)"></div></div><div class="val dim">5.8%</div></div>
+        <div class="cap">104/120 (95% CI 79–92%) · Spanish 85.0% · Portuguese 88.3%</div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><b>0</b><span>unsafe outcomes (0/120)</span></div>
+        <div class="tile"><b>26/26</b><span>manipulation attempts blocked</span></div>
+        <div class="tile"><b>81.8%</b><span>safe automatic resolution (today: 0%)</span></div>
+        <div class="tile"><b>96.2%</b><span>escalation precision · 89.3% recall</span></div>
+        <div class="tile"><b>0.9 s</b><span>median reply · p95 1.2 s</span></div>
+        <div class="tile"><b>$0.0001</b><span>model cost per case</span></div>
+      </div>
+    </div>
+    <div class="next">
+      <h3>What a bank would need next</h3>
+      <ul>
+        <li><b>Real, consented messages</b> and a blind test set written outside the team, then shadow mode on live traffic</li>
+        <li><b>Chargeback and card-network integration</b>; today cases and blocks are simulated</li>
+        <li><b>Country-specific legal rules</b> in the policy, reviewed by compliance</li>
+        <li><b>A data-processing agreement</b> or a self-hosted model for the LLM</li>
+      </ul>
+      <div class="close"><span class="pill solid">hackathon.evon.solutions</span><span class="pill">factored-hackathon-2026-nicebank</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>eval/reports/test-v2-20261004T213856Z.md · docs/production_gap.md</span><span>6 / 6</span></div>
+</section>
+
+</body>
+</html>

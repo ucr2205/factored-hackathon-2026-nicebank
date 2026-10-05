@@ -1,12 +1,13 @@
 # Pitch deck
 
-Final presentation (6 slides, NiceBank brand): the problem, the experience, value for the bank, how it is built and
-why, results on 120 unseen cases, and the pilot plan.
+Final presentation: 6 slides in English, 16:9, NiceBank brand.
 
-| File | Language |
+| File | What |
 |---|---|
-| [`NiceBank-pitch-EN.pdf`](NiceBank-pitch-EN.pdf) · [`.pptx`](NiceBank-pitch-EN.pptx) | English |
-| [`NiceBank-pitch-ES.pdf`](NiceBank-pitch-ES.pdf) · [`.pptx`](NiceBank-pitch-ES.pptx) | Spanish |
+| [`deck/NiceBank-pitch.pdf`](deck/NiceBank-pitch.pdf) | The deck: the problem in the bank's data, the product, architecture and decisions, data / ML / evaluation, results and what a bank would need next |
+| [`deck/deck.html`](deck/deck.html) | Its source (HTML + CSS, the same fonts and colors as the video in `video/assets/`) |
+| [`deck/img/`](deck/img/) | Real screens of the app used on the slides |
 
-Rebuild the editable decks with `python docs/pitch/build_deck.py` (python-pptx) and export the PDFs from PowerPoint.
-All figures come from `eval/reports/` and `docs/eda_findings.md`.
+Rebuild the PDF from `video/` with `node tools/deck-pdf.mjs ../docs/pitch/deck/NiceBank-pitch.pdf` (Playwright with
+the local Chrome). Every figure comes from `eval/reports/test-v2-20261004T213856Z.md`, `docs/eda_findings.md`,
+`docs/ml_report.md` and `docs/production_gap.md`.
